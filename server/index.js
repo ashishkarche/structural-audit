@@ -11,23 +11,19 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET;
 
-const allowedOrigins = [
-  'https://structural-audit-6xw4.vercel.app',
-  'https://structural-audit.vercel.app'
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+const corsOptions = {
+  origin: 'https://structural-audit-6xw4.vercel.app',
   credentials: true
-}));
+};
 
-app.use(express.json()); // Replaces body-parser
+// Enable CORS for preflight requests before all routes
+app.options('*', cors(corsOptions)); 
+
+// Apply CORS policy
+app.use(cors(corsOptions)); 
+
+// Parse JSON bodies
+app.use(express.json());
 
 // Database connection (using Pool for better efficiency)
 const db = mysql.createPool({
