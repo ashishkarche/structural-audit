@@ -11,7 +11,22 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET;
 
-app.use(cors({ origin: 'https://structural-audit-6xw4.vercel.app', credentials: true }));
+const allowedOrigins = [
+  'https://structural-audit-6xw4.vercel.app',
+  'https://structural-audit.vercel.app'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json()); // Replaces body-parser
 
 // Database connection (using Pool for better efficiency)
