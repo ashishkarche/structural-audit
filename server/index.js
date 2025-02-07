@@ -11,18 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET;
 
-const corsOptions = {
-  origin: 'https://structural-audit-6xw4.vercel.app',
-  credentials: true
-};
-
-// Enable CORS for preflight requests before all routes
-app.options('*', cors(corsOptions)); 
-
-// Apply CORS policy
-app.use(cors(corsOptions)); 
-
-// Parse JSON bodies
+app.use(cors({ origin: '*', credentials: true })); 
+app.options('*', cors()); 
 app.use(express.json());
 
 // Database connection (using Pool for better efficiency)
