@@ -11,8 +11,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.JWT_SECRET;
 
-app.use(cors({ origin: '*', credentials: true })); 
-app.options('*', cors()); 
+const corsOptions = {
+  origin: ['https://structural-audit-6xw4.vercel.app'], // Allow requests only from your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  allowedHeaders: 'Content-Type, Authorization',
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 app.use(express.json());
 
 // Database connection (using Pool for better efficiency)
