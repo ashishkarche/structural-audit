@@ -10,12 +10,13 @@ function EditProfile() {
     name: "",
     qualification: "",
     specialization: "",
-    firmName: "",
-    generalExperience: "",
-    specializedExperience: "",
-    employmentPeriod: "",
+    firm_name: "",  // Changed to match DB
+    general_experience: 0, // Changed to match DB
+    specialized_experience: 0, // Changed to match DB
+    employment_period: 0, // Changed to match DB
     email: "",
   });
+  
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -32,17 +33,24 @@ function EditProfile() {
         headers: { Authorization: `Bearer ${token}` },
       });
   
-      // Ensure all fields are defined
-      const sanitizedData = Object.fromEntries(
-        Object.entries(response.data).map(([key, value]) => [key, value !== undefined ? value : ""])
-      );
-  
-      setFormData(sanitizedData);
+      if (response.data) {
+        setFormData({
+          name: response.data.name || "",
+          qualification: response.data.qualification || "",
+          specialization: response.data.specialization || "",
+          firm_name: response.data.firm_name || "",  // Fixed field name
+          general_experience: response.data.general_experience || 0,
+          specialized_experience: response.data.specialized_experience || 0,
+          employment_period: response.data.employment_period || 0,
+          email: response.data.email || "",
+        });
+      }
     } catch (error) {
       console.error("Error fetching profile:", error);
       setError("Failed to load profile.");
     }
   };
+  
   
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

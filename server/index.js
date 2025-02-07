@@ -178,50 +178,27 @@ app.get('/api/auditors/me', authenticate, async (req, res) => {
 
 app.put('/api/auditors/me', authenticate, async (req, res) => {
   try {
-    let { name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email } = req.body;
+    let { name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email } = req.body;
 
-    // Ensure all fields have a valid value (replace undefined with null)
-    const sanitizedData = {
-      name: name || null,
-      qualification: qualification || null,
-      specialization: specialization || null,
-      firmName: firmName || null,
-      generalExperience: generalExperience || 0,
-      specializedExperience: specializedExperience || 0,
-      employmentPeriod: employmentPeriod || 0,
-      email: email || null,
-    };
+    // Set default values for missing fields
+    name = name || "";
+    qualification = qualification || "";
+    specialization = specialization || "";
+    firm_name = firm_name || "";
+    general_experience = general_experience || 0;
+    specialized_experience = specialized_experience || 0;
+    employment_period = employment_period || 0;
+    email = email || "";
 
-    // Ensure email is unique (except for the current user)
-    const [existingUser] = await db.execute(
-      `SELECT id FROM Auditors WHERE email = ? AND id != ?`,
-      [sanitizedData.email, req.user.id]
-    );
-
-    if (existingUser.length > 0) {
-      return res.status(400).json({ message: "Email is already in use by another auditor." });
-    }
-
-    // Update profile query
     const sql = `UPDATE Auditors 
                  SET name = ?, qualification = ?, specialization = ?, firm_name = ?, 
                      general_experience = ?, specialized_experience = ?, employment_period = ?, email = ? 
                  WHERE id = ?`;
 
-    const [updateResult] = await db.execute(sql, [
-      sanitizedData.name,
-      sanitizedData.qualification,
-      sanitizedData.specialization,
-      sanitizedData.firmName,
-      sanitizedData.generalExperience,
-      sanitizedData.specializedExperience,
-      sanitizedData.employmentPeriod,
-      sanitizedData.email,
-      req.user.id
-    ]);
+    const [result] = await db.execute(sql, [name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email, req.user.id]);
 
-    if (updateResult.affectedRows === 0) {
-      return res.status(404).json({ message: "Profile not found or no changes made." });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Profile not found or not updated" });
     }
 
     res.json({ message: "Profile updated successfully" });
