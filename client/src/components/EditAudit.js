@@ -15,7 +15,7 @@ function EditAudit() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`http://localhost:5000/api/audits/${id}`, config);
+        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${id}`, config);
         setAuditData(response.data);
       } catch (err) {
         console.error("Error fetching audit:", err);
