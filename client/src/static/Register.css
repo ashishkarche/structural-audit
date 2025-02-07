@@ -104,21 +104,76 @@
   transform: scale(1.05);
 }
 
-/* Login Link */
-.login-link {
-  margin-top: 1rem;
+/* Step Indicator */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.step {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #ccc;
+  color: #fff;
+  text-align: center;
+  line-height: 25px;
+  margin: 0 5px;
   font-size: 0.9rem;
-}
-
-.login-link a {
-  color: #667eea;
   font-weight: bold;
-  text-decoration: none;
 }
 
-.login-link a:hover {
+.step.active {
+  background: #667eea;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.next-btn, .back-btn, .register-btn {
+  background: #667eea;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+}
+
+.back-btn {
+  background: #ccc;
+  color: #333;
+}
+
+.next-btn:hover, .register-btn:hover {
+  background: #5563c1;
+}
+
+.back-btn:hover {
+  background: #aaa;
+}
+
+.login-redirect {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.login-link {
+  color: #007bff;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-link:hover {
   text-decoration: underline;
 }
+
 
 /* RESPONSIVE DESIGN */
 @media (max-width: 1024px) { /* Laptops */
@@ -132,17 +187,13 @@
     font-size: 0.9rem;
   }
 }
-
-@media (max-width: 768px) { /* Tablets */
+@media (max-width: 768px) { /* Tablets and below */
   .register-card {
-    max-width: 500px;
+    max-width: 90%;
     padding: 1.5rem;
   }
-  .register-title {
-    font-size: 1.5rem;
-  }
   .form-grid {
-    flex-direction: column;
+    flex-direction: column; /* Stack items vertically */
   }
 }
 
@@ -152,22 +203,23 @@
   }
   .register-card {
     width: 100%;
-    max-width: 350px;
-    padding: 1.2rem;
+    max-width: 90%;
+    padding: 1rem;
   }
   .register-title {
     font-size: 1.4rem;
   }
   .form-grid {
     flex-direction: column;
+    gap: 10px;
   }
   .input-group {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row; /* Keep icon inline */
+    align-items: center;
     padding: 8px;
   }
-  .input-icon {
-    margin-bottom: 5px;
+  .input-group input {
+    font-size: 1rem;
   }
   .register-btn {
     font-size: 0.9rem;

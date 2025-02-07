@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../static/Register.css";
 
 function Register() {
+  const [step, setStep] = useState(1); // Step tracker
   const [formData, setFormData] = useState({
     name: "",
     qualification: "",
@@ -19,6 +20,14 @@ function Register() {
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  const handleNext = () => {
+    setStep((prevStep) => prevStep + 1);
+  };
+
+  const handleBack = () => {
+    setStep((prevStep) => prevStep - 1);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,10 +46,17 @@ function Register() {
         <h2 className="register-title">Create an Account</h2>
         {error && <p className="error-message">{error}</p>}
 
+        {/* Step Progress Indicator */}
+        <div className="step-indicator">
+          <div className={`step ${step >= 1 ? "active" : ""}`}>1</div>
+          <div className={`step ${step >= 2 ? "active" : ""}`}>2</div>
+          <div className={`step ${step === 3 ? "active" : ""}`}>3</div>
+        </div>
+
         <form onSubmit={handleSubmit} className="register-form">
-          <div className="form-grid">
-            {/* Left Column */}
-            <div className="form-column">
+          {/* Step 1: Basic Details */}
+          {step === 1 && (
+            <div className="form-group">
               <div className="input-group">
                 <FaUser className="input-icon" />
                 <input
@@ -73,7 +89,12 @@ function Register() {
                   required
                 />
               </div>
+            </div>
+          )}
 
+          {/* Step 2: Work Experience */}
+          {step === 2 && (
+            <div className="form-group">
               <div className="input-group">
                 <FaBuilding className="input-icon" />
                 <input
@@ -84,10 +105,7 @@ function Register() {
                   required
                 />
               </div>
-            </div>
 
-            {/* Right Column */}
-            <div className="form-column">
               <div className="input-group">
                 <FaCalendar className="input-icon" />
                 <input
@@ -109,18 +127,12 @@ function Register() {
                   required
                 />
               </div>
+            </div>
+          )}
 
-              <div className="input-group">
-                <FaCalendar className="input-icon" />
-                <input
-                  type="number"
-                  placeholder="Employment Period (Years)"
-                  value={formData.employmentPeriod}
-                  onChange={(e) => setFormData({ ...formData, employmentPeriod: e.target.value })}
-                  required
-                />
-              </div>
-
+          {/* Step 3: Account Details */}
+          {step === 3 && (
+            <div className="form-group">
               <div className="input-group">
                 <FaEnvelope className="input-icon" />
                 <input
@@ -143,13 +155,17 @@ function Register() {
                 />
               </div>
             </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="button-group">
+            {step > 1 && <button type="button" className="back-btn" onClick={handleBack}>Back</button>}
+            {step < 3 && <button type="button" className="next-btn" onClick={handleNext}>Next</button>}
+            {step === 3 && <button type="submit" className="register-btn">Register</button>}
           </div>
-
-          <button type="submit" className="register-btn">Register</button>
         </form>
-
-        <p className="login-link">
-          Already have an account? <a href="/">Log in</a>
+        <p className="login-redirect">
+          Already have an account? <span className="login-link" onClick={() => navigate("/")}>Login</span>
         </p>
       </div>
     </div>

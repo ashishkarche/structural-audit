@@ -57,7 +57,7 @@ function AuditDetails() {
         {audit.structural_drawing && (
           <p>
             <strong>Structural Drawing:</strong>{" "}
-            <a href={`https://structural-audit.vercel.app/${audit.structural_drawing}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://structural-audit.vercel.app/uploads/${audit.structural_drawing}`} target="_blank" rel="noopener noreferrer">
               View
             </a>
           </p>
