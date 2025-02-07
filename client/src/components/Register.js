@@ -127,11 +127,22 @@ function Register() {
                   required
                 />
               </div>
+              <div className="input-group">
+                <FaCalendar className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="Employment Period (Years)"
+                  value={formData.employmentPeriod}
+                  onChange={(e) => setFormData({ ...formData, employmentPeriod: e.target.value })}
+                  required
+                />
+              </div>
             </div>
           )}
 
           {/* Step 3: Account Details */}
           {step === 3 && (
+
             <div className="form-group">
               <div className="input-group">
                 <FaEnvelope className="input-icon" />
@@ -143,6 +154,7 @@ function Register() {
                   required
                 />
               </div>
+
 
               <div className="input-group">
                 <FaLock className="input-icon" />
