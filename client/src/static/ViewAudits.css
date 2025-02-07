@@ -1,0 +1,211 @@
+/* Audit Table Container */
+.audit-table-container {
+  max-width: 90%;
+  margin: 40px auto;
+  font-family: 'Poppins', sans-serif;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Header Section */
+.audit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.audit-header h2 {
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+.add-audit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #27ae60;
+  color: white;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease-in-out;
+}
+
+.add-audit-btn:hover {
+  background-color: #219150;
+  transform: scale(1.05);
+}
+
+/* Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+.table thead {
+  background-color: #2c3e50;
+  color: white;
+}
+
+.table th, 
+.table td {
+  padding: 14px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.table th {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* Status Styling */
+.status {
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.status.in-progress {
+  background-color: #f39c12;
+  color: white;
+}
+
+.status.completed {
+  background-color: #27ae60;
+  color: white;
+}
+
+/* Buttons */
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-info {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-info:hover {
+  background-color: #2980b9;
+  transform: scale(1.05);
+}
+
+.btn-warning {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #d4ac0d;
+  transform: scale(1.05);
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+/* Loading & Error Messages */
+.loading-message, .error-message {
+  text-align: center;
+  font-size: 16px;
+  color: #e74c3c;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) { /* Laptops */
+  .audit-table-container {
+    max-width: 95%;
+    padding: 15px;
+  }
+  .table th,
+  .table td {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 768px) { /* Tablets */
+  .audit-table-container {
+    max-width: 100%;
+    padding: 15px;
+  }
+  .audit-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .add-audit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .table th,
+  .table td {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) { /* Mobile Phones */
+  .audit-table-container {
+    max-width: 100%;
+    padding: 10px;
+  }
+  .audit-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  .add-audit-btn {
+    width: 100%;
+    font-size: 12px;
+  }
+  .table {
+    font-size: 12px;
+  }
+  .btn {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

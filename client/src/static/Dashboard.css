@@ -1,0 +1,268 @@
+/* General Dashboard Layout */
+.dashboard-container {
+  display: flex;
+  height: 100vh;
+  font-family: "Arial", sans-serif;
+  background: #f4f6f9;
+}
+
+/* Sidebar */
+.dashboard-sidebar {
+  width: 250px;
+  background: #2c3e50;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: width 0.3s ease-in-out;
+}
+
+/* Sidebar Logo */
+.dashboard-logo {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Sidebar Navigation */
+.dashboard-nav {
+  list-style: none;
+  padding: 0;
+}
+
+.dashboard-nav li {
+  padding: 12px 15px;
+  margin: 5px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 5px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.dashboard-nav li:hover {
+  background-color: #34495e;
+  transform: translateX(5px);
+}
+
+/* Logout Button */
+.dashboard-logout {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+.dashboard-logout:hover {
+  background: #c0392b;
+}
+
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  padding: 30px;
+  background: #f5f6fa;
+}
+
+/* Header */
+.dashboard-header {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.dashboard-header h1 {
+  font-size: 26px;
+  color: #333;
+}
+
+.dashboard-header p {
+  color: #555;
+}
+
+/* Actions */
+.dashboard-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 12px 18px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.3s ease-in-out;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+  transform: scale(1.05);
+}
+
+/* Statistics Cards */
+.dashboard-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-card h3 {
+  font-size: 18px;
+  color: #333;
+}
+
+.stat-card p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+/* Table */
+.dashboard-table {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.dashboard-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.dashboard-table th {
+  background: #007bff;
+  color: white;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+.status.in-progress {
+  background: #f39c12;
+  color: white;
+}
+
+.status.completed {
+  background: #28a745;
+  color: white;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 1024px) { /* Laptops */
+  .dashboard-sidebar {
+    width: 220px;
+  }
+  .btn-primary,
+  .btn-secondary {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) { /* Tablets */
+  .dashboard-container {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px;
+  }
+  .dashboard-nav {
+    display: flex;
+    gap: 10px;
+  }
+  .dashboard-main {
+    padding: 20px;
+  }
+  .dashboard-stats {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) { /* Mobile Phones */
+  .dashboard-container {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+  .dashboard-nav {
+    flex-direction: column;
+    width: 100%;
+  }
+  .dashboard-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  .dashboard-stats {
+    flex-direction: column;
+  }
+  .dashboard-table th,
+  .dashboard-table td {
+    font-size: 12px;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

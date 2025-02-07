@@ -1,0 +1,121 @@
+/* Container */
+.submit-audit-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Title */
+.form-title {
+  text-align: center;
+  color: #333;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Grid Layout */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Labels */
+.audit-form .form-group label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+/* Input Fields */
+.audit-form .form-group input,
+.audit-form .form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease-in-out;
+}
+
+.audit-form .form-group input:focus,
+.audit-form .form-group textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* Textarea */
+.audit-form .form-group textarea {
+  height: 100px;
+  resize: none;
+}
+
+/* File Input */
+.audit-form .form-group input[type="file"] {
+  padding: 8px;
+}
+
+/* Submit Button */
+.submit-btn-container {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.submit-btn {
+  background: #007bff;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.submit-btn:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) { /* Tablets */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) { /* Mobile */
+  .submit-audit-container {
+    max-width: 100%;
+    padding: 15px;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .submit-btn {
+    width: 100%;
+  }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
