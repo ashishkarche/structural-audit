@@ -15,9 +15,9 @@ function Dashboard() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         
-        const auditorRes = await axios.get("http://localhost:5000/api/auditors/me", config);
-        const statsRes = await axios.get("http://localhost:5000/api/audits/stats", config);
-        const auditsRes = await axios.get("http://localhost:5000/api/audits/recent", config);
+        const auditorRes = await axios.get("https://structural-audit.vercel.app/api/auditors/me", config);
+        const statsRes = await axios.get("https://structural-audit.vercel.app/api/audits/stats", config);
+        const auditsRes = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
 
         setAuditor(auditorRes.data);
         setStats(statsRes.data);

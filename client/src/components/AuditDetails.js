@@ -15,7 +15,7 @@ function AuditDetails() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`http://localhost:5000/api/audits/${id}`, config);
+        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${id}`, config);
         setAudit(response.data);
       } catch (err) {
         console.error("Error fetching audit details:", err);
@@ -48,7 +48,7 @@ function AuditDetails() {
         {audit.architectural_drawing && (
           <p>
             <strong>Architectural Drawing:</strong>{" "}
-            <a href={`http://localhost:5000/${audit.architectural_drawing}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://structural-audit.vercel.app/${audit.architectural_drawing}`} target="_blank" rel="noopener noreferrer">
               View
             </a>
           </p>
@@ -57,7 +57,7 @@ function AuditDetails() {
         {audit.structural_drawing && (
           <p>
             <strong>Structural Drawing:</strong>{" "}
-            <a href={`http://localhost:5000/${audit.structural_drawing}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://structural-audit.vercel.app/${audit.structural_drawing}`} target="_blank" rel="noopener noreferrer">
               View
             </a>
           </p>

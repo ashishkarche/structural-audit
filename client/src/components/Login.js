@@ -15,7 +15,7 @@ function Login() {
     e.preventDefault();
     setError("");
     try {
-      const response = await axios.post("http://localhost:5000/login", { email, password });
+      const response = await axios.post("https://structural-audit.vercel.app/login", { email, password });
       localStorage.setItem("token", response.data.token);
       navigate("/dashboard");
     } catch (err) {

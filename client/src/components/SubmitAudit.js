@@ -41,7 +41,7 @@ function SubmitAudit() {
     });
   
     try {
-      await axios.post("http://localhost:5000/submit-audit", formDataToSend, config);
+      await axios.post("https://structural-audit.vercel.app/submit-audit", formDataToSend, config);
       navigate("/dashboard");
     } catch (err) {
       setError("Failed to submit audit. Please try again.");

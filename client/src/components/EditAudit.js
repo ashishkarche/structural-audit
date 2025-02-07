@@ -36,7 +36,7 @@ function EditAudit() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } };
-      await axios.put(`http://localhost:5000/api/audits/${id}`, auditData, config);
+      await axios.put(`https://structural-audit.vercel.app/api/audits/${id}`, auditData, config);
 
       alert("Audit updated successfully!");
       navigate("/view-audits");

@@ -21,7 +21,7 @@ function ViewAudits() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get("http://localhost:5000/api/audits/recent", config);
+      const response = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
       setAudits(response.data);
     } catch (error) {
       console.error("Error fetching audits:", error);
@@ -37,7 +37,7 @@ function ViewAudits() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`http://localhost:5000/api/audits/${id}`, config);
+      await axios.delete(`https://structural-audit.vercel.app/api/audits/${id}`, config);
       setAudits(audits.filter((audit) => audit.id !== id)); // Remove from UI
     } catch (error) {
       console.error("Error deleting audit:", error);

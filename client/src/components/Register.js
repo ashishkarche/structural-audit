@@ -24,7 +24,7 @@ function Register() {
     e.preventDefault();
     setError("");
     try {
-      await axios.post("http://localhost:5000/register", formData);
+      await axios.post("https://structural-audit.vercel.app/register", formData);
       navigate("/");
     } catch (err) {
       setError("Registration failed. Please try again.");
