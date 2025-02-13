@@ -1,3 +1,4 @@
+// components/EditAudit.js
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -5,7 +6,7 @@ import "../static/EditAudit.css";
 import { FaSave, FaArrowLeft } from "react-icons/fa";
 
 function EditAudit() {
-  const { id } = useParams();
+  const { auditId } = useParams();
   const navigate = useNavigate();
   const [auditData, setAuditData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -15,7 +16,7 @@ function EditAudit() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${id}`, config);
+        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}`, config);
         setAuditData(response.data);
       } catch (err) {
         console.error("Error fetching audit:", err);
@@ -23,7 +24,7 @@ function EditAudit() {
       }
     };
     fetchAuditDetails();
-  }, [id]);
+  }, [auditId]);
 
   const handleInputChange = (e) => {
     setAuditData({ ...auditData, [e.target.name]: e.target.value });
@@ -36,8 +37,7 @@ function EditAudit() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } };
-      await axios.put(`https://structural-audit.vercel.app/api/audits/${id}`, auditData, config);
-
+      await axios.put(`https://structural-audit.vercel.app/api/audits/${auditId}`, auditData, config);
       alert("Audit updated successfully!");
       navigate("/view-audits");
     } catch (err) {
@@ -51,7 +51,7 @@ function EditAudit() {
 
   return (
     <div className="audit-edit-container">
-      <button className="audit-back-button" onClick={() => navigate(`/audit/${id}`)}>
+      <button className="audit-back-button" onClick={() => navigate(`/audit/${auditId}/full`)}>
         <FaArrowLeft /> Back to Audit Details
       </button>
 
@@ -80,7 +80,7 @@ function EditAudit() {
         <div className="audit-form-group">
           <label>Status</label>
           <select name="status" value={auditData.status} onChange={handleInputChange} required>
-            <option value="In Progress">In Progress</option>
+            <option value="In-Progress">In Progress</option>
             <option value="Completed">Completed</option>
           </select>
         </div>

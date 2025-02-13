@@ -1,0 +1,10 @@
+/* AuditLayout.css */
+.audit-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .audit-content {
+    margin-top: 20px;
+  }
+  

@@ -5,7 +5,7 @@ import "../static/AuditDetails.css";
 import { FaArrowLeft } from "react-icons/fa";
 
 function AuditDetails() {
-  const { id } = useParams();
+  const { auditId } = useParams();
   const navigate = useNavigate();
   const [audit, setAudit] = useState(null);
   const [error, setError] = useState("");
@@ -15,52 +15,88 @@ function AuditDetails() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${id}`, config);
+        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}`, config);
         setAudit(response.data);
       } catch (err) {
         console.error("Error fetching audit details:", err);
         setError("Failed to load audit details.");
       }
     };
-    fetchAuditDetails();
-  }, [id]);
 
-  if (error) return <p className="text-danger text-center">{error}</p>;
-  if (!audit) return <p className="text-center">Loading...</p>;
+    fetchAuditDetails();
+  }, [auditId]);
+
+  if (error) return <div className="audit-details-error">{error}</div>;
+  if (!audit) return <div className="audit-details-loading">Loading audit details...</div>;
 
   return (
     <div className="audit-details-container">
-      <button className="back-btn" onClick={() => navigate("/view-audits")}>
-        <FaArrowLeft /> Back to Audits
-      </button>
-
-      <h2>Audit Details</h2>
-      <div className="audit-info">
-        <p><strong>Project Name:</strong> {audit.name}</p>
-        <p><strong>Location:</strong> {audit.location}</p>
-        <p><strong>Date of Audit:</strong> {audit.date_of_audit}</p>
-        <p><strong>Structural Changes:</strong> {audit.structural_changes}</p>
-        <p><strong>Distress Year:</strong> {audit.distress_year}</p>
-        <p><strong>Distress Nature:</strong> {audit.distress_nature}</p>
-        <p><strong>Previous Reports:</strong> {audit.previous_reports}</p>
-        <p><strong>Status:</strong> <span className={`status1 ${audit.status.toLowerCase()}`}>{audit.status}</span></p>
-
+      <div className="audit-details-header">
+        <button className="back-btn" onClick={() => navigate('/view-audits')}>
+          <FaArrowLeft /> Back
+        </button>
+        <h2>Audit Details</h2>
+      </div>
+      <div className="audit-details-card">
+        <div className="audit-field">
+          <span className="audit-label">Project Name:</span>
+          <span className="audit-value">{audit.name}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Location:</span>
+          <span className="audit-value">{audit.location}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Date of Audit:</span>
+          <span className="audit-value">{audit.date_of_audit}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Structural Changes:</span>
+          <span className="audit-value">{audit.structural_changes}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Distress Year:</span>
+          <span className="audit-value">{audit.distress_year}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Distress Nature:</span>
+          <span className="audit-value">{audit.distress_nature}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Previous Reports:</span>
+          <span className="audit-value">{audit.previous_reports}</span>
+        </div>
+        <div className="audit-field">
+          <span className="audit-label">Status:</span>
+          <span className={`audit-status ${audit.status.toLowerCase()}`}>
+            {audit.status}
+          </span>
+        </div>
         {audit.architectural_drawing && (
-          <p>
-            <strong>Architectural Drawing:</strong>{" "}
-            <a href={`https://structural-audit.vercel.app/${audit.architectural_drawing}`} target="_blank" rel="noopener noreferrer">
-              View
+          <div className="audit-field">
+            <span className="audit-label">Architectural Drawing:</span>
+            <a
+              className="audit-link"
+              href={`https://structural-audit.vercel.app/${audit.architectural_drawing}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Drawing
             </a>
-          </p>
+          </div>
         )}
-
         {audit.structural_drawing && (
-          <p>
-            <strong>Structural Drawing:</strong>{" "}
-            <a href={`https://structural-audit.vercel.app/uploads/${audit.structural_drawing}`} target="_blank" rel="noopener noreferrer">
-              View
+          <div className="audit-field">
+            <span className="audit-label">Structural Drawing:</span>
+            <a
+              className="audit-link"
+              href={`https://structural-audit.vercel.app/uploads/${audit.structural_drawing}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Drawing
             </a>
-          </p>
+          </div>
         )}
       </div>
     </div>

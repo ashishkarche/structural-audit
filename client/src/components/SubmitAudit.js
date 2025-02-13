@@ -24,31 +24,31 @@ function SubmitAudit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } };
-  
+
     const formDataToSend = new FormData();
     Object.keys(formData).forEach((key) => {
       if (key === "dateOfAudit" && formData[key]) {
-        const formattedDate = new Date(formData[key]).toISOString().split("T")[0]; // Convert full date to YYYY-MM-DD
+        const formattedDate = new Date(formData[key]).toISOString().split("T")[0];
         formDataToSend.append(key, formattedDate);
       } else if (key === "distressYear" && formData[key]) {
-        const yearOnly = new Date(formData[key]).getFullYear(); // Extract only the year (YYYY)
+        const yearOnly = new Date(formData[key]).getFullYear();
         formDataToSend.append(key, yearOnly);
       } else {
         formDataToSend.append(key, formData[key]);
       }
     });
-  
+
     try {
-      await axios.post("https://structural-audit.vercel.app/submit-audit", formDataToSend, config);
-      navigate("/dashboard");
+      const response = await axios.post("https://structural-audit.vercel.app/submit-audit", formDataToSend, config);
+      navigate(`/audit/${response.data.auditId}/structural-changes`);
     } catch (err) {
       setError("Failed to submit audit. Please try again.");
     }
   };
-  
-  
+
   return (
     <div className="submit-audit-container">
       <h2 className="form-title">Submit New Audit</h2>
@@ -76,7 +76,7 @@ function SubmitAudit() {
           ))}
         </div>
         <div className="form-group submit-btn-container">
-          <button type="submit" className="submit-btn">Submit Audit</button>
+          <button type="submit" className="submit-btn">Save & Next</button>
         </div>
       </form>
     </div>

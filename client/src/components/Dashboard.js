@@ -8,64 +8,124 @@ function Dashboard() {
   const [auditor, setAuditor] = useState({});
   const [audits, setAudits] = useState([]);
   const [stats, setStats] = useState({ totalAudits: 0, inProgress: 0, completed: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Unauthorized access. Please log in.");
+          navigate("/");
+          return;
+        }
+
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        
-        const auditorRes = await axios.get("https://structural-audit.vercel.app/api/auditors/me", config);
-        const statsRes = await axios.get("https://structural-audit.vercel.app/api/audits/stats", config);
-        const auditsRes = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
+        const [auditorRes, statsRes, auditsRes] = await Promise.all([
+          axios.get("https://structural-audit.vercel.app/api/auditors/me", config),
+          axios.get("https://structural-audit.vercel.app/api/audits/stats", config),
+          axios.get("https://structural-audit.vercel.app/api/audits/recent", config),
+        ]);
 
         setAuditor(auditorRes.data);
         setStats(statsRes.data);
-        setAudits(auditsRes.data);
+
+        // Format the date_of_audit for each audit
+        const formattedAudits = auditsRes.data.map((audit) => {
+          let displayDate = "";
+          if (audit.date_of_audit) {
+            const dateObj = new Date(audit.date_of_audit);
+            // Check if date is valid
+            if (!isNaN(dateObj)) {
+              // Convert to YYYY-MM-DD
+              displayDate = dateObj.toISOString().split("T")[0];
+            }
+          }
+          return { ...audit, date_of_audit: displayDate };
+        });
+        setAudits(formattedAudits);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching dashboard data:", error);
+        setError("Failed to load dashboard data. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchData();
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="dashboard-container">
       <main className="dashboard-main">
         <header className="dashboard-header">
-          <h1>Welcome, {auditor.name}</h1>
-          <p>{auditor.firm_name}</p>
+          <h1>Welcome, {auditor.name || "Auditor"}</h1>
+          <p>{auditor.firm_name || "Your Firm"}</p>
         </header>
 
-        <div className="dashboard-actions">
-          <button onClick={() => navigate("/submit-audit")} className="btn-primary">+ Submit New Audit</button>
-          <button onClick={() => navigate("/view-audits")} className="btn-secondary">View Previous Audits</button>
-        </div>
+        {loading ? (
+          <p className="loading-text">Loading...</p>
+        ) : error ? (
+          <p className="error-message">{error}</p>
+        ) : (
+          <>
+            {/* Dashboard Quick Actions */}
+            <div className="dashboard-actions">
+              <button onClick={() => navigate("/submit-audit")} className="btn-primary">
+                + Submit New Audit
+              </button>
+              <button onClick={() => navigate("/view-audits")} className="btn-secondary">
+                View Previous Audits
+              </button>
+            </div>
 
-        <div className="dashboard-stats">
-          <div className="stat-card"><h3>Total Audits</h3><p>{stats.totalAudits}</p></div>
-          <div className="stat-card"><h3>In Progress</h3><p>{stats.inProgress}</p></div>
-          <div className="stat-card"><h3>Completed</h3><p>{stats.completed}</p></div>
-        </div>
+            {/* Audit Statistics */}
+            <div className="dashboard-stats">
+              <div className="stat-card">
+                <h3>Total Audits</h3>
+                <p>{stats.totalAudits}</p>
+              </div>
+              <div className="stat-card">
+                <h3>In Progress</h3>
+                <p>{stats.inProgress}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Completed</h3>
+                <p>{stats.completed}</p>
+              </div>
+            </div>
 
-        <div className="dashboard-table">
-          <h2>Recent Audits</h2>
-          <table>
-            <thead>
-              <tr><th>Project Name</th><th>Location</th><th>Audit Date</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              {audits.map(audit => (
-                <tr key={audit.id}>
-                  <td>{audit.name}</td>
-                  <td>{audit.location}</td>
-                  <td>{audit.date_of_audit}</td>
-                  <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {/* Recent Audits Table */}
+            <div className="dashboard-table">
+              <h2>Recent Audits</h2>
+              {audits.length === 0 ? (
+                <p>No recent audits available.</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Project Name</th>
+                      <th>Location</th>
+                      <th>Audit Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {audits.map((audit) => (
+                      <tr key={audit.id}>
+                        <td>{audit.name}</td>
+                        <td>{audit.location}</td>
+                        <td>{audit.date_of_audit}</td>
+                        <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );

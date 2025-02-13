@@ -1,3 +1,4 @@
+// components/ViewAudits.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,12 +18,24 @@ function ViewAudits() {
   const fetchAudits = async () => {
     setLoading(true);
     setError("");
-
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const response = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
-      setAudits(response.data);
+
+      // Format the date_of_audit for each audit
+      const formattedAudits = response.data.map((audit) => {
+        let displayDate = "";
+        if (audit.date_of_audit) {
+          const dateObj = new Date(audit.date_of_audit);
+          if (!isNaN(dateObj)) {
+            // Convert to YYYY-MM-DD
+            displayDate = dateObj.toISOString().split("T")[0];
+          }
+        }
+        return { ...audit, date_of_audit: displayDate };
+      });
+      setAudits(formattedAudits);
     } catch (error) {
       console.error("Error fetching audits:", error);
       setError("Failed to fetch audits. Please try again.");
@@ -33,12 +46,11 @@ function ViewAudits() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this audit?")) return;
-
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.delete(`https://structural-audit.vercel.app/api/audits/${id}`, config);
-      setAudits(audits.filter((audit) => audit.id !== id)); // Remove from UI
+      setAudits((prev) => prev.filter((audit) => audit.id !== id));
     } catch (error) {
       console.error("Error deleting audit:", error);
       alert("Failed to delete audit.");
@@ -79,13 +91,22 @@ function ViewAudits() {
                     <td>{audit.date_of_audit}</td>
                     <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
                     <td>
-                      <button className="btn btn-info btn-sm me-2" onClick={() => navigate(`/audit/${audit.id}`)}>
+                      <button
+                        className="btn btn-info btn-sm me-2"
+                        onClick={() => navigate(`/audit/${audit.id}/full`)}
+                      >
                         <FaEye /> View
                       </button>
-                      <button className="btn btn-warning btn-sm me-2" onClick={() => navigate(`/edit-audit/${audit.id}`)}>
+                      <button
+                        className="btn btn-warning btn-sm me-2"
+                        onClick={() => navigate(`/audit/${audit.id}/edit`)}
+                      >
                         <FaEdit /> Edit
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDelete(audit.id)}>
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => handleDelete(audit.id)}
+                      >
                         <FaTrash /> Delete
                       </button>
                     </td>
@@ -93,7 +114,9 @@ function ViewAudits() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="text-center">No audits available.</td>
+                  <td colSpan="5" className="text-center">
+                    No audits available.
+                  </td>
                 </tr>
               )}
             </tbody>

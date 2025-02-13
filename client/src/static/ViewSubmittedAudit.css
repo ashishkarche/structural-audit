@@ -1,0 +1,68 @@
+/* ViewSubmittedAudit.css */
+
+.view-audit-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .back-button {
+    background-color: #2c3e50;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .back-button:hover {
+    background-color: #34495e;
+  }
+  
+  .audit-summary p {
+    margin: 6px 0;
+    font-size: 16px;
+  }
+  
+  .audit-section {
+    margin-top: 30px;
+  }
+  
+  .audit-section h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+  }
+  
+  .sub-table-list {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .sub-table-list li {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+  }
+  
+  .sub-table-list li p {
+    margin: 4px 0;
+    font-size: 15px;
+  }
+  
+  .loading-message,
+  .error-message {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px;
+    color: #e74c3c;
+  }
+  

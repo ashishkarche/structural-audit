@@ -1,54 +1,73 @@
+// App.js
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Layout from "./components/Layout";
-import Loader from "./components/Loader"; // Import new loader
+import Loader from "./components/Loader";
+import ProtectedRoute from "./components/ProtectedRoute"; 
 
-// Lazy Load Components
+// Lazy load components
 const Login = lazy(() => import("./components/Login"));
 const Register = lazy(() => import("./components/Register"));
 const Dashboard = lazy(() => import("./components/Dashboard"));
 const SubmitAudit = lazy(() => import("./components/SubmitAudit"));
-const ViewAudits = lazy(() => import("./components/ViewAudit"));
+const ViewAudits = lazy(() => import("./components/ViewAudits"));
 const EditProfile = lazy(() => import("./components/EditProfile"));
 const AuditDetails = lazy(() => import("./components/AuditDetails"));
 const EditAudit = lazy(() => import("./components/EditAudit"));
+const StructuralChangesPage = lazy(() => import("./components/StructuralChangesPage"));
+const Observations = lazy(() => import("./components/ObservationPage"));
+const ImmediateConcern = lazy(() => import("./components/ImmediateConcernPage"));
+const NDTPage = lazy(() => import("./components/NDTPage"));
+const ViewSubmittedAudit = lazy(() => import("./components/ViewSubmittedAudit"));
 const NotFound = lazy(() => import("./components/NotFound"));
-
-// Check Authentication
-const isAuthenticated = () => !!localStorage.getItem("token");
-
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  return isAuthenticated() ? <Layout>{children}</Layout> : <Navigate to="/" replace />;
-};
+const AuditLayout = lazy(() => import("./components/AuditLayout"));
+const MainLayout = lazy(() => import("./components/MainLayout")); 
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
 
   useEffect(() => {
-    // Hide loader after 4s
-    const timer = setTimeout(() => setShowLoader(false), 4000);
+    const timer = setTimeout(() => setShowLoader(false), 3000); 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <Router>
       {showLoader ? (
-        <Loader onComplete={() => setShowLoader(false)} />
+        <Loader />
       ) : (
         <Suspense fallback={<Loader />}>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected Routes */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/submit-audit" element={<ProtectedRoute><SubmitAudit /></ProtectedRoute>} />
-            <Route path="/view-audits" element={<ProtectedRoute><ViewAudits /></ProtectedRoute>} />
-            <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
-            <Route path="/audit/:id" element={<ProtectedRoute><AuditDetails /></ProtectedRoute>} />
-            <Route path="/edit-audit/:id" element={<ProtectedRoute><EditAudit /></ProtectedRoute>} />
+            {/* Protected Routes Wrapped in MainLayout */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <MainLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="submit-audit" element={<SubmitAudit />} />
+              <Route path="view-audits" element={<ViewAudits />} />
+              <Route path="edit-profile" element={<EditProfile />} />
+
+              {/* Audit-Specific Routes nested inside MainLayout */}
+              <Route path="audit/:auditId/*" element={<AuditLayout />}>
+                <Route index element={<Navigate to="structural-changes" replace />} />
+                <Route path="structural-changes" element={<StructuralChangesPage />} />
+                <Route path="observations" element={<Observations />} />
+                <Route path="immediate-concern" element={<ImmediateConcern />} />
+                <Route path="ndt-tests" element={<NDTPage />} />
+                <Route path="full" element={<ViewSubmittedAudit />} />
+                <Route path="details" element={<AuditDetails />} />
+                <Route path="edit" element={<EditAudit />} />
+              </Route>
+            </Route>
 
             {/* 404 Not Found */}
             <Route path="*" element={<NotFound />} />

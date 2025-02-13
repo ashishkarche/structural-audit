@@ -1,0 +1,148 @@
+/* Structural Changes Page - Unique Styles */
+.structural-changes-page-container {
+  margin: 40px auto;
+  padding: 20px;
+  font-family: "Poppins", sans-serif;
+  animation: fadeIn 0.5s ease-in-out;
+  max-width: 1200px; /* Maximum width for large screens */
+}
+
+.structural-changes-page-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Error Message */
+.structural-changes-error-message {
+  color: #d9534f;
+  background: #f8d7da;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+/* Form Styling */
+.structural-changes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Form Groups */
+.structural-changes-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Labels */
+.structural-changes-form-group label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+/* Input Fields */
+.structural-changes-form-group input,
+.structural-changes-form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.3s ease-in-out;
+}
+
+.structural-changes-form-group input:focus,
+.structural-changes-form-group textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* Textarea */
+.structural-changes-form-group textarea {
+  height: 100px;
+  resize: none;
+}
+
+/* File Input */
+.structural-changes-form-group input[type="file"] {
+  padding: 8px;
+}
+
+/* Submit Button */
+.structural-changes-submit-btn {
+  background: #007bff;
+  color: white;
+  padding: 12px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-align: center;
+}
+
+.structural-changes-submit-btn:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+
+/* Large Desktops (min-width: 1025px) */
+@media (min-width: 1025px) {
+  .structural-changes-page-container {
+    width: 60%;
+    padding: 30px;
+  }
+  .structural-changes-page-title {
+    font-size: 2.5rem;
+  }
+  .structural-changes-submit-btn {
+    font-size: 18px;
+  }
+}
+
+/* Tablets (min-width: 768px and max-width: 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .structural-changes-page-container {
+    width: 80%;
+    padding: 25px;
+  }
+  .structural-changes-page-title {
+    font-size: 2rem;
+  }
+  .structural-changes-submit-btn {
+    font-size: 16px;
+  }
+}
+
+/* Mobile Devices (max-width: 767px) */
+@media (max-width: 767px) {
+  .structural-changes-page-container {
+    width: 90%;
+    padding: 15px;
+  }
+  .structural-changes-page-title {
+    font-size: 1.75rem;
+  }
+  .structural-changes-submit-btn {
+    width: 100%;
+  }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

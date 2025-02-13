@@ -1,3 +1,4 @@
+/* Sidebar.css */
 .sidebar {
   width: 250px;
   height: 100vh;
@@ -5,7 +6,7 @@
   color: white;
   position: fixed;
   top: 0;
-  left: -250px;
+  left: -250px; /* Hidden by default on small screens */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -27,6 +28,16 @@
   font-size: 24px;
   cursor: pointer;
   z-index: 1000;
+}
+
+/* On larger screens, always show the sidebar and hide the toggle */
+@media screen and (min-width: 768px) {
+  .sidebar {
+    left: 0;
+  }
+  .sidebar-toggle {
+    display: none;
+  }
 }
 
 .sidebar-nav {
@@ -62,14 +73,4 @@
 
 .sidebar-logout:hover {
   background: #c0392b;
-}
-
-@media screen and (min-width: 768px) {
-  .sidebar {
-    left: 0;
-  }
-  
-  .sidebar-toggle {
-    display: none;
-  }
 }
