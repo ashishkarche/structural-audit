@@ -128,6 +128,35 @@ app.put('/api/auditors/me', authenticate, async (req, res) => {
   }
 });
 
+
+// Fetch audit statistics
+app.get('/api/audits/stats', authenticate, async (req, res) => {
+  try {
+    const [results] = await db.execute(`
+      SELECT COUNT(*) AS totalAudits,
+             SUM(CASE WHEN status = 'In-Progress' THEN 1 ELSE 0 END) AS inProgress,
+             SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed
+      FROM Audits WHERE auditor_id = ?`, [req.user.id]);
+    res.json(results[0]);
+  } catch (error) {
+    console.error('Error fetching audit stats:', error);
+    res.status(500).json({ message: 'Failed to fetch audit stats' });
+  }
+});
+
+// Fetch recent audits
+app.get('/api/audits/recent', authenticate, async (req, res) => {
+  try {
+    const [results] = await db.execute(`
+      SELECT id, name, location, date_of_audit, COALESCE(status, 'In-Progress') AS status 
+      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC LIMIT 5`, [req.user.id]);
+    res.json(results);
+  } catch (error) {
+    console.error('Error fetching recent audits:', error);
+    res.status(500).json({ message: 'Failed to fetch recent audits' });
+  }
+});
+
 // ------------------------------
 // Audit Endpoints
 // ------------------------------
@@ -228,33 +257,6 @@ app.delete('/api/audits/:id', authenticate, async (req, res) => {
   }
 });
 
-// Fetch audit statistics
-app.get('/api/audits/stats', authenticate, async (req, res) => {
-  try {
-    const [results] = await db.execute(`
-      SELECT COUNT(*) AS totalAudits,
-             SUM(CASE WHEN status = 'In-Progress' THEN 1 ELSE 0 END) AS inProgress,
-             SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) AS completed
-      FROM Audits WHERE auditor_id = ?`, [req.user.id]);
-    res.json(results[0]);
-  } catch (error) {
-    console.error('Error fetching audit stats:', error);
-    res.status(500).json({ message: 'Failed to fetch audit stats' });
-  }
-});
-
-// Fetch recent audits
-app.get('/api/audits/recent', authenticate, async (req, res) => {
-  try {
-    const [results] = await db.execute(`
-      SELECT id, name, location, date_of_audit, COALESCE(status, 'In-Progress') AS status 
-      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC LIMIT 5`, [req.user.id]);
-    res.json(results);
-  } catch (error) {
-    console.error('Error fetching recent audits:', error);
-    res.status(500).json({ message: 'Failed to fetch recent audits' });
-  }
-});
 
 // ------------------------------
 // Sub-Table Endpoints (using audit_id)
