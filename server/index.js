@@ -247,7 +247,7 @@ app.get('/api/audits/stats', authenticate, async (req, res) => {
 app.get('/api/audits/recent', authenticate, async (req, res) => {
   try {
     const [results] = await db.execute(`
-      SELECT id, name, location, date_of_audit, COALESCE(status, 'In Progress') AS status 
+      SELECT id, name, location, date_of_audit, COALESCE(status, 'In-Progress') AS status 
       FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC LIMIT 5`, [req.user.id]);
     res.json(results);
   } catch (error) {
