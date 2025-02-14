@@ -175,6 +175,8 @@ app.get('/api/audits/recent', authenticate, async (req, res) => {
 // Submit audit report
 app.post('/submit-audit', authenticate, upload.fields([{ name: 'architecturalDrawing' }, { name: 'structuralDrawing' }]), async (req, res) => {
   try {
+    const { id } = req.params;
+
     const { name, location, yearOfConstruction, dateOfAudit, area, use, structuralChanges, distressYear, distressNature, previousReports } = req.body;
     // For files using memoryStorage, you can store the file as base64 (if needed) or process it further.
     // Here, we'll simply store the original filename (or you may choose to store the buffer as needed).
@@ -189,7 +191,7 @@ app.post('/submit-audit', authenticate, upload.fields([{ name: 'architecturalDra
     const sql = `INSERT INTO Audits (auditor_id, name, location, year_of_construction, date_of_audit, area, usage_type, structural_changes, distress_year, distress_nature, previous_reports, architectural_drawing, structural_drawing) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [req.user.id, name, location, yearOfConstruction, formattedDate, area, use, structuralChanges, formattedDistressYear, distressNature, previousReports, architecturalDrawing, structuralDrawing]);
-    await logAuditHistory(auditId, "Audit submitted", req.user.id);
+    await logAuditHistory(id, "Audit submitted", req.user.id);
     res.json({ message: 'Audit submitted successfully', auditId: result.insertId });
   } catch (error) {
     console.error('Error submitting audit:', error);
@@ -246,7 +248,7 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
     const { name, location, date_of_audit, structural_changes, status } = req.body;
     const sql = `UPDATE Audits SET name = ?, location = ?, date_of_audit = ?, structural_changes = ?, status = ? WHERE id = ? AND auditor_id = ?`;
     await db.execute(sql, [name, location, date_of_audit, structural_changes, status, id, req.user.id]);
-    await logAuditHistory(auditId, "Audit Updated.", req.user.id);
+    await logAuditHistory(id, "Audit Updated.", req.user.id);
     res.json({ message: "Audit updated successfully" });
   } catch (error) {
     console.error("Error updating audit:", error);
@@ -263,7 +265,7 @@ app.delete('/api/audits/:id', authenticate, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Audit not found or unauthorized" });
     }
-    await logAuditHistory(auditId, "Audit Deleted", req.user.id);
+    await logAuditHistory(id, "Audit Deleted", req.user.id);
     res.json({ message: "Audit deleted successfully" });
   } catch (error) {
     console.error("Error deleting audit:", error);
