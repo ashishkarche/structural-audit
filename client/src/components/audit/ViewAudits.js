@@ -22,7 +22,20 @@ function ViewAudits() {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const response = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
-      setAudits(response.data);
+
+      // Format the date_of_audit for each audit
+      const formattedAudits = response.data.map((audit) => {
+        let displayDate = "";
+        if (audit.date_of_audit) {
+          const dateObj = new Date(audit.date_of_audit);
+          if (!isNaN(dateObj)) {
+            // Convert to YYYY-MM-DD
+            displayDate = dateObj.toISOString().split("T")[0];
+          }
+        }
+        return { ...audit, date_of_audit: displayDate };
+      });
+      setAudits(formattedAudits);
     } catch (error) {
       console.error("Error fetching audits:", error);
       setError("Failed to fetch audits. Please try again.");
