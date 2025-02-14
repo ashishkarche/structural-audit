@@ -48,6 +48,17 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+const logAuditHistory = async (auditId, action, userId) => {
+  try {
+    await db.execute(
+      `INSERT INTO AuditHistory (audit_id, action, user_id, timestamp) VALUES (?, ?, ?, NOW())`,
+      [auditId, action, userId]
+    );
+  } catch (error) {
+    console.error("Error logging audit history:", error);
+  }
+};
+
 app.get("/", (req, res) => {
   res.json("Success");
 });
@@ -178,6 +189,7 @@ app.post('/submit-audit', authenticate, upload.fields([{ name: 'architecturalDra
     const sql = `INSERT INTO Audits (auditor_id, name, location, year_of_construction, date_of_audit, area, usage_type, structural_changes, distress_year, distress_nature, previous_reports, architectural_drawing, structural_drawing) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [req.user.id, name, location, yearOfConstruction, formattedDate, area, use, structuralChanges, formattedDistressYear, distressNature, previousReports, architecturalDrawing, structuralDrawing]);
+    await logAuditHistory(auditId, "Audit submitted", req.user.id);
     res.json({ message: 'Audit submitted successfully', auditId: result.insertId });
   } catch (error) {
     console.error('Error submitting audit:', error);
@@ -234,6 +246,7 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
     const { name, location, date_of_audit, structural_changes, status } = req.body;
     const sql = `UPDATE Audits SET name = ?, location = ?, date_of_audit = ?, structural_changes = ?, status = ? WHERE id = ? AND auditor_id = ?`;
     await db.execute(sql, [name, location, date_of_audit, structural_changes, status, id, req.user.id]);
+    await logAuditHistory(auditId, "Audit Updated.", req.user.id);
     res.json({ message: "Audit updated successfully" });
   } catch (error) {
     console.error("Error updating audit:", error);
@@ -250,6 +263,7 @@ app.delete('/api/audits/:id', authenticate, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Audit not found or unauthorized" });
     }
+    await logAuditHistory(auditId, "Audit Deleted", req.user.id);
     res.json({ message: "Audit deleted successfully" });
   } catch (error) {
     console.error("Error deleting audit:", error);
@@ -272,6 +286,7 @@ app.post("/api/structural-changes/:auditId", authenticate, upload.single("previo
     const sql = `INSERT INTO StructuralChanges (audit_id, date_of_change, change_details, previous_investigations, repair_year, repair_type, repair_efficacy, repair_cost) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     await db.execute(sql, [auditId, dateOfChange, changeDetails, previousInvestigations, repairYear, repairType, repairEfficacy, repairCost]);
+    await logAuditHistory(auditId, "Structural changes submitted", req.user.id);
     res.json({ message: "Structural changes submitted successfully" });
   } catch (error) {
     console.error("Error submitting structural changes:", error);
@@ -279,43 +294,69 @@ app.post("/api/structural-changes/:auditId", authenticate, upload.single("previo
   }
 });
 
-// Observation Submission
+// Fetch Audit History
+app.get('/api/audits/:auditId/history', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const [history] = await db.execute(
+      `SELECT * FROM AuditHistory WHERE audit_id = ? ORDER BY timestamp DESC`,
+      [auditId]
+    );
+    res.json(history);
+  } catch (error) {
+    console.error("Error fetching audit history:", error);
+    res.status(500).json({ message: "Failed to fetch audit history" });
+  }
+});
+
+// Insert into Audit History
+
+
 app.post("/api/observations/:auditId", authenticate, upload.single("damagePhoto"), async (req, res) => {
   try {
     const { auditId } = req.params;
-    let { 
-      unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage, 
-      cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls, 
-      windowProblems, heavingFloor, concreteTexture, algaeGrowth 
+    let {
+      unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage,
+      cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls,
+      windowProblems, heavingFloor, concreteTexture, algaeGrowth, damageClassification
     } = req.body;
-    // For memoryStorage, file is in req.file.buffer; we'll store original filename.
+
+    // Convert boolean values to 0 or 1
+    unexpectedLoad = unexpectedLoad === "true" || unexpectedLoad === true ? 1 : 0;
+    unapprovedChanges = unapprovedChanges === "true" || unapprovedChanges === true ? 1 : 0;
+    additionalFloor = additionalFloor === "true" || additionalFloor === true ? 1 : 0;
+    vegetationGrowth = vegetationGrowth === "true" || vegetationGrowth === true ? 1 : 0;
+    leakage = leakage === "true" || leakage === true ? 1 : 0;
+    cracksBeams = cracksBeams === "true" || cracksBeams === true ? 1 : 0;
+    cracksColumns = cracksColumns === "true" || cracksColumns === true ? 1 : 0;
+    cracksFlooring = cracksFlooring === "true" || cracksFlooring === true ? 1 : 0;
+    floorSagging = floorSagging === "true" || floorSagging === true ? 1 : 0;
+    bulgingWalls = bulgingWalls === "true" || bulgingWalls === true ? 1 : 0;
+    windowProblems = windowProblems === "true" || windowProblems === true ? 1 : 0;
+    heavingFloor = heavingFloor === "true" || heavingFloor === true ? 1 : 0;
+    algaeGrowth = algaeGrowth === "true" || algaeGrowth === true ? 1 : 0;
+
+    // Handle file upload
     const damagePhoto = req.file ? req.file.originalname : null;
-    // Convert checkbox values to numbers
-    unexpectedLoad = (unexpectedLoad === true || unexpectedLoad === "true") ? 1 : 0;
-    unapprovedChanges = (unapprovedChanges === true || unapprovedChanges === "true") ? 1 : 0;
-    additionalFloor = (additionalFloor === true || additionalFloor === "true") ? 1 : 0;
-    vegetationGrowth = (vegetationGrowth === true || vegetationGrowth === "true") ? 1 : 0;
-    leakage = (leakage === true || leakage === "true") ? 1 : 0;
-    cracksBeams = (cracksBeams === true || cracksBeams === "true") ? 1 : 0;
-    cracksColumns = (cracksColumns === true || cracksColumns === "true") ? 1 : 0;
-    cracksFlooring = (cracksFlooring === true || cracksFlooring === "true") ? 1 : 0;
-    floorSagging = (floorSagging === true || floorSagging === "true") ? 1 : 0;
-    bulgingWalls = (bulgingWalls === true || bulgingWalls === "true") ? 1 : 0;
-    windowProblems = (windowProblems === true || windowProblems === "true") ? 1 : 0;
-    heavingFloor = (heavingFloor === true || heavingFloor === "true") ? 1 : 0;
-    algaeGrowth = (algaeGrowth === true || algaeGrowth === "true") ? 1 : 0;
-    const sql = `INSERT INTO Observations (
-                    audit_id, unexpected_load, unapproved_changes, additional_floor, 
-                    vegetation_growth, leakage, cracks_beams, cracks_columns, cracks_flooring, 
-                    floor_sagging, bulging_walls, window_problems, heaving_floor, concrete_texture, 
-                    algae_growth, damage_photo
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
+
+    // Insert into the database
+    const sql = `
+      INSERT INTO Observations (
+        audit_id, unexpected_load, unapproved_changes, additional_floor,
+        vegetation_growth, leakage, cracks_beams, cracks_columns, cracks_flooring,
+        floor_sagging, bulging_walls, window_problems, heaving_floor, concrete_texture,
+        algae_growth, damage_classification, damage_photo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
     await db.execute(sql, [
-      auditId, unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage, 
-      cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls, windowProblems, 
-      heavingFloor, concreteTexture, algaeGrowth, damagePhoto
+      auditId, unexpectedLoad, unapprovedChanges, additionalFloor,
+      vegetationGrowth, leakage, cracksBeams, cracksColumns, cracksFlooring,
+      floorSagging, bulgingWalls, windowProblems, heavingFloor, concreteTexture,
+      algaeGrowth, damageClassification, damagePhoto
     ]);
+
+    await logAuditHistory(auditId, "Observations submitted", req.user.id);
 
     res.json({ message: "Observations submitted successfully" });
   } catch (error) {
@@ -323,6 +364,7 @@ app.post("/api/observations/:auditId", authenticate, upload.single("damagePhoto"
     res.status(500).json({ message: "Failed to submit observations" });
   }
 });
+
 
 // NDT Test Submission
 app.post("/api/ndt/:auditId", authenticate, async (req, res) => {
@@ -341,6 +383,8 @@ app.post("/api/ndt/:auditId", authenticate, async (req, res) => {
       auditId, reboundHammerTest, ultrasonicTest, coreSamplingTest, carbonationTest, 
       chlorideTest, sulfateTest, halfCellPotentialTest, concreteCoverMeasurement, rebarDiameterReduction
     ]);
+    await logAuditHistory(auditId, "NTD Results submitted", req.user.id);
+
     res.json({ message: "NDT results submitted successfully" });
   } catch (error) {
     console.error("Error submitting NDT results:", error);
@@ -357,6 +401,8 @@ app.post("/api/immediate-concern/:auditId", authenticate, upload.single("damageP
     const sql = `INSERT INTO ImmediateConcerns (audit_id, concern_description, location, effect_description, recommended_measures, damage_photo) 
                  VALUES (?, ?, ?, ?, ?, ?)`;
     await db.execute(sql, [auditId, concernDescription, location, effectDescription, recommendedMeasures, damagePhoto]);
+    await logAuditHistory(auditId, "Immediate concern submitted", req.user.id);
+
     res.json({ message: "Immediate concern submitted successfully" });
   } catch (error) {
     console.error("Error submitting immediate concern:", error);

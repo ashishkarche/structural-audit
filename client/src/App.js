@@ -1,33 +1,33 @@
-// App.js
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import Loader from "./components/Loader";
-import ProtectedRoute from "./components/ProtectedRoute"; 
+import Loader from "./components/dashboard/Loader";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy load components
-const Login = lazy(() => import("./components/Login"));
-const Register = lazy(() => import("./components/Register"));
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const SubmitAudit = lazy(() => import("./components/SubmitAudit"));
-const ViewAudits = lazy(() => import("./components/ViewAudits"));
-const EditProfile = lazy(() => import("./components/EditProfile"));
-const AuditDetails = lazy(() => import("./components/AuditDetails"));
-const EditAudit = lazy(() => import("./components/EditAudit"));
-const StructuralChangesPage = lazy(() => import("./components/StructuralChangesPage"));
-const Observations = lazy(() => import("./components/ObservationPage"));
-const ImmediateConcern = lazy(() => import("./components/ImmediateConcernPage"));
-const NDTPage = lazy(() => import("./components/NDTPage"));
-const ViewSubmittedAudit = lazy(() => import("./components/ViewSubmittedAudit"));
-const NotFound = lazy(() => import("./components/NotFound"));
-const AuditLayout = lazy(() => import("./components/AuditLayout"));
-const MainLayout = lazy(() => import("./components/MainLayout")); 
+const Login = lazy(() => import("./components/auth/Login"));
+const Register = lazy(() => import("./components/auth/Register"));
+const Dashboard = lazy(() => import("./components/dashboard/Dashboard"));
+const SubmitAudit = lazy(() => import("./components/audit/SubmitAudit"));
+const ViewAudits = lazy(() => import("./components/audit/ViewAudits"));
+const EditProfile = lazy(() => import("./components/profile/EditProfile"));
+const AuditDetails = lazy(() => import("./components/audit/AuditDetails"));
+const EditAudit = lazy(() => import("./components/audit/EditAudit"));
+const StructuralChangesPage = lazy(() => import("./components/pages/StructuralChangesPage"));
+const Observations = lazy(() => import("./components/pages/ObservationPage"));
+const ImmediateConcern = lazy(() => import("./components/pages/ImmediateConcernPage"));
+const NDTPage = lazy(() => import("./components/pages/NDTPage"));
+const ViewSubmittedAudit = lazy(() => import("./components/audit/ViewSubmittedAudit"));
+const NotFound = lazy(() => import("./components/pages/NotFound"));
+const AuditLayout = lazy(() => import("./components/layouts/AuditLayout"));
+const MainLayout = lazy(() => import("./components/layouts/MainLayout"));
+const AuditHistory = lazy(() => import("./components/audit/AuditHistory"));
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowLoader(false), 3000); 
+    const timer = setTimeout(() => setShowLoader(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -67,6 +67,7 @@ function App() {
                 <Route path="details" element={<AuditDetails />} />
                 <Route path="edit" element={<EditAudit />} />
               </Route>
+              <Route path="audit/:auditId/history" element={<AuditHistory />} />
             </Route>
 
             {/* 404 Not Found */}

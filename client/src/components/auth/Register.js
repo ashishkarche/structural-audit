@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaUser, FaEnvelope, FaLock, FaBuilding, FaGraduationCap, FaBriefcase, FaCalendar } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "../static/Register.css";
+import "../../static/Register.css";
 
 function Register() {
   const [step, setStep] = useState(1); // Step tracker

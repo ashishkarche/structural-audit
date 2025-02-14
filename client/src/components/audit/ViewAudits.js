@@ -1,9 +1,9 @@
-// components/ViewAudits.js
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../static/ViewAudits.css";
-import { FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import "../../static/ViewAudits.css";
+import { FaEye, FaEdit, FaTrash, FaPlus, FaHistory } from "react-icons/fa";
+import AuditHistory from "../audit/AuditHistory";
 
 function ViewAudits() {
   const [audits, setAudits] = useState([]);
@@ -22,20 +22,7 @@ function ViewAudits() {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const response = await axios.get("https://structural-audit.vercel.app/api/audits/recent", config);
-
-      // Format the date_of_audit for each audit
-      const formattedAudits = response.data.map((audit) => {
-        let displayDate = "";
-        if (audit.date_of_audit) {
-          const dateObj = new Date(audit.date_of_audit);
-          if (!isNaN(dateObj)) {
-            // Convert to YYYY-MM-DD
-            displayDate = dateObj.toISOString().split("T")[0];
-          }
-        }
-        return { ...audit, date_of_audit: displayDate };
-      });
-      setAudits(formattedAudits);
+      setAudits(response.data);
     } catch (error) {
       console.error("Error fetching audits:", error);
       setError("Failed to fetch audits. Please try again.");
@@ -91,32 +78,24 @@ function ViewAudits() {
                     <td>{audit.date_of_audit}</td>
                     <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
                     <td>
-                      <button
-                        className="btn btn-info btn-sm me-2"
-                        onClick={() => navigate(`/audit/${audit.id}/full`)}
-                      >
+                      <button className="btn btn-info btn-sm me-2" onClick={() => navigate(`/audit/${audit.id}/full`)}>
                         <FaEye /> View
                       </button>
-                      <button
-                        className="btn btn-warning btn-sm me-2"
-                        onClick={() => navigate(`/audit/${audit.id}/edit`)}
-                      >
+                      <button className="btn btn-warning btn-sm me-2" onClick={() => navigate(`/audit/${audit.id}/edit`)}>
                         <FaEdit /> Edit
                       </button>
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(audit.id)}
-                      >
+                      <button className="btn btn-danger btn-sm me-2" onClick={() => handleDelete(audit.id)}>
                         <FaTrash /> Delete
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/audit/${audit.id}/history`)}>
+                        <FaHistory /> History
                       </button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="text-center">
-                    No audits available.
-                  </td>
+                  <td colSpan="5" className="text-center">No audits available.</td>
                 </tr>
               )}
             </tbody>

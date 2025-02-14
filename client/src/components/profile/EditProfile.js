@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "../static/EditProfile.css";
+import "../../static/EditProfile.css";
 import { FaEdit, FaSave } from "react-icons/fa";
 
 function EditProfile() {

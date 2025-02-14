@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../static/StructuralChangesPage.css";
+import "../../static/StructuralChangesPage.css";
 
 function StructuralChangesPage() {
   const { auditId } = useParams();

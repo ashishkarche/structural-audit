@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaUser, FaLock } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "../static/Login.css";
+import "../../static/Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");

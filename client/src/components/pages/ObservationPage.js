@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../static/ObservationPage.css";
+import "../../static/ObservationPage.css";
+import DamageClassification from "../observations/DamageClassification";
+
 
 function ObservationPage() {
   const { auditId } = useParams();
@@ -227,6 +229,14 @@ function ObservationPage() {
           />
         </div>
 
+        <div className="form-group">
+          <label>Damage Classification</label>
+          <DamageClassification
+            classification={formData.damageClassification}
+            setClassification={(value) => setFormData({ ...formData, damageClassification: value })}
+          />
+        </div>
+        
         <button type="submit" className="observation-submit-btn">Save & Next</button>
       </form>
     </div>

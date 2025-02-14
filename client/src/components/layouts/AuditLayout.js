@@ -1,8 +1,8 @@
 // components/AuditLayout.js
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import AuditProgress from "./AuditProgress";
-import "../static/AuditLayout.css";
+import AuditProgress from "../audit/AuditProgress";
+import "../../static/AuditLayout.css";
 
 const AuditLayout = () => {
   const location = useLocation();

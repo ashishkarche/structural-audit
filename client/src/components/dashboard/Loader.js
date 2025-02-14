@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import "../static/Loader.css";
+import "../../static/Loader.css";
 
 function Loader({ onComplete }) {
   const [isVisible, setIsVisible] = useState(true);

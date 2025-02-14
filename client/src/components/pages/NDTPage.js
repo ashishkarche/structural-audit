@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../static/NDTPage.css";
+import "../../static/NDTPage.css";
 
 function NDTPage() {
   const { auditId } = useParams();

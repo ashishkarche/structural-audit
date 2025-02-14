@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import "../static/ImmediateConcern.css";
+import "../../static/ImmediateConcern.css";
 
 function ImmediateConcernPage() {
   // Retrieve the auditId from the URL

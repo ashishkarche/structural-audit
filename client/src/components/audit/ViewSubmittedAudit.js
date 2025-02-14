@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../static/ViewSubmittedAudit.css";
+import "../../static/ViewSubmittedAudit.css";
 import { FaArrowLeft } from "react-icons/fa";
 
 function ViewSubmittedAudit() {

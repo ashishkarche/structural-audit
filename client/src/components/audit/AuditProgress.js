@@ -1,7 +1,7 @@
 // components/AuditProgress.js
 import React from "react";
 import { NavLink, useParams } from "react-router-dom";
-import '../static/AuditProgress.css';
+import '../../static/AuditProgress.css';
 
 const steps = [
   { path: "structural-changes", label: "Structural Changes" },
