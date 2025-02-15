@@ -1,9 +1,8 @@
-// components/ViewSubmittedAudit.js
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/ViewSubmittedAudit.css";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft, FaDownload } from "react-icons/fa";
 
 function ViewSubmittedAudit() {
   const { auditId } = useParams();
@@ -31,82 +30,215 @@ function ViewSubmittedAudit() {
 
   const { audit, structuralChanges, observations, immediateConcerns, ndtTests } = fullAudit;
 
+  const handleGenerateReport = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+  
+      // 📌 Show loading state (Optional)
+      alert("Generating report, please wait...");
+  
+      // 📌 Request report generation & immediate download
+      const response = await axios.get(
+        `https://structural-audit.vercel.app/api/audits/${auditId}/report`,
+        { ...config, responseType: "blob" }
+      );
+  
+      // 📌 Create a downloadable link for the PDF
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Audit_Report_${auditId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+  
+      alert("Report downloaded successfully!");
+    } catch (err) {
+      console.error("Error generating report:", err);
+      alert("Failed to generate/download report. Please try again.");
+    }
+  };
+  
+  
+
   return (
     <div className="view-audit-container">
       <button className="back-button" onClick={() => navigate(`/view-audits`)}>
         <FaArrowLeft /> Back
       </button>
+      <button className="generate-report-btn" onClick={handleGenerateReport}>
+        <FaDownload /> Generate Report
+      </button>
+
       <h2>Audit Details</h2>
-      <div className="audit-summary">
-        <p><strong>Project Name:</strong> {audit.name}</p>
-        <p><strong>Location:</strong> {audit.location}</p>
-        <p><strong>Date of Audit:</strong> {audit.date_of_audit}</p>
-        <p><strong>Status:</strong> {audit.status}</p>
+      <div className="table-container"><table className="audit-table">
+        <tbody>
+          <tr><td><strong>Project Name:</strong></td><td>{audit.name}</td></tr>
+          <tr><td><strong>Location:</strong></td><td>{audit.location}</td></tr>
+          <tr><td><strong>Date of Audit:</strong></td><td>{audit.date_of_audit}</td></tr>
+          <tr><td><strong>Status:</strong></td><td>{audit.status}</td></tr>
+          <tr><td><strong>Structural Changes:</strong></td><td>{audit.structural_changes || "None"}</td></tr>
+          <tr><td><strong>Distress Year:</strong></td><td>{audit.distress_year || "N/A"}</td></tr>
+          <tr><td><strong>Distress Nature:</strong></td><td>{audit.distress_nature || "N/A"}</td></tr>
+          <tr><td><strong>Previous Reports:</strong></td><td>{audit.previous_reports || "N/A"}</td></tr>
+        </tbody>
+      </table>
       </div>
-      
-      <section className="audit-section">
-        <h3>Structural Changes</h3>
-        {structuralChanges.length > 0 ? (
-          <ul className="sub-table-list">
+
+      {/* Structural Changes Table */}
+      <h3>Structural Changes</h3>
+      <div className="table-container">{structuralChanges.length > 0 ? (
+        <table className="audit-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Details</th>
+              <th>Previous Investigations</th>
+              <th>Repair Year</th>
+              <th>Repair Type</th>
+              <th>Repair Efficacy</th>
+              <th>Repair Cost</th>
+            </tr>
+          </thead>
+          <tbody>
             {structuralChanges.map((item) => (
-              <li key={item.id}>
-                <p><strong>Date:</strong> {item.date_of_change}</p>
-                <p><strong>Details:</strong> {item.change_details}</p>
-              </li>
+              <tr key={item.id}>
+                <td>{item.date_of_change}</td>
+                <td>{item.change_details}</td>
+                <td>
+                  {item.previous_investigations ? (
+                    <a
+                      href={`https://structural-audit.vercel.app/uploads/${item.previous_investigations}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      View File
+                    </a>
+                  ) : "No File"}
+                </td>
+                <td>{item.repair_year || "N/A"}</td>
+                <td>{item.repair_type || "N/A"}</td>
+                <td>{item.repair_efficacy || "N/A"}</td>
+                <td>
+                  {item.repair_cost && !isNaN(item.repair_cost)
+                    ? `$${parseFloat(item.repair_cost).toFixed(2)}`
+                    : "N/A"}
+                </td>
+              </tr>
             ))}
-          </ul>
-        ) : (
-          <p>No structural changes recorded.</p>
-        )}
-      </section>
-      
-      <section className="audit-section">
-        <h3>Observations</h3>
-        {observations.length > 0 ? (
-          <ul className="sub-table-list">
+          </tbody>
+        </table>
+      ) : (
+        <p>No structural changes recorded.</p>
+      )}</div>
+
+
+
+      {/* Observations Table */}
+      <h3>Observations</h3>
+      <div className="table-container">{observations.length > 0 ? (
+        <table className="audit-table">
+          <thead>
+            <tr>
+              <th>Unexpected Load</th>
+              <th>Unapproved Changes</th>
+              <th>Additional Floor</th>
+              <th>Vegetation Growth</th>
+              <th>Leakage</th>
+              <th>Cracks (Beams)</th>
+              <th>Cracks (Columns)</th>
+              <th>Cracks (Flooring)</th>
+              <th>Floor Sagging</th>
+              <th>Bulging Walls</th>
+              <th>Window Problems</th>
+              <th>Heaving Floor</th>
+              <th>Concrete Texture</th>
+              <th>Algae Growth</th>
+              <th>Damage Photo</th>
+            </tr>
+          </thead>
+          <tbody>
             {observations.map((item) => (
-              <li key={item.id}>
-                <p><strong>Unexpected Load:</strong> {item.unexpected_load ? "Yes" : "No"}</p>
-                <p><strong>Concrete Texture:</strong> {item.concrete_texture}</p>
-              </li>
+              <tr key={item.id}>
+                <td>{item.unexpected_load ? "Yes" : "No"}</td>
+                <td>{item.unapproved_changes ? "Yes" : "No"}</td>
+                <td>{item.additional_floor ? "Yes" : "No"}</td>
+                <td>{item.vegetation_growth ? "Yes" : "No"}</td>
+                <td>{item.leakage ? "Yes" : "No"}</td>
+                <td>{item.cracks_beams ? "Yes" : "No"}</td>
+                <td>{item.cracks_columns ? "Yes" : "No"}</td>
+                <td>{item.cracks_flooring ? "Yes" : "No"}</td>
+                <td>{item.floor_sagging ? "Yes" : "No"}</td>
+                <td>{item.bulging_walls ? "Yes" : "No"}</td>
+                <td>{item.window_problems ? "Yes" : "No"}</td>
+                <td>{item.heaving_floor ? "Yes" : "No"}</td>
+                <td>{item.concrete_texture || "N/A"}</td>
+                <td>{item.algae_growth ? "Yes" : "No"}</td>
+                <td>
+                  {item.damage_photo ? (
+                    <a href={`https://structural-audit.vercel.app/${item.damage_photo}`} target="_blank" rel="noopener noreferrer">
+                      <img src={`https://structural-audit.vercel.app/${item.damage_photo}`} alt="Damage" width="50" height="50" />
+                    </a>
+                  ) : "No Photo"}
+                </td>
+              </tr>
             ))}
-          </ul>
-        ) : (
-          <p>No observations recorded.</p>
-        )}
-      </section>
+          </tbody>
+        </table>
+      ) : (
+        <p>No observations recorded.</p>
+      )}</div>
       
-      <section className="audit-section">
-        <h3>Immediate Concerns</h3>
-        {immediateConcerns.length > 0 ? (
-          <ul className="sub-table-list">
+
+
+      {/* Immediate Concerns Table */}
+      <h3>Immediate Concerns</h3>
+      <div className="table-container">{immediateConcerns.length > 0 ? (
+        <table className="audit-table">
+          <thead>
+            <tr><th>Description</th><th>Location</th><th>Effect</th><th>recommended_measures</th><th>damage_photo</th></tr>
+          </thead>
+          <tbody>
             {immediateConcerns.map((item) => (
-              <li key={item.id}>
-                <p><strong>Description:</strong> {item.concern_description}</p>
-                <p><strong>Location:</strong> {item.location}</p>
-              </li>
+              <tr key={item.id}>
+                <td>{item.concern_description || "N/A"}</td>
+                <td>{item.location || "N/A"}</td>
+                <td>{item.effect_description || "N/A"}</td>
+                <td>{item.recommended_measures || "N/A"}</td>
+                <td>{item.damage_photo || "N/A"}</td>
+              </tr>
             ))}
-          </ul>
-        ) : (
-          <p>No immediate concerns recorded.</p>
-        )}
-      </section>
+          </tbody>
+        </table>
+      ) : <p>No immediate concerns recorded.</p>}</div>
       
-      <section className="audit-section">
-        <h3>NDT Test Results</h3>
-        {ndtTests.length > 0 ? (
-          <ul className="sub-table-list">
+
+      {/* NDT Test Results Table */}
+      <h3>NDT Test Results</h3>
+      <div className="table-container">{ndtTests.length > 0 ? (
+        <table className="audit-table">
+          <thead>
+            <tr><th>Rebound Hammer</th><th>Ultrasonic Test</th><th>Core Sampling</th><th>Carbonation Test</th><th>chloride_test</th><th>sulfate_test</th><th>half_cell_potential_test</th><th>concrete_cover_measurement</th><th>rebar_diameter_reduction</th></tr>
+          </thead>
+          <tbody>
             {ndtTests.map((item) => (
-              <li key={item.id}>
-                <p><strong>Rebound Hammer Test:</strong> {item.rebound_hammer_test}</p>
-                <p><strong>Ultrasonic Test:</strong> {item.ultrasonic_test}</p>
-              </li>
+              <tr key={item.id}>
+                <td>{item.rebound_hammer_test || "N/A"}</td>
+                <td>{item.ultrasonic_test || "N/A"}</td>
+                <td>{item.core_sampling_test || "N/A"}</td>
+                <td>{item.carbonation_test || "N/A"}</td>
+                <td>{item.chloride_test || "N/A"}</td>
+                <td>{item.sulfate_test || "N/A"}</td>
+                <td>{item.half_cell_potential_test || "N/A"}</td>
+                <td>{item.concrete_cover_measurement || "N/A"}</td>
+                <td>{item.rebar_diameter_reduction || "N/A"}</td>
+              </tr>
             ))}
-          </ul>
-        ) : (
-          <p>No NDT test results recorded.</p>
-        )}
-      </section>
+          </tbody>
+        </table>
+      ) : <p>No NDT test results recorded.</p>}</div>
+      
     </div>
   );
 }

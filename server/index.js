@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 require('dotenv').config();
 const cors = require('cors');
+const PDFDocument = require("pdfkit");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -484,5 +486,145 @@ app.delete('/api/notifications/clear', authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to clear notifications" });
   }
 });
+
+// 📌 Generate & Directly Serve Audit Report
+app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+
+    // Fetch audit details
+    const [auditResult] = await db.execute(
+      `SELECT * FROM Audits WHERE id = ? AND auditor_id = ?`,
+      [auditId, req.user.id]
+    );
+    
+    if (auditResult.length === 0) {
+      return res.status(404).json({ message: "Audit not found" });
+    }
+
+    const audit = auditResult[0];
+
+    // Fetch related data
+    const [structuralChanges] = await db.execute(`SELECT * FROM StructuralChanges WHERE audit_id = ?`, [auditId]);
+    const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
+    const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
+    const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
+
+    // Create PDF in memory
+    const doc = new PDFDocument();
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=Audit_Report_${auditId}.pdf`);
+
+    doc.pipe(res);
+
+    // 📌 Report Title
+    doc.fontSize(20).text("Audit Report", { align: "center" });
+    doc.moveDown();
+
+    // 📌 Audit Information
+    doc.fontSize(14).text(`Project Name: ${audit.name}`);
+    doc.text(`Location: ${audit.location}`);
+    doc.text(`Date of Audit: ${audit.date_of_audit}`);
+    doc.text(`Status: ${audit.status}`);
+    doc.text(`Distress Year: ${audit.distress_year || "N/A"}`);
+    doc.text(`Distress Nature: ${audit.distress_nature || "N/A"}`);
+    doc.text(`Previous Reports: ${audit.previous_reports || "N/A"}`);
+    doc.moveDown();
+
+    // 📌 Structural Changes
+    doc.fontSize(16).text("Structural Changes", { underline: true });
+    if (structuralChanges.length > 0) {
+      structuralChanges.forEach(change => {
+        doc.fontSize(12).text(`- Date: ${change.date_of_change}`);
+        doc.text(`  Details: ${change.change_details}`);
+        doc.text(`  Repair Year: ${change.repair_year || "N/A"}`);
+        doc.text(`  Repair Type: ${change.repair_type || "N/A"}`);
+        doc.text(`  Repair Cost: $${change.repair_cost || "N/A"}`);
+        doc.moveDown();
+      });
+    } else {
+      doc.text("No structural changes recorded.");
+      doc.moveDown();
+    }
+
+    // 📌 Observations
+    doc.fontSize(16).text("Observations", { underline: true });
+    if (observations.length > 0) {
+      observations.forEach(obs => {
+        doc.fontSize(12).text(`- Unexpected Load: ${obs.unexpected_load ? "Yes" : "No"}`);
+        doc.text(`  Concrete Texture: ${obs.concrete_texture || "N/A"}`);
+        doc.text(`  Cracks in Beams: ${obs.cracks_beams ? "Yes" : "No"}`);
+        doc.text(`  Leakage: ${obs.leakage ? "Yes" : "No"}`);
+        doc.text(`  Algae Growth: ${obs.algae_growth ? "Yes" : "No"}`);
+        doc.moveDown();
+      });
+    } else {
+      doc.text("No observations recorded.");
+      doc.moveDown();
+    }
+
+    // 📌 Immediate Concerns
+    doc.fontSize(16).text("Immediate Concerns", { underline: true });
+    if (immediateConcerns.length > 0) {
+      immediateConcerns.forEach(concern => {
+        doc.fontSize(12).text(`- Description: ${concern.concern_description}`);
+        doc.text(`  Location: ${concern.location}`);
+        doc.text(`  Effect: ${concern.effect_description || "N/A"}`);
+        doc.text(`  Recommended Measures: ${concern.recommended_measures || "N/A"}`);
+        doc.moveDown();
+      });
+    } else {
+      doc.text("No immediate concerns recorded.");
+      doc.moveDown();
+    }
+
+    // 📌 NDT Test Results
+    doc.fontSize(16).text("NDT Test Results", { underline: true });
+    if (ndtTests.length > 0) {
+      ndtTests.forEach(ndt => {
+        doc.fontSize(12).text(`- Rebound Hammer Test: ${ndt.rebound_hammer_test || "N/A"}`);
+        doc.text(`  Ultrasonic Test: ${ndt.ultrasonic_test || "N/A"}`);
+        doc.text(`  Core Sampling Test: ${ndt.core_sampling_test || "N/A"}`);
+        doc.text(`  Carbonation Test: ${ndt.carbonation_test || "N/A"}`);
+        doc.text(`  Chloride Test: ${ndt.chloride_test || "N/A"}`);
+        doc.moveDown();
+      });
+    } else {
+      doc.text("No NDT test results recorded.");
+      doc.moveDown();
+    }
+
+    doc.end(); // Finalize PDF
+
+  } catch (error) {
+    console.error("Error generating report:", error);
+    res.status(500).json({ message: "Failed to generate report" });
+  }
+});
+
+// 📌 Fetch All Reports Available for Download
+app.get('/api/reports', authenticate, async (req, res) => {
+  try {
+    const [reports] = await db.execute(
+      `SELECT id, name, location, date_of_audit FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC`,
+      [req.user.id]
+    );
+
+    // Generate download links dynamically
+    const reportsWithLinks = reports.map(report => ({
+      id: report.id,
+      name: report.name,
+      location: report.location,
+      date_of_audit: report.date_of_audit,
+      download_url: `http://localhost:5000/api/audits/${report.id}/report`,
+    }));
+
+    res.json(reportsWithLinks);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    res.status(500).json({ message: "Failed to fetch reports" });
+  }
+});
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

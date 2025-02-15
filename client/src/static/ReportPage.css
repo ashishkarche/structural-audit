@@ -1,0 +1,89 @@
+.report-page-container {
+    margin: 40px auto;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  
+  .loading-message, .error-message {
+    font-size: 16px;
+    color: #d9534f;
+  }
+  
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    padding-bottom: 10px;
+  }
+  
+  /* Scrollable Table */
+  .report-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    background: #f9f9f9;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .report-table th {
+    background: #007bff;
+    color: white;
+    font-size: 16px;
+    padding: 12px;
+    text-align: left;
+  }
+  
+  .report-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 14px;
+    color: #555;
+  }
+  
+  .report-table tbody tr:hover {
+    background: #e3f2fd;
+  }
+  
+  .download-link {
+    color: #28a745;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  
+  .download-link:hover {
+    text-decoration: underline;
+  }
+  
+  .download-btn {
+    background: #28a745;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.3s ease-in-out;
+  }
+  
+  .download-btn:hover {
+    background: #218838;
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .table-container {
+      overflow-x: auto;
+    }
+  
+    .report-table {
+      min-width: 100%;
+    }
+  }
+  

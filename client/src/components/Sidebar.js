@@ -43,7 +43,7 @@ function Sidebar() {
           <li onClick={() => { navigate("/edit-profile"); setIsOpen(false); }}>
             <FaUserEdit /> Profile
           </li>
-          <li onClick={() => setIsOpen(false)}>
+          <li onClick={() => { navigate("/reports"); setIsOpen(false); }}>
             <FaClipboardList /> Reports
           </li>
           <li onClick={() => setIsOpen(false)}>
