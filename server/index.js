@@ -59,6 +59,17 @@ const logAuditHistory = async (auditId, action, userId) => {
   }
 };
 
+const createNotification = async (userId, message, type = "info") => {
+  try {
+    await db.execute(
+      `INSERT INTO Notifications (user_id, message, type) VALUES (?, ?, ?)`,
+      [userId, message, type]
+    );
+  } catch (error) {
+    console.error("Error creating notification:", error);
+  }
+};
+
 app.get("/", (req, res) => {
   res.json("Success");
 });
@@ -192,6 +203,9 @@ app.post('/submit-audit', authenticate, upload.fields([{ name: 'architecturalDra
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await db.execute(sql, [req.user.id, name, location, yearOfConstruction, formattedDate, area, use, structuralChanges, formattedDistressYear, distressNature, previousReports, architecturalDrawing, structuralDrawing]);
     await logAuditHistory(id, "Audit submitted", req.user.id);
+    // 🔥 Log a notification
+    await createNotification(req.user.id, "A new audit has been submitted.", "success");
+
     res.json({ message: 'Audit submitted successfully', auditId: result.insertId });
   } catch (error) {
     console.error('Error submitting audit:', error);
@@ -249,6 +263,7 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
     const sql = `UPDATE Audits SET name = ?, location = ?, date_of_audit = ?, structural_changes = ?, status = ? WHERE id = ? AND auditor_id = ?`;
     await db.execute(sql, [name, location, date_of_audit, structural_changes, status, id, req.user.id]);
     await logAuditHistory(id, "Audit Updated.", req.user.id);
+    await createNotification(req.user.id,`Audit "${name}" has been updated.`, "success");
     res.json({ message: "Audit updated successfully" });
   } catch (error) {
     console.error("Error updating audit:", error);
@@ -266,6 +281,7 @@ app.delete('/api/audits/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: "Audit not found or unauthorized" });
     }
     await logAuditHistory(id, "Audit Deleted", req.user.id);
+    await createNotification(req.user.id, "An audit has been deleted.", "warning");
     res.json({ message: "Audit deleted successfully" });
   } catch (error) {
     console.error("Error deleting audit:", error);
@@ -368,24 +384,39 @@ app.post("/api/observations/:auditId", authenticate, upload.single("damagePhoto"
 });
 
 
-// NDT Test Submission
-app.post("/api/ndt/:auditId", authenticate, async (req, res) => {
+app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (req, res) => {
   try {
     const { auditId } = req.params;
     const { 
-      reboundHammerTest, ultrasonicTest, coreSamplingTest, carbonationTest, 
-      chlorideTest, sulfateTest, halfCellPotentialTest, concreteCoverMeasurement, 
-      rebarDiameterReduction 
+      reboundHammerTest, reboundGrading, ultrasonicTest, ultrasonicGrading, 
+      coreSamplingTest, carbonationTest, chlorideTest, sulfateTest, 
+      halfCellPotentialTest, concreteCoverRequired, concreteCoverMeasured, 
+      rebarDiameterReduction, crushingStrength 
     } = req.body;
+
+    const ndtPhoto = req.file ? req.file.originalname : null;
+
+    // Fix: Ensure `ndtPhoto` is only included when it's uploaded
     const sql = `INSERT INTO NDTTests (
-                    audit_id, rebound_hammer_test, ultrasonic_test, core_sampling_test, carbonation_test, 
-                    chloride_test, sulfate_test, half_cell_potential_test, concrete_cover_measurement, rebar_diameter_reduction
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    await db.execute(sql, [
-      auditId, reboundHammerTest, ultrasonicTest, coreSamplingTest, carbonationTest, 
-      chlorideTest, sulfateTest, halfCellPotentialTest, concreteCoverMeasurement, rebarDiameterReduction
-    ]);
-    await logAuditHistory(auditId, "NTD Results submitted", req.user.id);
+                    audit_id, rebound_hammer_test, rebound_grading, ultrasonic_test, ultrasonic_grading, 
+                    core_sampling_test, carbonation_test, chloride_test, sulfate_test, 
+                    half_cell_potential_test, concrete_cover_required, concrete_cover_measured, 
+                    rebar_diameter_reduction, crushing_strength ${ndtPhoto ? ", ndt_photo" : ""}
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ${ndtPhoto ? ", ?" : ""})`;
+
+    const params = [
+      auditId, reboundHammerTest, reboundGrading, ultrasonicTest, ultrasonicGrading, 
+      coreSamplingTest, carbonationTest, chlorideTest, sulfateTest, 
+      halfCellPotentialTest, concreteCoverRequired, concreteCoverMeasured, 
+      rebarDiameterReduction, crushingStrength
+    ];
+
+    if (ndtPhoto) {
+      params.push(ndtPhoto);
+    }
+
+    await db.execute(sql, params);
+    await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "NDT results submitted successfully" });
   } catch (error) {
@@ -393,6 +424,7 @@ app.post("/api/ndt/:auditId", authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to submit NDT results" });
   }
 });
+
 
 // Immediate Concern Submission
 app.post("/api/immediate-concern/:auditId", authenticate, upload.single("damagePhoto"), async (req, res) => {
@@ -409,6 +441,47 @@ app.post("/api/immediate-concern/:auditId", authenticate, upload.single("damageP
   } catch (error) {
     console.error("Error submitting immediate concern:", error);
     res.status(500).json({ message: "Failed to submit immediate concern" });
+  }
+});
+
+
+// Notification endpoint
+app.get('/api/notifications', authenticate, async (req, res) => {
+  try {
+    const [notifications] = await db.execute(
+      `SELECT id, message, is_read, created_at FROM Notifications WHERE user_id = ? ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    res.json(notifications);
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ message: "Failed to fetch notifications" });
+  }
+});
+
+app.put('/api/notifications/:id/read', authenticate, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.execute(
+      `UPDATE Notifications SET is_read = TRUE WHERE id = ? AND user_id = ?`,
+      [id, req.user.id]
+    );
+    res.json({ message: "Notification marked as read" });
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    res.status(500).json({ message: "Failed to mark notification as read" });
+  }
+});
+app.delete('/api/notifications/clear', authenticate, async (req, res) => {
+  try {
+    await db.execute(
+      `DELETE FROM Notifications WHERE user_id = ?`,
+      [req.user.id]
+    );
+    res.json({ message: "All notifications cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing notifications:", error);
+    res.status(500).json({ message: "Failed to clear notifications" });
   }
 });
 

@@ -1,0 +1,115 @@
+/* Notification Panel */
+.notification-panel {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    padding: 16px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 600px;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  
+  .notification-panel:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 7px 15px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Notification Header */
+  .notification-header {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  
+  /* Notification List */
+  .notification-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .notification-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f9f9f9;
+    border-left: 5px solid #007bff;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: #444;
+    border-radius: 5px;
+    transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+  }
+  
+  .notification-item:hover {
+    background: #e6f0ff;
+    transform: translateX(5px);
+    cursor: pointer;
+  }
+  
+  /* Notification Types */
+  .notification.success {
+    border-left-color: #28a745;
+  }
+  
+  .notification.error {
+    border-left-color: #dc3545;
+  }
+  
+  .notification.warning {
+    border-left-color: #f39c12;
+  }
+  
+  .notification.info {
+    border-left-color: #17a2b8;
+  }
+  
+  /* Empty State */
+  .no-notifications {
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    padding: 15px;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 1024px) {
+    .notification-panel {
+      max-width: 100%;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .notification-panel {
+      padding: 12px;
+    }
+    
+    .notification-header {
+      font-size: 16px;
+    }
+    
+    .notification-item {
+      font-size: 0.85rem;
+      padding: 8px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .notification-panel {
+      padding: 10px;
+    }
+  
+    .notification-header {
+      font-size: 14px;
+    }
+  
+    .notification-item {
+      font-size: 0.8rem;
+      padding: 6px;
+    }
+  }
+  

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/Dashboard.css";
+import NotificationPanel from "../dashboard/NotificationPanel"; // Import the Notification Panel
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -30,21 +31,7 @@ function Dashboard() {
 
         setAuditor(auditorRes.data);
         setStats(statsRes.data);
-
-        // Format the date_of_audit for each audit
-        const formattedAudits = auditsRes.data.map((audit) => {
-          let displayDate = "";
-          if (audit.date_of_audit) {
-            const dateObj = new Date(audit.date_of_audit);
-            // Check if date is valid
-            if (!isNaN(dateObj)) {
-              // Convert to YYYY-MM-DD
-              displayDate = dateObj.toISOString().split("T")[0];
-            }
-          }
-          return { ...audit, date_of_audit: displayDate };
-        });
-        setAudits(formattedAudits);
+        setAudits(auditsRes.data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Failed to load dashboard data. Please try again.");
@@ -52,7 +39,7 @@ function Dashboard() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [navigate]);
 
@@ -70,6 +57,9 @@ function Dashboard() {
           <p className="error-message">{error}</p>
         ) : (
           <>
+            {/* Notification Panel */}
+            <NotificationPanel />
+
             {/* Dashboard Quick Actions */}
             <div className="dashboard-actions">
               <button onClick={() => navigate("/submit-audit")} className="btn-primary">
