@@ -364,7 +364,9 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
 app.delete('/api/audits/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    let { name} = req.body;
+    const {
+      name
+    } = req.body;
 
     const sql = `DELETE FROM Audits WHERE id = ? AND auditor_id = ?`;
     const [result] = await db.execute(sql, [id, req.user.id]);
