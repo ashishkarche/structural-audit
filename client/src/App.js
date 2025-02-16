@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import {jwtDecode} from "jwt-decode";
 import Loader from "./components/dashboard/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -29,6 +30,31 @@ function App() {
   const [showLoader, setShowLoader] = useState(true);
 
   useEffect(() => {
+    const checkTokenValidity = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/"; // Redirect to login if no token
+        return;
+      }
+
+      try {
+        const decoded = jwtDecode(token);
+        const currentTime = Date.now() / 1000;
+
+        if (decoded.exp < currentTime) {
+          // Token expired, clear it and redirect
+          localStorage.removeItem("token");
+          window.location.href = "/";
+        }
+      } catch (error) {
+        console.error("Invalid token:", error);
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }
+    };
+
+    checkTokenValidity();
+
     const timer = setTimeout(() => setShowLoader(false), 3000);
     return () => clearTimeout(timer);
   }, []);
@@ -58,7 +84,7 @@ function App() {
               <Route path="view-audits" element={<ViewAudits />} />
               <Route path="edit-profile" element={<EditProfile />} />
               <Route path="/reports" element={<ReportPage />} />
-              {/* Audit-Specific Routes nested inside MainLayout */}
+              {/* Audit-Specific Routes */}
               <Route path="audit/:auditId/*" element={<AuditLayout />}>
                 <Route index element={<Navigate to="structural-changes" replace />} />
                 <Route path="structural-changes" element={<StructuralChangesPage />} />
