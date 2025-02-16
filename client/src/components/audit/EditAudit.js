@@ -1,4 +1,3 @@
-// components/EditAudit.js
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -17,7 +16,16 @@ function EditAudit() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}`, config);
-        setAuditData(response.data);
+
+        // Convert date_of_audit to yyyy-MM-dd format
+        const formattedAudit = {
+          ...response.data,
+          date_of_audit: response.data.date_of_audit
+            ? response.data.date_of_audit.split("T")[0]  // Extract YYYY-MM-DD part
+            : "",  
+        };
+
+        setAuditData(formattedAudit);
       } catch (err) {
         console.error("Error fetching audit:", err);
         setErrorMessage("Failed to load audit details.");
@@ -68,21 +76,63 @@ function EditAudit() {
         </div>
 
         <div className="audit-form-group">
+          <label>Year of Construction</label>
+          <input type="number" name="yearOfConstruction" value={auditData.year_of_construction} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
           <label>Date of Audit</label>
           <input type="date" name="date_of_audit" value={auditData.date_of_audit} onChange={handleInputChange} required />
         </div>
 
         <div className="audit-form-group">
-          <label>Structural Changes</label>
-          <textarea name="structural_changes" value={auditData.structural_changes} onChange={handleInputChange}></textarea>
+          <label>Building Area</label>
+          <input type="text" name="area" value={auditData.area} onChange={handleInputChange} />
         </div>
 
         <div className="audit-form-group">
-          <label>Status</label>
-          <select name="status" value={auditData.status} onChange={handleInputChange} required>
-            <option value="In-Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-          </select>
+          <label>Structure Type</label>
+          <input type="text" name="structureType" value={auditData.structure_type} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Cement Type</label>
+          <input type="text" name="cementType" value={auditData.cement_type} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Steel Type</label>
+          <input type="text" name="steelType" value={auditData.steel_type} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Number of Stories</label>
+          <input type="number" name="numberOfStories" value={auditData.number_of_stories} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Designed Use</label>
+          <input type="text" name="designedUse" value={auditData.designed_use} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Present Use</label>
+          <input type="text" name="presentUse" value={auditData.present_use} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Changes in Building</label>
+          <textarea name="changesInBuilding" value={auditData.changes_in_building} onChange={handleInputChange}></textarea>
+        </div>
+
+        <div className="audit-form-group">
+          <label>Distress Year</label>
+          <input type="number" name="distressYear" value={auditData.distress_year} onChange={handleInputChange} />
+        </div>
+
+        <div className="audit-form-group">
+          <label>Distress Nature</label>
+          <input type="text" name="distressNature" value={auditData.distress_nature} onChange={handleInputChange} />
         </div>
 
         <button type="submit" className="audit-save-button">

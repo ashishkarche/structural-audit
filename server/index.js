@@ -259,7 +259,7 @@ app.post(
       await logAuditHistory(result.insertId, "Audit submitted", req.user.id);
 
       // 🔥 Log a notification
-      await createNotification(req.user.id, "A new audit has been submitted.", "success");
+      await createNotification(req.user.id, `Audit "${name}" has been Submitted.`, "success");
 
       res.json({ message: "Audit submitted successfully", auditId: result.insertId });
     } catch (error) {
@@ -268,6 +268,7 @@ app.post(
     }
   }
 );
+
 app.get('/api/audits/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
@@ -328,11 +329,29 @@ app.get('/api/audits/:auditId/full', authenticate, async (req, res) => {
 app.put('/api/audits/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, location, date_of_audit, structural_changes, status } = req.body;
-    const sql = `UPDATE Audits SET name = ?, location = ?, date_of_audit = ?, structural_changes = ?, status = ? WHERE id = ? AND auditor_id = ?`;
-    await db.execute(sql, [name, location, date_of_audit, structural_changes, status, id, req.user.id]);
+    const {
+      name, location, year_of_construction, date_of_audit, area, structure_type,
+      cement_type, steel_type, number_of_stories, designed_use, present_use,
+      changes_in_building, distress_year, distress_nature
+    } = req.body;
+
+    const sql = `
+      UPDATE Audits
+      SET name = ?, location = ?, year_of_construction = ?, date_of_audit = ?, area = ?,
+          structure_type = ?, cement_type = ?, steel_type = ?, number_of_stories = ?,
+          designed_use = ?, present_use = ?, changes_in_building = ?, distress_year = ?, distress_nature = ?
+      WHERE id = ? AND auditor_id = ?`;
+
+    await db.execute(sql, [
+      name, location, year_of_construction, date_of_audit, area,
+      steel_type, cement_type, steel_type, number_of_stories,
+      designed_use, present_use, changes_in_building, distress_year, distress_nature,
+      id, req.user.id
+    ]);
+
     await logAuditHistory(id, "Audit Updated.", req.user.id);
     await createNotification(req.user.id, `Audit "${name}" has been updated.`, "success");
+
     res.json({ message: "Audit updated successfully" });
   } catch (error) {
     console.error("Error updating audit:", error);
@@ -340,17 +359,20 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
   }
 });
 
+
 // Delete audit
 app.delete('/api/audits/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+    let { name} = req.body;
+
     const sql = `DELETE FROM Audits WHERE id = ? AND auditor_id = ?`;
     const [result] = await db.execute(sql, [id, req.user.id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Audit not found or unauthorized" });
     }
     await logAuditHistory(id, "Audit Deleted", req.user.id);
-    await createNotification(req.user.id, "An audit has been deleted.", "warning");
+    await createNotification(req.user.id, `Audit "${name}" has been updated.`, "success");
     res.json({ message: "Audit deleted successfully" });
   } catch (error) {
     console.error("Error deleting audit:", error);
@@ -807,6 +829,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     });
 
     doc.end();
+    
   } catch (error) {
     console.error("Error generating report:", error);
     res.status(500).json({ message: "Failed to generate report" });
