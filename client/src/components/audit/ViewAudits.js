@@ -78,7 +78,6 @@ function ViewAudits() {
                 <th>Project Name</th>
                 <th>Location</th>
                 <th>Date of Audit</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -89,7 +88,6 @@ function ViewAudits() {
                     <td>{audit.name}</td>
                     <td>{audit.location}</td>
                     <td>{audit.date_of_audit}</td>
-                    <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
                     <td>
                       <button className="btn btn-info btn-sm me-2" onClick={() => navigate(`/audit/${audit.id}/full`)}>
                         <FaEye /> View

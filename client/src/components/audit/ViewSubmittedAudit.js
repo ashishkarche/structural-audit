@@ -76,9 +76,17 @@ function ViewSubmittedAudit() {
         <tbody>
           <tr><td><strong>Project Name:</strong></td><td>{audit.name}</td></tr>
           <tr><td><strong>Location:</strong></td><td>{audit.location}</td></tr>
+          <tr><td><strong>Year Of Construction:</strong></td><td>{audit.year_of_construction}</td></tr>
           <tr><td><strong>Date of Audit:</strong></td><td>{audit.date_of_audit}</td></tr>
-          <tr><td><strong>Status:</strong></td><td>{audit.status}</td></tr>
-          <tr><td><strong>Structural Changes:</strong></td><td>{audit.structural_changes || "None"}</td></tr>
+          <tr><td><strong>Area:</strong></td><td>{audit.area}</td></tr>
+          <tr><td><strong>Usage Type:</strong></td><td>{audit.usage_type}</td></tr>
+          <tr><td><strong>Structure Type:</strong></td><td>{audit.structure_type}</td></tr>
+          <tr><td><strong>Cement Type:</strong></td><td>{audit.cement_type}</td></tr>
+          <tr><td><strong>Steel Type:</strong></td><td>{audit.steel_type}</td></tr>
+          <tr><td><strong>Number of Stories:</strong></td><td>{audit.number_of_stories}</td></tr>
+          <tr><td><strong>Designed Use:</strong></td><td>{audit.designed_use}</td></tr>
+          <tr><td><strong>Present Use:</strong></td><td>{audit.present_use}</td></tr>
+          <tr><td><strong>Change In Building:</strong></td><td>{audit.changes_in_building}</td></tr>
           <tr><td><strong>Distress Year:</strong></td><td>{audit.distress_year || "N/A"}</td></tr>
           <tr><td><strong>Distress Nature:</strong></td><td>{audit.distress_nature || "N/A"}</td></tr>
           <tr><td><strong>Previous Reports:</strong></td><td>{audit.previous_reports || "N/A"}</td></tr>
@@ -92,6 +100,7 @@ function ViewSubmittedAudit() {
         <table className="audit-table">
           <thead>
             <tr>
+              <th>brief_background_history</th>
               <th>Date</th>
               <th>Details</th>
               <th>Previous Investigations</th>
@@ -99,11 +108,15 @@ function ViewSubmittedAudit() {
               <th>Repair Type</th>
               <th>Repair Efficacy</th>
               <th>Repair Cost</th>
+              <th>conclusion_from_previous_report</th>
+              <th>scope_of_work</th>
+              <th>purpose_of_investigation</th>
             </tr>
           </thead>
           <tbody>
             {structuralChanges.map((item) => (
               <tr key={item.id}>
+                <td>{item.brief_background_history}</td>
                 <td>{item.date_of_change}</td>
                 <td>{item.change_details}</td>
                 <td>
@@ -125,6 +138,10 @@ function ViewSubmittedAudit() {
                     ? `$${parseFloat(item.repair_cost).toFixed(2)}`
                     : "N/A"}
                 </td>
+                <td>{item.conclusion_from_previous_report || "N/A"}</td>
+                <td>{item.scope_of_work || "N/A"}</td>
+                <td>{item.purpose_of_investigation || "N/A"}</td>
+
               </tr>
             ))}
           </tbody>

@@ -17,6 +17,7 @@ function Register() {
     employmentPeriod: "",
     email: "",
     password: "",
+    termsAccepted: false,
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -166,8 +167,22 @@ function Register() {
                   required
                 />
               </div>
+              <div className="certificate-container">
+                <p className="certificate-text">
+                  The information furnished above is true to my knowledge and belief. I am aware that any mis-information or its concealment, which forms the basis of pre-qualification, is liable for any action against the firm, which could include termination of the agreement and/or blacklisting.
+                </p>
+              </div>
+
+              {/* ✅ Terms & Conditions Checkbox */}
+              <div className="terms-container">
+                <input type="checkbox" id="terms" checked={formData.termsAccepted} onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })} />
+                <label htmlFor="terms">
+                  <strong>I accept the above Terms & Conditions</strong>
+                </label>
+              </div>
             </div>
           )}
+
 
           {/* Navigation Buttons */}
           <div className="button-group">

@@ -51,10 +51,6 @@ function AuditDetails() {
           <span className="audit-value">{audit.date_of_audit}</span>
         </div>
         <div className="audit-field">
-          <span className="audit-label">Structural Changes:</span>
-          <span className="audit-value">{audit.structural_changes}</span>
-        </div>
-        <div className="audit-field">
           <span className="audit-label">Distress Year:</span>
           <span className="audit-value">{audit.distress_year}</span>
         </div>
@@ -63,42 +59,32 @@ function AuditDetails() {
           <span className="audit-value">{audit.distress_nature}</span>
         </div>
         <div className="audit-field">
-          <span className="audit-label">Previous Reports:</span>
-          <span className="audit-value">{audit.previous_reports}</span>
-        </div>
-        <div className="audit-field">
-          <span className="audit-label">Status:</span>
-          <span className={`audit-status ${audit.status.toLowerCase()}`}>
-            {audit.status}
-          </span>
-        </div>
-        {audit.architectural_drawing && (
-          <div className="audit-field">
-            <span className="audit-label">Architectural Drawing:</span>
-            <a
-              className="audit-link"
-              href={`https://structural-audit.vercel.app/${audit.architectural_drawing}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Drawing
-            </a>
+            <span className="audit-label">Conclusion:</span>
+            <span className="audit-value">{audit.finalSubmission.conclusion}</span>
           </div>
-        )}
-        {audit.structural_drawing && (
           <div className="audit-field">
-            <span className="audit-label">Structural Drawing:</span>
-            <a
-              className="audit-link"
-              href={`https://structural-audit.vercel.app/uploads/${audit.structural_drawing}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Drawing
-            </a>
+            <span className="audit-label">Recommendations:</span>
+            <span className="audit-value">{audit.finalSubmission.recommendations}</span>
           </div>
-        )}
+          <div className="audit-field">
+            <span className="audit-label">Technical Comments on Distress:</span>
+            <span className="audit-value">{audit.finalSubmission.technical_comments}</span>
+          </div>
+          <div className="audit-field">
+            <span className="audit-label">Executive Engineers' Comments:</span>
+            <span className="audit-value">{audit.finalSubmission.executive_engineers}</span>
+          </div>
+          <div className="audit-field">
+            <span className="audit-label">Superintending Engineers' Comments:</span>
+            <span className="audit-value">{audit.finalSubmission.superintending_engineers}</span>
+          </div>
+          <div className="audit-field">
+            <span className="audit-label">Chief Engineers' Comments:</span>
+            <span className="audit-value">{audit.finalSubmission.chief_engineers}</span>
+          </div>
       </div>
+
+      
     </div>
   );
 }

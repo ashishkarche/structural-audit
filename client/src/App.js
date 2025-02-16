@@ -23,6 +23,7 @@ const AuditLayout = lazy(() => import("./components/layouts/AuditLayout"));
 const MainLayout = lazy(() => import("./components/layouts/MainLayout"));
 const AuditHistory = lazy(() => import("./components/audit/AuditHistory"));
 const ReportPage = lazy(() => import("./components/pages/ReportPage"));
+const ConclusionPage = lazy(() => import("./components/audit/ConclusionPage"));
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
@@ -64,6 +65,7 @@ function App() {
                 <Route path="observations" element={<Observations />} />
                 <Route path="immediate-concern" element={<ImmediateConcern />} />
                 <Route path="ndt-tests" element={<NDTPage />} />
+                <Route path="conclusion" element={<ConclusionPage />} />
                 <Route path="full" element={<ViewSubmittedAudit />} />
                 <Route path="details" element={<AuditDetails />} />
                 <Route path="edit" element={<EditAudit />} />

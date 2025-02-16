@@ -10,14 +10,19 @@ function SubmitAudit() {
     yearOfConstruction: "",
     dateOfAudit: "",
     area: "",
-    use: "",
-    structuralChanges: "",
+    structureType: "",
+    cementType: "",
+    steelType: "",
+    numberOfStories: "",
+    designedUse: "",
+    presentUse: "",
+    changesInBuilding: "",
     distressYear: "",
     distressNature: "",
-    previousReports: "",
     architecturalDrawing: null,
     structuralDrawing: null,
   });
+
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -53,28 +58,55 @@ function SubmitAudit() {
     <div className="submit-audit-container">
       <h2 className="form-title">Submit New Audit</h2>
       {error && <p className="text-danger text-center">{error}</p>}
+      
       <form onSubmit={handleSubmit} className="audit-form">
         <div className="form-grid">
-          {Object.keys(formData).map((key) => (
+          {/* Text Fields */}
+          {[
+            { key: "name", label: "Project Name" },
+            { key: "location", label: "Location" },
+            { key: "yearOfConstruction", label: "Year of Construction", type: "number" },
+            { key: "dateOfAudit", label: "Date of Audit", type: "date" },
+            { key: "area", label: "Area of Building (sq.ft.)" },
+            { key: "structureType", label: "Type of Structure" },
+            { key: "cementType", label: "Type of Cement Used (OPC/PPC/SRC/Other)" },
+            { key: "steelType", label: "Type of Steel Reinforcement (Mild Steel/Cold Twisted Steel/TMT/Other)" },
+            { key: "numberOfStories", label: "Number of Stories", type: "number" },
+            { key: "designedUse", label: "Designed Use" },
+            { key: "presentUse", label: "Present Use" },
+            { key: "changesInBuilding", label: "Any Other Changes in Building" },
+            { key: "distressYear", label: "Year of First Distress Noticed", type: "number" },
+            { key: "distressNature", label: "Nature of Distress Noticed" },
+          ].map(({ key, label, type }) => (
             <div className="form-group" key={key}>
-              <label>{key.replace(/([A-Z])/g, " $1").trim()}</label>
-              {key.includes("Drawing") ? (
-                <input
-                  type="file"
-                  onChange={(e) => setFormData({ ...formData, [key]: e.target.files[0] })}
-                />
-              ) : (
-                <input
-                  type={key.includes("Year") || key.includes("date") ? "date" : "text"}
-                  placeholder={`Enter ${key}`}
-                  value={formData[key]}
-                  onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                  required
-                />
-              )}
+              <label>{label}</label>
+              <input
+                type={type || "text"}
+                placeholder={`Enter ${label}`}
+                value={formData[key]}
+                onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
+                required
+              />
+            </div>
+          ))}
+
+          {/* File Upload Fields */}
+          {[
+            { key: "architecturalDrawing", label: "Architectural Drawing (PDF)" },
+            { key: "structuralDrawing", label: "Structural Drawing (PDF)" },
+          ].map(({ key, label }) => (
+            <div className="form-group" key={key}>
+              <label>{label}</label>
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => setFormData({ ...formData, [key]: e.target.files[0] })}
+              />
             </div>
           ))}
         </div>
+
+        {/* Submit Button */}
         <div className="form-group submit-btn-container">
           <button type="submit" className="submit-btn">Save & Next</button>
         </div>

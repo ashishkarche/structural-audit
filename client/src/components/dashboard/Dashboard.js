@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/Dashboard.css";
-import NotificationPanel from "../dashboard/NotificationPanel"; // Import the Notification Panel
+import NotificationPanel from "../dashboard/NotificationPanel";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [auditor, setAuditor] = useState({});
   const [audits, setAudits] = useState([]);
-  const [stats, setStats] = useState({ totalAudits: 0, inProgress: 0, completed: 0 });
+  const [totalAudits, setTotalAudits] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -23,14 +23,14 @@ function Dashboard() {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const [auditorRes, statsRes, auditsRes] = await Promise.all([
+        const [auditorRes, totalAuditsRes, auditsRes] = await Promise.all([
           axios.get("https://structural-audit.vercel.app/api/auditors/me", config),
-          axios.get("https://structural-audit.vercel.app/api/audits/stats", config),
+          axios.get("https://structural-audit.vercel.app/api/audits/total", config),
           axios.get("https://structural-audit.vercel.app/api/audits/recent", config),
         ]);
 
         setAuditor(auditorRes.data);
-        setStats(statsRes.data);
+        setTotalAudits(totalAuditsRes.data.totalAudits);
         setAudits(auditsRes.data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -57,7 +57,6 @@ function Dashboard() {
           <p className="error-message">{error}</p>
         ) : (
           <>
-            {/* Notification Panel */}
             <NotificationPanel />
 
             {/* Dashboard Quick Actions */}
@@ -74,15 +73,7 @@ function Dashboard() {
             <div className="dashboard-stats">
               <div className="stat-card">
                 <h3>Total Audits</h3>
-                <p>{stats.totalAudits}</p>
-              </div>
-              <div className="stat-card">
-                <h3>In Progress</h3>
-                <p>{stats.inProgress}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Completed</h3>
-                <p>{stats.completed}</p>
+                <p>{totalAudits}</p>
               </div>
             </div>
 
@@ -98,7 +89,6 @@ function Dashboard() {
                       <th>Project Name</th>
                       <th>Location</th>
                       <th>Audit Date</th>
-                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -107,7 +97,6 @@ function Dashboard() {
                         <td>{audit.name}</td>
                         <td>{audit.location}</td>
                         <td>{audit.date_of_audit}</td>
-                        <td className={`status ${audit.status.toLowerCase()}`}>{audit.status}</td>
                       </tr>
                     ))}
                   </tbody>

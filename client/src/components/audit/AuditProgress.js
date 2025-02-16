@@ -8,6 +8,7 @@ const steps = [
   { path: "observations", label: "Observations" },
   { path: "immediate-concern", label: "Immediate Concern" },
   { path: "ndt-tests", label: "NDT Tests" },
+  { path: "conclusion", label: "Conclusion & Recommendations" },  // ✅ Added New Step
   { path: "details", label: "Audit Details" },
 ];
 

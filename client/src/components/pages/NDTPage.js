@@ -51,7 +51,7 @@ function NDTPage() {
 
     try {
       await axios.post(`https://structural-audit.vercel.app/api/ndt/${auditId}`, formDataToSend, config);
-      navigate(`/audit/${auditId}/details`);
+      navigate(`/audit/${auditId}/conclusion`);
     } catch (err) {
       setError("Failed to submit NDT results.");
     }
