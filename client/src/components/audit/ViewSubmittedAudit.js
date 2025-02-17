@@ -79,7 +79,6 @@ function ViewSubmittedAudit() {
           <tr><td><strong>Year Of Construction:</strong></td><td>{audit.year_of_construction}</td></tr>
           <tr><td><strong>Date of Audit:</strong></td><td>{audit.date_of_audit}</td></tr>
           <tr><td><strong>Area:</strong></td><td>{audit.area}</td></tr>
-          <tr><td><strong>Usage Type:</strong></td><td>{audit.usage_type}</td></tr>
           <tr><td><strong>Structure Type:</strong></td><td>{audit.structure_type}</td></tr>
           <tr><td><strong>Cement Type:</strong></td><td>{audit.cement_type}</td></tr>
           <tr><td><strong>Steel Type:</strong></td><td>{audit.steel_type}</td></tr>
@@ -89,7 +88,6 @@ function ViewSubmittedAudit() {
           <tr><td><strong>Change In Building:</strong></td><td>{audit.changes_in_building}</td></tr>
           <tr><td><strong>Distress Year:</strong></td><td>{audit.distress_year || "N/A"}</td></tr>
           <tr><td><strong>Distress Nature:</strong></td><td>{audit.distress_nature || "N/A"}</td></tr>
-          <tr><td><strong>Previous Reports:</strong></td><td>{audit.previous_reports || "N/A"}</td></tr>
         </tbody>
       </table>
       </div>
@@ -108,9 +106,9 @@ function ViewSubmittedAudit() {
               <th>Repair Type</th>
               <th>Repair Efficacy</th>
               <th>Repair Cost</th>
-              <th>conclusion_from_previous_report</th>
-              <th>scope_of_work</th>
-              <th>purpose_of_investigation</th>
+              <th>conclusion from previous report</th>
+              <th>scope of work</th>
+              <th>purpose of investigation</th>
             </tr>
           </thead>
           <tbody>

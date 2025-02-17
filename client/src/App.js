@@ -1,10 +1,9 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
-import {jwtDecode} from "jwt-decode";
 import Loader from "./components/dashboard/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import TokenChecker from "./components/TokenChecker";
 // Lazy load components
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
@@ -30,37 +29,13 @@ function App() {
   const [showLoader, setShowLoader] = useState(true);
 
   useEffect(() => {
-    const checkTokenValidity = () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/"; // Redirect to login if no token
-        return;
-      }
-
-      try {
-        const decoded = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-
-        if (decoded.exp < currentTime) {
-          // Token expired, clear it and redirect
-          localStorage.removeItem("token");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Invalid token:", error);
-        localStorage.removeItem("token");
-        window.location.href = "/";
-      }
-    };
-
-    checkTokenValidity();
-
     const timer = setTimeout(() => setShowLoader(false), 3000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <Router>
+      <TokenChecker />
       {showLoader ? (
         <Loader />
       ) : (

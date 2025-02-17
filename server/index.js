@@ -400,6 +400,7 @@ app.post(
     try {
       const { auditId } = req.params;
       let {
+        briefBackgroundHistory, // ✅ Added missing field
         dateOfChange,
         changeDetails,
         repairYear,
@@ -415,16 +416,47 @@ app.post(
       repairYear = repairYear ? new Date(repairYear).getFullYear() : null;
 
       // 🛠️ Handle File Uploads
-      const previousInvestigations = req.files["previousInvestigations"] ? req.files["previousInvestigations"][0].originalname : null;
-      const previousInvestigationReports = req.files["previousInvestigationReports"] ? req.files["previousInvestigationReports"][0].originalname : null;
+      const previousInvestigations = req.files["previousInvestigations"] 
+        ? req.files["previousInvestigations"][0].originalname 
+        : null;
 
-      // ✅ Insert into DB
-      const sql = `INSERT INTO StructuralChanges (
-        audit_id, date_of_change, change_details, previous_investigation_reports, repair_year, repair_type, repair_efficacy, repair_cost, conclusion_from_previous_report, scope_of_work, purpose_of_investigation
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      const previousInvestigationReports = req.files["previousInvestigationReports"] 
+        ? req.files["previousInvestigationReports"][0].originalname 
+        : null;
+
+      // ✅ Insert into DB with all required fields
+      const sql = `
+        INSERT INTO StructuralChanges (
+          audit_id, 
+          brief_background_history, 
+          date_of_change, 
+          change_details, 
+          previous_investigations, 
+          previous_investigation_reports, 
+          repair_year, 
+          repair_type, 
+          repair_efficacy, 
+          repair_cost, 
+          conclusion_from_previous_report, 
+          scope_of_work, 
+          purpose_of_investigation
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
 
       await db.execute(sql, [
-        auditId, dateOfChange, changeDetails, previousInvestigationReports, repairYear, repairType, repairEfficacy, repairCost, conclusionFromPreviousReport, scopeOfWork, purposeOfInvestigation
+        auditId, 
+        briefBackgroundHistory, 
+        dateOfChange, 
+        changeDetails, 
+        previousInvestigations, 
+        previousInvestigationReports, 
+        repairYear, 
+        repairType, 
+        repairEfficacy, 
+        repairCost, 
+        conclusionFromPreviousReport, 
+        scopeOfWork, 
+        purposeOfInvestigation
       ]);
 
       await logAuditHistory(auditId, "Structural changes submitted", req.user.id);
@@ -437,6 +469,7 @@ app.post(
     }
   }
 );
+
 
 
 // Fetch Audit History

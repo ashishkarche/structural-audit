@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/Dashboard.css";
 import NotificationPanel from "../dashboard/NotificationPanel";
+import SkeletonLoader from "../SkeletonLoader"; // Skeleton loader component
+import { format } from "date-fns"; // For date formatting
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -31,7 +33,14 @@ function Dashboard() {
 
         setAuditor(auditorRes.data);
         setTotalAudits(totalAuditsRes.data.totalAudits);
-        setAudits(auditsRes.data);
+
+        // Format audit dates before setting state
+        const formattedAudits = auditsRes.data.map((audit) => ({
+          ...audit,
+          date_of_audit: format(new Date(audit.date_of_audit), "dd MMM yyyy"), // Format date
+        }));
+
+        setAudits(formattedAudits);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Failed to load dashboard data. Please try again.");
@@ -52,7 +61,7 @@ function Dashboard() {
         </header>
 
         {loading ? (
-          <p className="loading-text">Loading...</p>
+          <SkeletonLoader /> // Show skeleton while loading
         ) : error ? (
           <p className="error-message">{error}</p>
         ) : (
@@ -96,7 +105,7 @@ function Dashboard() {
                       <tr key={audit.id}>
                         <td>{audit.name}</td>
                         <td>{audit.location}</td>
-                        <td>{audit.date_of_audit}</td>
+                        <td>{audit.date_of_audit}</td> {/* Formatted date */}
                       </tr>
                     ))}
                   </tbody>
