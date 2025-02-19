@@ -386,7 +386,7 @@ app.get("/api/files/:filename", async (req, res) => {
 app.get('/api/audits/:auditId/full', async (req, res) => {
   try {
     const { auditId } = req.params;
-    
+
     // 🔍 Fetch audit details
     const [auditResult] = await db.execute(`SELECT * FROM Audits WHERE id = ?`, [auditId]);
     if (auditResult.length === 0) {
@@ -983,23 +983,23 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       doc.fontSize(16).text("Visual Observations", { underline: true });
       observations.forEach((obs) => {
         doc.fontSize(12).text(` Unexpected Load: ${obs.unexpected_load}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.unapproved_changes}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.additional_floor}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.vegetation_growth}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.leakage}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_beams}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_columns}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_flooring}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.floor_sagging}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.bulging_walls}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.window_problems}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.heaving_floor}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.concrete_texture}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.algae_growth}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_description}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_location}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_cause}`);
-        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_classification}`);
+        doc.fontSize(12).text(` Unapproved Changes: ${obs.unapproved_changes}`);
+        doc.fontSize(12).text(` Additional Floor: ${obs.additional_floor}`);
+        doc.fontSize(12).text(` Vegetation Growth: ${obs.vegetation_growth}`);
+        doc.fontSize(12).text(` Leakage Load: ${obs.leakage}`);
+        doc.fontSize(12).text(` Cracks Beams: ${obs.cracks_beams}`);
+        doc.fontSize(12).text(` Cracks Columns: ${obs.cracks_columns}`);
+        doc.fontSize(12).text(` Cracks Flooring: ${obs.cracks_flooring}`);
+        doc.fontSize(12).text(` Floor Sagging: ${obs.floor_sagging}`);
+        doc.fontSize(12).text(` Bulging Walls: ${obs.bulging_walls}`);
+        doc.fontSize(12).text(` Window Pronlems: ${obs.window_problems}`);
+        doc.fontSize(12).text(` Heaving Floor: ${obs.heaving_floor}`);
+        doc.fontSize(12).text(` Concrete Texture: ${obs.concrete_texture}`);
+        doc.fontSize(12).text(` Algae Growth: ${obs.algae_growth}`);
+        doc.fontSize(12).text(` Damage Description: ${obs.damage_description}`);
+        doc.fontSize(12).text(` Damage Location: ${obs.damage_location}`);
+        doc.fontSize(12).text(` Damage Cause: ${obs.damage_cause}`);
+        doc.fontSize(12).text(` Damage Classification: ${obs.damage_classification}`);
       });
       doc.moveDown();
     }
@@ -1022,8 +1022,34 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       });
     }
 
-    // 📌 Conclusion & Recommendations (Page 8)
-    // 📌 Conclusion & Recommendations (Final Section)
+    // 📌 Proforma (Page 4)
+    doc.addPage();
+    doc.fontSize(16).text("Proforma", { underline: true });
+    doc.fontSize(12).text(`Subject: Structural Audit of ${audit.name} at ${audit.location}`);
+    doc.text(`Date of Audit: ${audit.date_of_audit}`);
+    doc.text(`1. Name of the Project: ${audit.name}`);
+    doc.text(`   a. Location: ${audit.location}`);
+    doc.text(`   b. Area of Building: ${audit.area}`);
+    doc.text(`   c. Type of Structure: ${audit.structure_type}`);
+    doc.text(`   d. Number of Stories: ${audit.stories}`);
+    doc.text(`2. Year of Construction: ${audit.year_of_construction}`);
+    doc.text(`3. Use of the Building:`);
+    doc.text(`   a. Designed Use: ${audit.designed_use}`);
+    doc.text(`   b. Present Use: ${audit.present_use}`);
+    doc.text(`   c. Changes in Building: ${audit.changes_in_building}`);
+    doc.text(`4. History of Structure:`);
+    doc.text(`   a. Year of carrying out  Repairs: ${structuralChanges[0]?.date_of_change || "N/A"}`);
+    doc.text(`   b. Type of Repairs: ${structuralChanges[0]?.repair_type || "N/A"}`);
+    doc.text(`   c. Efficacy of Repairs: ${structuralChanges[0]?.repair_efficacy || "N/A"}`);
+    doc.text(`   d. Cost of Repairs: ${structuralChanges[0]?.repair_cost || "N/A"}`);
+    doc.text(`5. Type of Cement Used: ${audit.cement_type}`);
+    doc.text(`6. Type of Steel Reinforcement: ${audit.steel_type}`);
+    doc.text(`7. Visual Observations Conclusion: ${conclusion[0]?.conclusion || "N/A"}`);
+    doc.text(`8. Areas of Immediate Concern: ${immediateConcerns[0]?.description || "N/A"}`);
+    doc.text(`9. NDT Test Results:`);
+    ndtTests.forEach((ndt, index) => {
+      doc.text(`   ${index + 1}. ${ndt.test_type}: ${ndt.conclusion}`);
+    });
     if (conclusion.length > 0) {
       doc.addPage(); // Ensure conclusion starts on new page
       doc.fontSize(16).text("Conclusion & Recommendations", { underline: true });
@@ -1053,35 +1079,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         .text(`Superintending Engineers: ${conclusion[0].superintending_engineers || "___________________"}`)
         .text(`Chief Engineers: ${conclusion[0].chief_engineers || "___________________"}`);
     }
-
-    // 📌 Proforma (Page 4)
-    doc.addPage();
-    doc.fontSize(16).text("Proforma", { underline: true });
-    doc.fontSize(12).text(`Subject: Structural Audit of ${audit.name} at ${audit.location}`);
-    doc.text(`Date of Audit: ${audit.date_of_audit}`);
-    doc.text(`1. Name of the Project: ${audit.name}`);
-    doc.text(`   a. Location: ${audit.location}`);
-    doc.text(`   b. Area of Building: ${audit.area_of_building}`);
-    doc.text(`   c. Type of Structure: ${audit.structure_type}`);
-    doc.text(`   d. Number of Stories: ${audit.stories}`);
-    doc.text(`2. Year of Construction: ${audit.year_of_construction}`);
-    doc.text(`3. Use of the Building:`);
-    doc.text(`   a. Designed Use: ${audit.designed_use}`);
-    doc.text(`   b. Present Use: ${audit.present_use}`);
-    doc.text(`   c. Changes in Use: ${audit.changes_in_use}`);
-    doc.text(`4. History of Structure:`);
-    doc.text(`   a. Year of Repairs: ${structuralChanges[0]?.repair_year || "N/A"}`);
-    doc.text(`   b. Type of Repairs: ${structuralChanges[0]?.repair_type || "N/A"}`);
-    doc.text(`   c. Efficacy of Repairs: ${structuralChanges[0]?.repair_efficacy || "N/A"}`);
-    doc.text(`   d. Cost of Repairs: ${structuralChanges[0]?.repair_cost || "N/A"}`);
-    doc.text(`5. Type of Cement Used: ${audit.cement_type}`);
-    doc.text(`6. Type of Steel Reinforcement: ${audit.steel_type}`);
-    doc.text(`7. Visual Observations Conclusion: ${conclusion[0]?.conclusion || "N/A"}`);
-    doc.text(`8. Areas of Immediate Concern: ${immediateConcerns[0]?.description || "N/A"}`);
-    doc.text(`9. NDT Test Results:`);
-    ndtTests.forEach((ndt, index) => {
-      doc.text(`   ${index + 1}. ${ndt.test_type}: ${ndt.conclusion}`);
-    });
 
     doc.end();
 
