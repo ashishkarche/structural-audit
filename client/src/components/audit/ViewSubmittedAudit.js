@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/ViewSubmittedAudit.css";
-import { FaArrowLeft, FaDownload } from "react-icons/fa";
+import { FaArrowLeft, FaDownload, FaEye } from "react-icons/fa";
 
 function ViewSubmittedAudit() {
   const { auditId } = useParams();
   const navigate = useNavigate();
   const [fullAudit, setFullAudit] = useState(null);
   const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedPDF, setSelectedPDF] = useState(null);
 
   useEffect(() => {
     const fetchFullAudit = async () => {
@@ -118,16 +120,12 @@ function ViewSubmittedAudit() {
                 <td>{item.date_of_change}</td>
                 <td>{item.change_details}</td>
                 <td>
-                  {item.previous_investigations ? (
-                    <a
-                      href={`https://structural-audit.vercel.app/uploads/${item.previous_investigations}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      View File
-                    </a>
-                  ) : "No File"}
-                </td>
+                    {item.previous_investigations ? (
+                      <button onClick={() => setSelectedPDF(item.previous_investigations)}>
+                        <FaEye /> View PDF
+                      </button>
+                    ) : "No File"}
+                  </td>
                 <td>{item.repair_year || "N/A"}</td>
                 <td>{item.repair_type || "N/A"}</td>
                 <td>{item.repair_efficacy || "N/A"}</td>
@@ -140,6 +138,40 @@ function ViewSubmittedAudit() {
                 <td>{item.scope_of_work || "N/A"}</td>
                 <td>{item.purpose_of_investigation || "N/A"}</td>
 
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No structural changes recorded.</p>
+      )}</div>
+
+      <h3>Uploaded Drawings</h3>
+      <div className="table-container">{structuralChanges.length > 0 ? (
+        <table className="audit-table">
+          <thead>
+            <tr>
+              <th>Architectural Drawing</th>
+              <th>Structural Drawing</th>
+            </tr>
+          </thead>
+          <tbody>
+            {structuralChanges.map((item) => (
+              <tr key={item.id}>
+                <td>
+                    {item.auditDrawings ? (
+                      <button onClick={() => setSelectedPDF(item.file_name)}>
+                        <FaEye /> View PDF
+                      </button>
+                    ) : "No File"}
+                  </td>
+                <td>
+                    {item.auditDrawings ? (
+                      <button onClick={() => setSelectedPDF(item.file_name)}>
+                        <FaEye /> View PDF
+                      </button>
+                    ) : "No File"}
+                  </td>
               </tr>
             ))}
           </tbody>
@@ -170,6 +202,10 @@ function ViewSubmittedAudit() {
               <th>Heaving Floor</th>
               <th>Concrete Texture</th>
               <th>Algae Growth</th>
+              <th>Damage Description</th>
+              <th>Damage location</th>
+              <th>Damage Cause</th>
+              <th>Damage classification</th>
               <th>Damage Photo</th>
             </tr>
           </thead>
@@ -188,15 +224,21 @@ function ViewSubmittedAudit() {
                 <td>{item.bulging_walls ? "Yes" : "No"}</td>
                 <td>{item.window_problems ? "Yes" : "No"}</td>
                 <td>{item.heaving_floor ? "Yes" : "No"}</td>
-                <td>{item.concrete_texture || "N/A"}</td>
+                <td>{item.concrete_texture ? "Yes" : "No"}</td>
                 <td>{item.algae_growth ? "Yes" : "No"}</td>
+                <td>{item.damage_description || "N/A"}</td>
+                <td>{item.damage_location || "N/A"}</td>
+                <td>{item.damage_cause || "N/A"}</td>
+                <td>{item.damage_classification || "N/A"}</td>
                 <td>
-                  {item.damage_photo ? (
-                    <a href={`https://structural-audit.vercel.app/${item.damage_photo}`} target="_blank" rel="noopener noreferrer">
-                      <img src={`https://structural-audit.vercel.app/${item.damage_photo}`} alt="Damage" width="50" height="50" />
-                    </a>
-                  ) : "No Photo"}
-                </td>
+                    {item.damage_photo ? (
+                      <button
+                        onClick={() => setSelectedImage(item.damage_photo)}
+                      >
+                        <FaEye /> View Image
+                      </button>
+                    ) : "No Photo"}
+                  </td>
               </tr>
             ))}
           </tbody>
@@ -254,6 +296,18 @@ function ViewSubmittedAudit() {
         </table>
       ) : <p>No NDT test results recorded.</p>}</div>
       
+      {/* Image & PDF Modal Viewer */}
+      {selectedImage && (
+        <div className="modal" onClick={() => setSelectedImage(null)}>
+          <img src={`https://structural-audit.vercel.app/api/files/${selectedImage}`} alt="Preview" />
+        </div>
+      )}
+
+      {selectedPDF && (
+        <div className="modal" onClick={() => setSelectedPDF(null)}>
+          <iframe src={`https://structural-audit.vercel.app/api/files/${selectedPDF}`} width="100%" height="600px" title="PDF Preview"></iframe>
+        </div>
+      )}
     </div>
   );
 }

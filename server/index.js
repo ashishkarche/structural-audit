@@ -353,29 +353,59 @@ app.get('/api/audits/:id', authenticate, async (req, res) => {
 });
 
 
-// Full Audit Details Endpoint (includes sub-tables)
-app.get('/api/audits/:auditId/full', authenticate, async (req, res) => {
+// ✅ Serve PDFs & Images from Database
+app.get("/api/files/:filename", async (req, res) => {
+  try {
+    const { filename } = req.params;
+
+    // 🔍 Check if file exists in memory storage (Database)
+    const [result] = await db.execute(
+      `SELECT damage_photo FROM Observations WHERE damage_photo = ? 
+       UNION 
+       SELECT previous_investigations FROM StructuralChanges WHERE previous_investigations = ?`,
+      [filename, filename]
+    );
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "File not found" });
+    }
+
+    // 📌 Identify file type
+    const fileType = filename.endsWith(".pdf") ? "application/pdf" : "image/jpeg";
+
+    // 🔹 Serve File
+    res.setHeader("Content-Type", fileType);
+    res.sendFile(filename, { root: "memory_storage_path_here" }); // Replace with actual memory handling
+  } catch (error) {
+    console.error("Error fetching file:", error);
+    res.status(500).json({ message: "Failed to fetch file" });
+  }
+});
+
+// ✅ Get Full Audit Details (Includes PDFs & Images)
+app.get('/api/audits/:auditId/full', async (req, res) => {
   try {
     const { auditId } = req.params;
-    const [auditResult] = await db.execute(`SELECT * FROM Audits WHERE id = ? AND auditor_id = ?`, [auditId, req.user.id]);
+    
+    // 🔍 Fetch audit details
+    const [auditResult] = await db.execute(`SELECT * FROM Audits WHERE id = ?`, [auditId]);
     if (auditResult.length === 0) {
       return res.status(404).json({ message: "Audit not found" });
     }
     const audit = auditResult[0];
+
+    // 🔍 Fetch related tables
     const [structuralChanges] = await db.execute(`SELECT * FROM StructuralChanges WHERE audit_id = ?`, [auditId]);
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
     const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
-    res.json({
-      audit,
-      structuralChanges,
-      observations,
-      immediateConcerns,
-      ndtTests,
-    });
+    const [auditDrawings] = await db.execute(`SELECT * FROM AuditDrawings WHERE audit_id = ?`, [auditId]);
+
+    // 🔹 Return full audit details
+    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, auditDrawings });
   } catch (error) {
-    console.error("Error fetching full audit details:", error);
-    res.status(500).json({ message: "Failed to fetch full audit details" });
+    console.error("Error fetching audit details:", error);
+    res.status(500).json({ message: "Failed to fetch audit details" });
   }
 });
 
@@ -913,11 +943,15 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.text(`Date of Audit: ${audit.date_of_audit}`);
     doc.text(`Area of Building: ${audit.area}`);
     doc.text(`Type of Structure: ${audit.structure_type}`);
+    doc.text(`Type of Cement: ${audit.cement_type}`);
+    doc.text(`Type of Steel: ${audit.steel_type}`);
     doc.text(`Number of Stories: ${audit.number_of_stories}`);
     doc.text(`Use of Building:`);
     doc.text(`  - Designed Use: ${audit.designed_use}`);
     doc.text(`  - Present Use: ${audit.present_use}`);
-    doc.text(`  - Changes in Use: ${audit.changes_in_use}`);
+    doc.text(`  - Changes in Building: ${audit.changes_in_building}`);
+    doc.text(`  - Distress Year: ${audit.distress_year}`);
+    doc.text(`  - Distress Nature: ${audit.distress_nature}`);
     doc.moveDown();
 
     // 📌 Introduction (Page 3)
@@ -934,12 +968,12 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     if (structuralChanges.length > 0) {
       doc.fontSize(16).text("Background History", { underline: true });
       structuralChanges.forEach((change) => {
-        doc.fontSize(12).text(`- Date of Change: ${change.change_date}`);
+        doc.fontSize(12).text(`- Brief Background History: ${change.brief_background_history}`);
+        doc.fontSize(12).text(`- Date of Change: ${change.date_of_change}`);
         doc.text(`  Details: ${change.change_details}`);
-        doc.text(`  Repair Year: ${change.repair_year}`);
-        doc.text(`  Repair Type: ${change.repair_type}`);
-        doc.text(`  Repair Efficacy: ${change.repair_efficacy}`);
-        doc.text(`  Repair Cost: ${change.repair_cost}`);
+        doc.text(`  Conclusion From Previous Report: ${change.conclusion_from_previous_report}`);
+        doc.text(`  Scope Of Work: ${change.scope_of_work}`);
+        doc.text(`  Purpose Of investigation: ${change.purpose_of_investigation}`);
         doc.moveDown();
       });
     }
@@ -948,7 +982,24 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     if (observations.length > 0) {
       doc.fontSize(16).text("Visual Observations", { underline: true });
       observations.forEach((obs) => {
-        doc.fontSize(12).text(`- ${obs.description}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.unexpected_load}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.unapproved_changes}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.additional_floor}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.vegetation_growth}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.leakage}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_beams}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_columns}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.cracks_flooring}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.floor_sagging}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.bulging_walls}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.window_problems}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.heaving_floor}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.concrete_texture}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.algae_growth}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_description}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_location}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_cause}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.damage_classification}`);
       });
       doc.moveDown();
     }
@@ -957,9 +1008,16 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     if (ndtTests.length > 0) {
       doc.fontSize(16).text("Non-Destructive Testing (NDT) Results", { underline: true });
       ndtTests.forEach((ndt) => {
-        doc.fontSize(12).text(`- Test Type: ${ndt.test_type}`);
-        doc.text(`  Results: ${ndt.test_results}`);
-        doc.text(`  Conclusion: ${ndt.conclusion}`);
+        doc.fontSize(12).text(`- Round Hammer Test: ${ndt.rebound_hammer_test}`);
+        doc.text(`  Ultersonic Test: ${ndt.ultrasonic_test}`);
+        doc.text(`  Core Sampling Test: ${ndt.core_sampling_test}`);
+        doc.text(`  Carbonation Test: ${ndt.carbonation_test}`);
+        doc.text(`  Chloride Test: ${ndt.chloride_test}`);
+        doc.text(`  Sulfate Test: ${ndt.sulfate_test}`);
+        doc.text(`  Half Cell Potential Test: ${ndt.half_cell_potential_test}`);
+        doc.text(`  Concrete Cover Test: ${ndt.concrete_cover_test}`);
+        doc.text(`  Rebar Diameter Test: ${ndt.rebar_diameter_test}`);
+        doc.text(`  Crushing Strength Test: ${ndt.crushing_strength_test}`);
         doc.moveDown();
       });
     }

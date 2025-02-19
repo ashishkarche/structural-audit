@@ -1,4 +1,4 @@
-/* static/AuditProgress.css */
+/* Base Styles */
 .audit-progress-container {
   margin-bottom: 2rem;
   padding: 1rem;
@@ -12,8 +12,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
+/* Step Styles */
 .step {
   display: flex;
   flex-direction: column;
@@ -30,14 +32,15 @@
 }
 
 .step-number {
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background-color: #e9ecef;
   margin-bottom: 0.5rem;
+  font-size: 1rem;
 }
 
 .step.active .step-number {
@@ -45,23 +48,40 @@
   color: white;
 }
 
-/* Responsive Styles for small devices */
+/* Medium Screens: Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+  .progress-steps {
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .step {
+    font-size: 0.85rem;
+  }
+
+  .step-number {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Small Screens: Mobile (600px and below) */
 @media (max-width: 600px) {
   .progress-steps {
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
   }
-  
+
   .step {
     font-size: 0.8rem;
-    flex: 1 1 45%; /* Allow steps to wrap into two columns */
-    margin-bottom: 0.5rem;
+    width: 100%;
+    text-align: center;
   }
-  
+
   .step-number {
-    width: 25px;
-    height: 25px;
+    width: 28px;
+    height: 28px;
     font-size: 0.8rem;
   }
 }

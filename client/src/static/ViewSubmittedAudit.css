@@ -100,6 +100,32 @@ h2, h3 {
   white-space: nowrap;
 }
 
+/* Modal for Image & PDF */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+}
+
+.modal iframe {
+  width: 90%;
+  height: 80%;
+  background: white;
+  border-radius: 8px;
+}
+
 /* Table Cells */
 .audit-table td {
   padding: 12px;
