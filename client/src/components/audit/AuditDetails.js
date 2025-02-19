@@ -33,7 +33,7 @@ function AuditDetails() {
     <div className="audit-details-container">
       <div className="audit-details-header">
         <button className="back-btn" onClick={() => navigate('/view-audits')}>
-          <FaArrowLeft /> Back
+          <FaArrowLeft /> View in Audits
         </button>
         <h2>Audit Details</h2>
       </div>

@@ -1,148 +1,172 @@
-/* Structural Changes Page - Unique Styles */
+/* Structural Changes Page - Modern Aesthetic */
+
 .structural-changes-page-container {
+  max-width: 800px;
   margin: 40px auto;
-  padding: 20px;
-  font-family: "Poppins", sans-serif;
-  animation: fadeIn 0.5s ease-in-out;
-  max-width: 1200px; /* Maximum width for large screens */
+  padding: 25px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: "Inter", sans-serif;
+  transition: all 0.3s ease-in-out;
 }
 
 .structural-changes-page-title {
+  font-size: 26px;
+  font-weight: 700;
   text-align: center;
-  font-size: 2rem;
-  font-weight: bold;
   color: #333;
   margin-bottom: 20px;
 }
 
-/* Error Message */
 .structural-changes-error-message {
   color: #d9534f;
-  background: #f8d7da;
+  text-align: center;
+  font-weight: bold;
   padding: 10px;
   border-radius: 6px;
-  text-align: center;
-  font-size: 0.875rem;
+  background: #ffe6e6;
+  margin-bottom: 15px;
 }
 
-/* Form Styling */
 .structural-changes-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 18px;
 }
 
-/* Form Groups */
-.structural-changes-form-group {
+.form-group {
   display: flex;
   flex-direction: column;
+  gap: 6px;
 }
 
-/* Labels */
-.structural-changes-form-group label {
+.form-group label {
+  font-size: 16px;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 5px;
+  color: #444;
 }
 
-/* Input Fields */
-.structural-changes-form-group input,
-.structural-changes-form-group textarea {
-  width: 100%;
+.form-group input,
+.form-group textarea,
+.form-group select {
   padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease;
+  background: #f9f9f9;
 }
 
-.structural-changes-form-group input:focus,
-.structural-changes-form-group textarea:focus {
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
   border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+  background: #fff;
+  outline: none;
 }
 
-/* Textarea */
-.structural-changes-form-group textarea {
-  height: 100px;
-  resize: none;
+textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
-/* File Input */
-.structural-changes-form-group input[type="file"] {
-  padding: 8px;
+/* Custom Radio Buttons */
+.radio-group {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.radio-group input[type="radio"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #007bff;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  display: inline-block;
+  position: relative;
+}
+
+.radio-group input[type="radio"]:checked {
+  background-color: #007bff;
+  border: 2px solid #007bff;
+}
+
+.radio-group input[type="radio"]:checked::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* File Upload */
+input[type="file"] {
+  padding: 10px;
+  border: none;
+  background: #f9f9f9;
+  border-radius: 6px;
 }
 
 /* Submit Button */
 .structural-changes-submit-btn {
+  padding: 14px;
   background: #007bff;
   color: white;
-  padding: 12px 20px;
   font-size: 16px;
+  font-weight: 700;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  text-align: center;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .structural-changes-submit-btn:hover {
   background: #0056b3;
-  transform: scale(1.05);
+}
+
+.structural-changes-submit-btn:active {
+  transform: scale(0.97);
 }
 
 /* Responsive Design */
-
-/* Large Desktops (min-width: 1025px) */
-@media (min-width: 1025px) {
+@media (max-width: 768px) {
   .structural-changes-page-container {
-    width: 60%;
-    padding: 30px;
+    max-width: 95%;
+    padding: 20px;
   }
-  .structural-changes-page-title {
-    font-size: 2.5rem;
-  }
-  .structural-changes-submit-btn {
-    font-size: 18px;
+
+  .radio-group {
+    flex-direction: column;
+    gap: 10px;
   }
 }
 
-/* Tablets (min-width: 768px and max-width: 1024px) */
-@media (min-width: 768px) and (max-width: 1024px) {
-  .structural-changes-page-container {
-    width: 80%;
-    padding: 25px;
-  }
+@media (max-width: 480px) {
   .structural-changes-page-title {
-    font-size: 2rem;
+    font-size: 22px;
   }
-  .structural-changes-submit-btn {
-    font-size: 16px;
-  }
-}
 
-/* Mobile Devices (max-width: 767px) */
-@media (max-width: 767px) {
-  .structural-changes-page-container {
-    width: 90%;
-    padding: 15px;
-  }
-  .structural-changes-page-title {
-    font-size: 1.75rem;
-  }
   .structural-changes-submit-btn {
-    width: 100%;
-  }
-}
-
-/* Fade In Animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+    font-size: 14px;
+    padding: 12px;
   }
 }

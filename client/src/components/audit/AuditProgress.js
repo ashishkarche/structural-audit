@@ -4,6 +4,7 @@ import { NavLink, useParams } from "react-router-dom";
 import '../../static/AuditProgress.css';
 
 const steps = [
+  { path: "upload-drawings", label: "Upload Drawings" },
   { path: "structural-changes", label: "Structural Changes" },
   { path: "observations", label: "Observations" },
   { path: "immediate-concern", label: "Immediate Concern" },

@@ -19,8 +19,6 @@ function SubmitAudit() {
     changesInBuilding: "",
     distressYear: "",
     distressNature: "",
-    architecturalDrawing: null,
-    structuralDrawing: null,
   });
 
   const [error, setError] = useState("");
@@ -29,30 +27,30 @@ function SubmitAudit() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     const token = localStorage.getItem("token");
-    const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } };
-
-    const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (key === "dateOfAudit" && formData[key]) {
-        const formattedDate = new Date(formData[key]).toISOString().split("T")[0];
-        formDataToSend.append(key, formattedDate);
-      } else if (key === "distressYear" && formData[key]) {
-        const yearOnly = new Date(formData[key]).getFullYear();
-        formDataToSend.append(key, yearOnly);
-      } else {
-        formDataToSend.append(key, formData[key]);
-      }
-    });
-
+    const config = { 
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      } 
+    };
+  
+    const formattedData = {
+      ...formData,
+      dateOfAudit: formData.dateOfAudit ? new Date(formData.dateOfAudit).toISOString().split("T")[0] : "",
+      distressYear: formData.distressYear ? parseInt(formData.distressYear, 10) : null
+    };
+  
     try {
-      const response = await axios.post("https://structural-audit.vercel.app/submit-audit", formDataToSend, config);
-      navigate(`/audit/${response.data.auditId}/structural-changes`);
+      const response = await axios.post("https://structural-audit.vercel.app/submit-audit", formattedData, config);
+      navigate(`/audit/${response.data.auditId}/upload-drawings`);
     } catch (err) {
-      setError("Failed to submit audit. Please try again.");
+      console.error("Audit Submission Error:", err.response?.data || err);
+      setError(err.response?.data?.message || "Failed to submit audit. Please try again.");
     }
   };
+  
 
   return (
     <div className="submit-audit-container">
@@ -91,19 +89,6 @@ function SubmitAudit() {
           ))}
 
           {/* File Upload Fields */}
-          {[
-            { key: "architecturalDrawing", label: "Architectural Drawing (PDF)" },
-            { key: "structuralDrawing", label: "Structural Drawing (PDF)" },
-          ].map(({ key, label }) => (
-            <div className="form-group" key={key}>
-              <label>{label}</label>
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setFormData({ ...formData, [key]: e.target.files[0] })}
-              />
-            </div>
-          ))}
         </div>
 
         {/* Submit Button */}

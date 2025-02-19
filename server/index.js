@@ -181,93 +181,147 @@ app.get('/api/audits/recent', authenticate, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch recent audits' });
   }
 });
+
 // ------------------------------
 // Audit Endpoints
 // ------------------------------
 // Submit audit report
-app.post(
-  "/submit-audit",
-  authenticate,
-  upload.fields([{ name: "architecturalDrawing" }, { name: "structuralDrawing" }]),
-  async (req, res) => {
-    try {
-      const {
-        name,
-        location,
-        yearOfConstruction,
-        dateOfAudit,
-        area,
-        structureType,
-        cementType,
-        steelType,
-        numberOfStories,
-        designedUse,
-        presentUse,
-        changesInBuilding,
-        distressYear,
-        distressNature,
-      } = req.body;
+app.post("/submit-audit", authenticate, async (req, res) => {
+  try {
+    const {
+      name,
+      location,
+      yearOfConstruction,
+      dateOfAudit,
+      area,
+      structureType,
+      cementType,
+      steelType,
+      numberOfStories,
+      designedUse,
+      presentUse,
+      changesInBuilding,
+      distressYear,
+      distressNature,
+    } = req.body;
 
-      // Extract file names if files are uploaded
-      const architecturalDrawing = req.files["architecturalDrawing"]
-        ? req.files["architecturalDrawing"][0].originalname
-        : null;
-      const structuralDrawing = req.files["structuralDrawing"]
-        ? req.files["structuralDrawing"][0].originalname
-        : null;
-
-      // Function to format date
-      const formatDate = (date) => (date ? new Date(date).toISOString().split("T")[0] : null);
-      const formattedDate = formatDate(dateOfAudit);
-      const formattedDistressYear = distressYear ? parseInt(distressYear, 10) : null;
-
-      if (!formattedDate) {
-        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
-      }
-
-      // Insert audit into database
-      const sql = `
-        INSERT INTO Audits (
-          auditor_id, name, location, year_of_construction, date_of_audit, area, structure_type,
-          cement_type, steel_type, number_of_stories, designed_use, present_use, changes_in_building,
-          distress_year, distress_nature, architectural_drawing, structural_drawing
-        ) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-
-      const [result] = await db.execute(sql, [
-        req.user.id,
-        name,
-        location,
-        yearOfConstruction,
-        formattedDate,
-        area,
-        structureType,
-        cementType,
-        steelType,
-        numberOfStories,
-        designedUse,
-        presentUse,
-        changesInBuilding,
-        formattedDistressYear,
-        distressNature,
-        architecturalDrawing,
-        structuralDrawing,
-      ]);
-
-      // Log audit history
-      await logAuditHistory(result.insertId, "Audit submitted", req.user.id);
-
-      // 🔥 Log a notification
-      await createNotification(req.user.id, `Audit "${name}" has been Submitted.`, "success");
-
-      res.json({ message: "Audit submitted successfully", auditId: result.insertId });
-    } catch (error) {
-      console.error("Error submitting audit:", error);
-      res.status(500).json({ message: "Failed to submit audit" });
+    // Ensure required fields are provided
+    if (!name || !location || !yearOfConstruction || !dateOfAudit || !area || !structureType || !cementType || !steelType || !numberOfStories || !designedUse || !presentUse) {
+      return res.status(400).json({ message: "Missing required fields. Please fill in all necessary details." });
     }
+
+    // Function to safely format dates
+    const formatDate = (date) => {
+      const parsedDate = new Date(date);
+      return isNaN(parsedDate) ? null : parsedDate.toISOString().split("T")[0];
+    };
+
+    // Format dates
+    const formattedDate = formatDate(dateOfAudit);
+    const formattedDistressYear = distressYear ? parseInt(distressYear, 10) : null;
+
+    if (!formattedDate) {
+      return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    }
+
+    // Insert audit into database WITHOUT file uploads
+    const sql = `
+    INSERT INTO Audits (
+    auditor_id, name, location, year_of_construction, date_of_audit, area, structure_type,
+    cement_type, steel_type, number_of_stories, designed_use, present_use, changes_in_building,
+    distress_year, distress_nature ) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+    `;
+
+    const [result] = await db.execute(sql, [
+      req.user.id,
+      name.trim(),
+      location.trim(),
+      parseInt(yearOfConstruction, 10),
+      formattedDate,
+      parseFloat(area),
+      structureType.trim(),
+      cementType.trim(),
+      steelType.trim(),
+      parseInt(numberOfStories, 10),
+      designedUse.trim(),
+      presentUse.trim(),
+      changesInBuilding ? changesInBuilding.trim() : null,
+      formattedDistressYear,
+      distressNature ? distressNature.trim() : null,
+    ]);
+
+    // Log audit history
+    await logAuditHistory(result.insertId, "Audit submitted", req.user.id);
+
+    // Log a notification
+    await createNotification(req.user.id, `Audit "${name}" has been submitted.`, "success");
+
+    res.json({ message: "Audit submitted successfully", auditId: result.insertId });
+  } catch (error) {
+    console.error("Error submitting audit:", error);
+    res.status(500).json({ message: "Failed to submit audit. Please try again later." });
   }
-);
+});
+
+
+app.post("/api/upload-drawings", authenticate, upload.fields([
+  { name: "architecturalDrawing", maxCount: 1 },
+  { name: "structuralDrawing", maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { auditId } = req.body;
+
+    if (!auditId || !req.files) {
+      return res.status(400).json({ message: "Audit ID and files are required" });
+    }
+
+    // Check if files exist
+    const files = {};
+    if (req.files["architecturalDrawing"]) {
+      files.architecturalDrawing = req.files["architecturalDrawing"][0].originalname;
+    }
+    if (req.files["structuralDrawing"]) {
+      files.structuralDrawing = req.files["structuralDrawing"][0].originalname;
+    }
+
+    // Insert file metadata into DB
+    const sql = `INSERT INTO AuditDrawings (audit_id, auditor_id, drawing_type, file_name) VALUES ?`;
+    const values = Object.keys(files).map((key) => [auditId, req.user.id, key, files[key]]);
+
+    await db.query(sql, [values]);
+
+    res.json({
+      message: "Drawings uploaded successfully",
+      uploadedFiles: files,
+    });
+  } catch (error) {
+    console.error("Error uploading drawings:", error);
+    res.status(500).json({ message: "Failed to upload drawings" });
+  }
+});
+
+
+app.get("/audit/:auditId/drawings", authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+
+    const sql = `
+      SELECT drawing_type, file_path, uploaded_at
+      FROM AuditDrawings
+      WHERE audit_id = ?
+    `;
+
+    const [drawings] = await db.execute(sql, [auditId]);
+
+    res.json(drawings);
+  } catch (error) {
+    console.error("Error fetching drawings:", error);
+    res.status(500).json({ message: "Failed to retrieve drawings" });
+  }
+});
+
 
 app.get('/api/audits/:id', authenticate, async (req, res) => {
   try {
@@ -400,9 +454,11 @@ app.post(
     try {
       const { auditId } = req.params;
       let {
-        briefBackgroundHistory, // ✅ Added missing field
+        briefBackgroundHistory,
         dateOfChange,
         changeDetails,
+        previousInvestigationDone, // ✅ Yes/No field
+        repairDone, // ✅ Yes/No field
         repairYear,
         repairType,
         repairEfficacy,
@@ -412,16 +468,21 @@ app.post(
         purposeOfInvestigation
       } = req.body;
 
-      // 🛠️ Convert repairYear from YYYY-MM-DD to just YYYY
-      repairYear = repairYear ? new Date(repairYear).getFullYear() : null;
+      // 🛠️ Convert "Yes"/"No" to boolean values (1 for Yes, 0 for No)
+      previousInvestigationDone = previousInvestigationDone === "Yes" ? 1 : 0;
+      repairDone = repairDone === "Yes" ? 1 : 0;
+
+      // 🛠️ Convert empty date to NULL
+      dateOfChange = dateOfChange && dateOfChange.trim() !== "" ? dateOfChange : null;
+      repairYear = repairYear && repairYear.trim() !== "" ? new Date(repairYear).getFullYear() : null;
 
       // 🛠️ Handle File Uploads
-      const previousInvestigations = req.files["previousInvestigations"] 
-        ? req.files["previousInvestigations"][0].originalname 
+      const previousInvestigations = req.files["previousInvestigations"]
+        ? req.files["previousInvestigations"][0].originalname
         : null;
 
-      const previousInvestigationReports = req.files["previousInvestigationReports"] 
-        ? req.files["previousInvestigationReports"][0].originalname 
+      const previousInvestigationReports = req.files["previousInvestigationReports"]
+        ? req.files["previousInvestigationReports"][0].originalname
         : null;
 
       // ✅ Insert into DB with all required fields
@@ -431,8 +492,10 @@ app.post(
           brief_background_history, 
           date_of_change, 
           change_details, 
+          previous_investigation_done, 
           previous_investigations, 
           previous_investigation_reports, 
+          repair_done, 
           repair_year, 
           repair_type, 
           repair_efficacy, 
@@ -440,22 +503,24 @@ app.post(
           conclusion_from_previous_report, 
           scope_of_work, 
           purpose_of_investigation
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       await db.execute(sql, [
-        auditId, 
-        briefBackgroundHistory, 
-        dateOfChange, 
-        changeDetails, 
-        previousInvestigations, 
-        previousInvestigationReports, 
-        repairYear, 
-        repairType, 
-        repairEfficacy, 
-        repairCost, 
-        conclusionFromPreviousReport, 
-        scopeOfWork, 
+        auditId,
+        briefBackgroundHistory,
+        dateOfChange,
+        changeDetails,
+        previousInvestigationDone,
+        previousInvestigations,
+        previousInvestigationReports,
+        repairDone,
+        repairYear,
+        repairType,
+        repairEfficacy,
+        repairCost,
+        conclusionFromPreviousReport,
+        scopeOfWork,
         purposeOfInvestigation
       ]);
 
@@ -465,6 +530,12 @@ app.post(
 
     } catch (error) {
       console.error("Error submitting structural changes:", error);
+
+      // 🔴 Specific Error Handling
+      if (error.code === "ER_TRUNCATED_WRONG_VALUE") {
+        return res.status(400).json({ message: "Invalid data format. Please check input values." });
+      }
+
       res.status(500).json({ message: "Failed to submit structural changes" });
     }
   }
@@ -487,110 +558,201 @@ app.get('/api/audits/:auditId/history', authenticate, async (req, res) => {
   }
 });
 
-// Insert into Audit History
-
-
-app.post("/api/observations/:auditId", authenticate, upload.array("damagePhotos", 5), async (req, res) => {
+// Fetch Structural Changes for a given auditId
+app.get('/api/structural-changes/:auditId', authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
-    let {
-      unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage,
-      cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls,
-      windowProblems, heavingFloor, concreteTexture, algaeGrowth,
-      damageDescription, damageLocation, damageCause, damageClassification
-    } = req.body;
 
-    // Convert boolean values to 0 or 1
-    const toBoolean = (value) => (value === "true" || value === true ? 1 : 0);
+    // Query the database to fetch structural changes for the given auditId
+    const [result] = await db.execute(
+      `SELECT * FROM StructuralChanges WHERE audit_id = ?`,
+      [auditId]
+    );
 
-    unexpectedLoad = toBoolean(unexpectedLoad);
-    unapprovedChanges = toBoolean(unapprovedChanges);
-    additionalFloor = toBoolean(additionalFloor);
-    vegetationGrowth = toBoolean(vegetationGrowth);
-    leakage = toBoolean(leakage);
-    cracksBeams = toBoolean(cracksBeams);
-    cracksColumns = toBoolean(cracksColumns);
-    cracksFlooring = toBoolean(cracksFlooring);
-    floorSagging = toBoolean(floorSagging);
-    bulgingWalls = toBoolean(bulgingWalls);
-    windowProblems = toBoolean(windowProblems);
-    heavingFloor = toBoolean(heavingFloor);
-    algaeGrowth = toBoolean(algaeGrowth);
-
-    // Extract only the classification code (e.g., "Class 4" instead of "Class 4 - Major Repair")
-    if (damageClassification) {
-      damageClassification = damageClassification.split(" - ")[0];
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No structural changes found for this audit." });
     }
 
-    // Handle multiple file uploads (damage photos)
-    const damagePhotos = req.files ? req.files.map(file => file.originalname).join(",") : null;
-
-    // Insert into the database
-    const sql = `
-      INSERT INTO Observations (
-        audit_id, unexpected_load, unapproved_changes, additional_floor,
-        vegetation_growth, leakage, cracks_beams, cracks_columns, cracks_flooring,
-        floor_sagging, bulging_walls, window_problems, heaving_floor, concrete_texture,
-        algae_growth, damage_description, damage_location, damage_cause, damage_classification, damage_photos
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    await db.execute(sql, [
-      auditId, unexpectedLoad, unapprovedChanges, additionalFloor,
-      vegetationGrowth, leakage, cracksBeams, cracksColumns, cracksFlooring,
-      floorSagging, bulgingWalls, windowProblems, heavingFloor, concreteTexture,
-      algaeGrowth, damageDescription, damageLocation, damageCause, damageClassification, damagePhotos
-    ]);
-
-    await logAuditHistory(auditId, "Observations submitted", req.user.id);
-
-    res.json({ message: "Observations submitted successfully" });
+    res.json(result[0]);  // Return the first record, assuming there is only one structural change record per auditId
   } catch (error) {
-    console.error("Error submitting observations:", error);
-    res.status(500).json({ message: "Failed to submit observations" });
+    console.error("Error fetching structural changes:", error);
+    res.status(500).json({ message: "Failed to fetch structural changes" });
   }
 });
 
+// Insert into Audit History
 
+app.post(
+  "/api/observations/:auditId",
+  authenticate,
+  upload.array("damagePhotos", 5),
+  async (req, res) => {
+    try {
+      const { auditId } = req.params;
+      let {
+        unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage,
+        cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls,
+        windowProblems, heavingFloor, concreteTexture, algaeGrowth,
+        damageDescription, damageLocation, damageCause, damageClassification
+      } = req.body;
+
+      // ✅ Convert "Yes"/"No" responses to boolean (1 or 0)
+      const toBoolean = (value) => (value === "Yes" ? 1 : 0);
+
+      unexpectedLoad = toBoolean(unexpectedLoad);
+      unapprovedChanges = toBoolean(unapprovedChanges);
+      additionalFloor = toBoolean(additionalFloor);
+      vegetationGrowth = toBoolean(vegetationGrowth);
+      leakage = toBoolean(leakage);
+      cracksBeams = toBoolean(cracksBeams);
+      cracksColumns = toBoolean(cracksColumns);
+      cracksFlooring = toBoolean(cracksFlooring);
+      floorSagging = toBoolean(floorSagging);
+      bulgingWalls = toBoolean(bulgingWalls);
+      windowProblems = toBoolean(windowProblems);
+      heavingFloor = toBoolean(heavingFloor);
+      algaeGrowth = toBoolean(algaeGrowth);
+
+      // ✅ Validate required fields
+      if (!auditId) {
+        return res.status(400).json({ message: "Audit ID is required." });
+      }
+      if (!damageDescription || !damageLocation || !damageCause || !damageClassification) {
+        return res.status(400).json({ message: "All damage details are required." });
+      }
+
+      // ✅ Extract damage classification (e.g., "Class 4" instead of "Class 4 - Major Repair")
+      if (damageClassification) {
+        damageClassification = damageClassification.split(" - ")[0];
+      }
+
+      // ✅ Handle file uploads (damage photos)
+      const damagePhotos = req.files ? req.files.map(file => file.filename).join(",") : null;
+
+      // ✅ Insert data into the database
+      const sql = `
+        INSERT INTO Observations (
+          audit_id, unexpected_load, unapproved_changes, additional_floor,
+          vegetation_growth, leakage, cracks_beams, cracks_columns, cracks_flooring,
+          floor_sagging, bulging_walls, window_problems, heaving_floor, concrete_texture,
+          algae_growth, damage_description, damage_location, damage_cause, damage_classification, damage_photos
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      await db.execute(sql, [
+        auditId, unexpectedLoad, unapprovedChanges, additionalFloor,
+        vegetationGrowth, leakage, cracksBeams, cracksColumns, cracksFlooring,
+        floorSagging, bulgingWalls, windowProblems, heavingFloor, concreteTexture,
+        algaeGrowth, damageDescription, damageLocation, damageCause, damageClassification, damagePhotos
+      ]);
+
+      // ✅ Log audit history
+      await logAuditHistory(auditId, "Observations submitted", req.user.id);
+
+      res.json({ message: "Observations submitted successfully." });
+    } catch (error) {
+      console.error("Error submitting observations:", error);
+      res.status(500).json({ message: "Failed to submit observations" });
+    }
+  }
+);
+
+app.get("/api/observations/:auditId", authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+
+    // Fetch the observations from the database for the given auditId
+    const sql = `
+      SELECT * FROM Observations WHERE audit_id = ?
+    `;
+
+    const [rows] = await db.execute(sql, [auditId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Observations not found for this audit." });
+    }
+
+    // Format the response data
+    const observation = rows[0];
+    const responseData = {
+      unexpectedLoad: observation.unexpected_load,
+      unapprovedChanges: observation.unapproved_changes,
+      additionalFloor: observation.additional_floor,
+      vegetationGrowth: observation.vegetation_growth,
+      leakage: observation.leakage,
+      cracksBeams: observation.cracks_beams,
+      cracksColumns: observation.cracks_columns,
+      cracksFlooring: observation.cracks_flooring,
+      floorSagging: observation.floor_sagging,
+      bulgingWalls: observation.bulging_walls,
+      windowProblems: observation.window_problems,
+      heavingFloor: observation.heaving_floor,
+      concreteTexture: observation.concrete_texture,
+      algaeGrowth: observation.algae_growth,
+      damageDescription: observation.damage_description,
+      damageLocation: observation.damage_location,
+      damageCause: observation.damage_cause,
+      damageClassification: observation.damage_classification,
+      damagePhotos: observation.damage_photos ? observation.damage_photos.split(",") : [],
+    };
+
+    res.json(responseData);
+  } catch (error) {
+    console.error("Error fetching observations:", error);
+    res.status(500).json({ message: "Failed to fetch observations" });
+  }
+});
 
 app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (req, res) => {
   try {
     const { auditId } = req.params;
     const {
-      reboundHammerTest, reboundGrading, ultrasonicTest, ultrasonicGrading,
-      coreSamplingTest, carbonationTest, chlorideTest, sulfateTest,
-      halfCellPotentialTest, concreteCoverRequired, concreteCoverMeasured,
-      rebarDiameterReduction, crushingStrength
+      reboundHammerTest, ultrasonicTest, coreSamplingTest, carbonationTest, chlorideTest, sulfateTest,
+      halfCellPotentialTest, concreteCoverTest, rebarDiameterTest, crushingStrengthTest,
+      concreteCoverRequired, concreteCoverMeasured, rebarDiameterReduction, crushingStrength
     } = req.body;
 
-    const ndtPhoto = req.file ? req.file.originalname : null;
+    // Replace undefined or empty values with null
+    const safeValue = (value) => (value !== undefined && value !== "" ? value : null);
 
-    // Fix: Ensure `ndtPhoto` is only included when it's uploaded
+    // Get the uploaded photo filename
+    const ndtPhoto = req.file ? req.file.filename : null;
+
+    // Ensure only valid fields are inserted into SQL
     const sql = `INSERT INTO NDTTests (
-                    audit_id, rebound_hammer_test, rebound_grading, ultrasonic_test, ultrasonic_grading, 
-                    core_sampling_test, carbonation_test, chloride_test, sulfate_test, 
-                    half_cell_potential_test, concrete_cover_required, concrete_cover_measured, 
-                    rebar_diameter_reduction, crushing_strength ${ndtPhoto ? ", ndt_photo" : ""}
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ${ndtPhoto ? ", ?" : ""})`;
+                    audit_id, rebound_hammer_test, ultrasonic_test, core_sampling_test, carbonation_test, 
+                    chloride_test, sulfate_test, half_cell_potential_test, concrete_cover_test, 
+                    rebar_diameter_test, crushing_strength_test, concrete_cover_required, 
+                    concrete_cover_measured, rebar_diameter_reduction, crushing_strength
+                    ${ndtPhoto ? ", ndt_photo" : ""}
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    ${ndtPhoto ? ", ?" : ""})`;
 
+    // Parameters list matching the exact columns
     const params = [
-      auditId, reboundHammerTest, reboundGrading, ultrasonicTest, ultrasonicGrading,
-      coreSamplingTest, carbonationTest, chlorideTest, sulfateTest,
-      halfCellPotentialTest, concreteCoverRequired, concreteCoverMeasured,
-      rebarDiameterReduction, crushingStrength
+      auditId,
+      safeValue(reboundHammerTest), safeValue(ultrasonicTest), safeValue(coreSamplingTest),
+      safeValue(carbonationTest), safeValue(chlorideTest), safeValue(sulfateTest),
+      safeValue(halfCellPotentialTest), safeValue(concreteCoverTest), safeValue(rebarDiameterTest),
+      safeValue(crushingStrengthTest), safeValue(concreteCoverRequired), safeValue(concreteCoverMeasured),
+      safeValue(rebarDiameterReduction), safeValue(crushingStrength)
     ];
 
     if (ndtPhoto) {
       params.push(ndtPhoto);
     }
 
+    // Execute the SQL query
     await db.execute(sql, params);
+
+    // Log the audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "NDT results submitted successfully" });
+
   } catch (error) {
     console.error("Error submitting NDT results:", error);
-    res.status(500).json({ message: "Failed to submit NDT results" });
+    res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });
 
@@ -864,7 +1026,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     });
 
     doc.end();
-    
+
   } catch (error) {
     console.error("Error generating report:", error);
     res.status(500).json({ message: "Failed to generate report" });

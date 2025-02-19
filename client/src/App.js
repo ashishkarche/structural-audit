@@ -24,6 +24,7 @@ const MainLayout = lazy(() => import("./components/layouts/MainLayout"));
 const AuditHistory = lazy(() => import("./components/audit/AuditHistory"));
 const ReportPage = lazy(() => import("./components/pages/ReportPage"));
 const ConclusionPage = lazy(() => import("./components/audit/ConclusionPage"));
+const UploadDrawings = lazy(() => import("./components/pages/UploadDrawings"));
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
@@ -61,7 +62,8 @@ function App() {
               <Route path="/reports" element={<ReportPage />} />
               {/* Audit-Specific Routes */}
               <Route path="audit/:auditId/*" element={<AuditLayout />}>
-                <Route index element={<Navigate to="structural-changes" replace />} />
+                <Route index element={<Navigate to="upload-drawings" replace />} />
+                <Route path="upload-drawings" element={<UploadDrawings />} />
                 <Route path="structural-changes" element={<StructuralChangesPage />} />
                 <Route path="observations" element={<Observations />} />
                 <Route path="immediate-concern" element={<ImmediateConcern />} />
