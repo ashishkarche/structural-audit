@@ -12,19 +12,31 @@ const SulfateTest = ({ formData, setFormData }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Determine Deterioration Risk based on Sulfate Content
+  // Determine Deterioration Risk based on Sulfate Content (As per IS 12330:1988)
   const determineDeteriorationRisk = (sulfate) => {
     if (!sulfate) return "";
-    if (sulfate > 0.25) return "High Risk - Immediate Sulfate-Resistant Measures Needed";
-    if (sulfate >= 0.1) return "Moderate Risk - Use Sulfate-Resistant Cement & Coatings";
-    return "Low Risk - No Immediate Action Needed";
+    if (sulfate >= 0.1) return "High Risk";
+    return "Low Risk";
   };
 
-  const deteriorationRisk = determineDeteriorationRisk(parseFloat(formData.sulfateContent));
+  // Generate Recommendations based on Sulfate Risk
+  const generateRecommendation = (sulfate) => {
+    if (!sulfate) return "";
+
+    if (sulfate >= 0.1) {
+      return "❌ High Risk: Use sulfate-resistant cement (SRC) as per IS 12330:1988. Reduce water-cement ratio, ensure proper curing, and apply protective coatings.";
+    }
+    return "✅ Low Risk: No immediate action required. Continue routine maintenance and monitoring.";
+  };
+
+  const sulfateContent = parseFloat(formData.sulfateContent);
+  const deteriorationRisk = determineDeteriorationRisk(sulfateContent);
+  const recommendation = generateRecommendation(sulfateContent);
 
   return (
     <div className="test-section">
       <h3>Sulfate Test</h3>
+
       <label>Perform Test?</label>
       <input type="radio" name="sulfateTest" value="yes" onChange={handleRadioChange} /> Yes
       <input type="radio" name="sulfateTest" value="no" onChange={handleRadioChange} /> No
@@ -34,8 +46,16 @@ const SulfateTest = ({ formData, setFormData }) => {
           <label>Sulfate Content (%):</label>
           <input type="number" name="sulfateContent" step="0.01" value={formData.sulfateContent || ""} onChange={handleChange} />
 
-          <label>Deterioration Risk & Recommendation:</label>
+          <label>Deterioration Risk:</label>
           <input type="text" value={deteriorationRisk} readOnly />
+
+          {/* ✅ Recommendation Box */}
+          {recommendation && (
+            <div className="recommendation-box">
+              <h4>Recommendation (As per IS 12330:1988):</h4>
+              <p>{recommendation}</p>
+            </div>
+          )}
         </>
       )}
     </div>
