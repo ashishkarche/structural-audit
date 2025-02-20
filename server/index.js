@@ -452,27 +452,37 @@ app.put('/api/audits/:id', authenticate, async (req, res) => {
 });
 
 
-// Delete audit
 app.delete('/api/audits/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      name
-    } = req.body;
 
+    // Fetch audit details before deletion
+    const [audit] = await db.execute(`SELECT name FROM Audits WHERE id = ? AND auditor_id = ?`, [id, req.user.id]);
+
+    if (audit.length === 0) {
+      return res.status(404).json({ message: "Audit not found or unauthorized" });
+    }
+
+    const auditName = audit[0].name; // Get the audit name
+
+    // Delete the audit
     const sql = `DELETE FROM Audits WHERE id = ? AND auditor_id = ?`;
     const [result] = await db.execute(sql, [id, req.user.id]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Audit not found or unauthorized" });
     }
+
     await logAuditHistory(id, "Audit Deleted", req.user.id);
-    await createNotification(req.user.id, `Audit "${name}" has been updated.`, "success");
+    await createNotification(req.user.id, `Audit "${auditName}" has been deleted.`, "success");
+
     res.json({ message: "Audit deleted successfully" });
   } catch (error) {
     console.error("Error deleting audit:", error);
     res.status(500).json({ message: "Failed to delete audit" });
   }
 });
+
 
 
 // ------------------------------
