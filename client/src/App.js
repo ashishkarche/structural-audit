@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Loader from "./components/dashboard/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TokenChecker from "./components/TokenChecker";
+
 // Lazy load components
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
@@ -32,6 +33,31 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => setShowLoader(false), 3000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // Disable Right-Click
+    document.addEventListener("contextmenu", (event) => event.preventDefault());
+
+    // Disable DevTools Shortcuts
+    const disableDevTools = (event) => {
+      if (
+        event.ctrlKey &&
+        (event.key === "u" || event.key === "U" || event.key === "i" || event.key === "I" || event.key === "j" || event.key === "J" || event.key === "c" || event.key === "C")
+      ) {
+        event.preventDefault();
+      }
+      if (event.key === "F12") {
+        event.preventDefault();
+      }
+    };
+    
+    document.addEventListener("keydown", disableDevTools);
+
+    return () => {
+      document.removeEventListener("contextmenu", (event) => event.preventDefault());
+      document.removeEventListener("keydown", disableDevTools);
+    };
   }, []);
 
   return (
