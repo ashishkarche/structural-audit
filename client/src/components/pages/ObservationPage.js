@@ -42,7 +42,7 @@ function ObservationPage() {
           setFormData(response.data);
         }
       } catch (err) {
-        setError("Failed to fetch data. Please try again.");
+        setError("No Observation changes found for this audit.");
       }
     };
 

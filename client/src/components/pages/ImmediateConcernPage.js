@@ -100,7 +100,7 @@ function ImmediateConcernPage() {
           onChange={handleChange}
         />
 
-        <button type="submit">Submit Concern</button>
+        <button type="submit">Save & Next</button>
       </form>
     </div>
   );
