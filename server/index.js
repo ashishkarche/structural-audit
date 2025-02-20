@@ -83,17 +83,25 @@ app.get("/", (req, res) => {
 // Register auditor
 app.post('/register', async (req, res) => {
   try {
-    const { name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, password } = req.body;
+    const { name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, password, termsAccepted } = req.body;
+
+    // Ensure terms are accepted
+    if (!termsAccepted) {
+      return res.status(400).json({ message: 'You must accept the terms and conditions' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = `INSERT INTO Auditors (name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email, password)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    await db.execute(sql, [name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, hashedPassword]);
+    const sql = `INSERT INTO Auditors (name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email, password, terms_accepted)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    await db.execute(sql, [name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, hashedPassword, termsAccepted]);
+
     res.status(201).json({ message: 'Auditor registered successfully' });
   } catch (error) {
     console.error('Error registering:', error);
     res.status(500).json({ message: 'Failed to register auditor' });
   }
 });
+
 
 // Login endpoint (generates token with expiration)
 app.post('/login', async (req, res) => {
