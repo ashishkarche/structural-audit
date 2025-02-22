@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const ConcreteCoverTest = ({ formData, setFormData }) => {
+const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      concrete_cover_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+    }));
   };
 
   const handleChange = (e) => {
@@ -45,6 +50,22 @@ const ConcreteCoverTest = ({ formData, setFormData }) => {
   const structuralRisk = determineStructuralRisk(parseFloat(coverDeficiency));
   const recommendation = generateRecommendation(parseFloat(coverDeficiency));
 
+  // ✅ Store test result as a JSON string
+  useEffect(() => {
+    if (showFields) {
+      setFormData((prev) => ({
+        ...prev,
+        concrete_cover_test: JSON.stringify({
+          required_cover: formData.concreteCoverRequired || "N/A",
+          measured_cover: formData.concreteCoverMeasured || "N/A",
+          cover_deficiency: coverDeficiency,
+          structural_risk: structuralRisk,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [coverDeficiency, structuralRisk, formData.concreteCoverRequired, formData.concreteCoverMeasured, showFields, setFormData]);
+
   return (
     <div className="test-section">
       <h3>Concrete Cover Test</h3>
@@ -66,6 +87,17 @@ const ConcreteCoverTest = ({ formData, setFormData }) => {
 
           <label>Structural Risk:</label>
           <input type="text" value={structuralRisk} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="concreteCoverImage" accept="image/*" onChange={handleImageChange} />
+
+          {imagePreviews.concreteCoverImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.concreteCoverImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
 
           {/* ✅ Recommendation Box */}
           {recommendation && (

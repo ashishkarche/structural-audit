@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const UltrasonicTest = ({ formData, setFormData }) => {
+const UltrasonicTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      ultrasonic_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+    }));
   };
 
   const handleChange = (e) => {
@@ -45,6 +50,20 @@ const UltrasonicTest = ({ formData, setFormData }) => {
   const concreteQuality = determineConcreteQuality(pulseVelocity);
   const recommendation = generateRecommendation(pulseVelocity);
 
+  // ✅ Store test result as a JSON string
+  useEffect(() => {
+    if (showFields) {
+      setFormData((prev) => ({
+        ...prev,
+        ultrasonic_test: JSON.stringify({
+          pulse_velocity: formData.ultrasonicVelocity || "N/A",
+          concrete_quality: concreteQuality,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [pulseVelocity, concreteQuality, recommendation, showFields, setFormData]);
+
   return (
     <div className="test-section">
       <h3>Ultrasonic Pulse Velocity Test</h3>
@@ -60,6 +79,17 @@ const UltrasonicTest = ({ formData, setFormData }) => {
 
           <label>Concrete Quality:</label>
           <input type="text" value={concreteQuality} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="ultrasonicImage" accept="image/*" onChange={handleImageChange} />
+
+          {imagePreviews.ultrasonicImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.ultrasonicImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
 
           {/* ✅ Recommendation Box */}
           {recommendation && (

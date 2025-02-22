@@ -5,6 +5,9 @@ import Loader from "./components/dashboard/Loader";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TokenChecker from "./components/TokenChecker";
 
+// Import Maintenance Page
+import MaintenancePage from "./MaintenancePage"; 
+
 // Lazy load components
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
@@ -29,6 +32,7 @@ const UploadDrawings = lazy(() => import("./components/pages/UploadDrawings"));
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true); // Toggle maintenance mode here
 
   useEffect(() => {
     const timer = setTimeout(() => setShowLoader(false), 3000);
@@ -59,6 +63,11 @@ function App() {
       document.removeEventListener("keydown", disableDevTools);
     };
   }, []);
+
+  // Show maintenance page if maintenance mode is enabled
+  if (isMaintenanceMode) {
+    return <MaintenancePage />;
+  }
 
   return (
     <Router>

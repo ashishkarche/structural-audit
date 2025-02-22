@@ -1,15 +1,24 @@
 import React, { useState } from "react";
 
-const ReboundHammerTest = ({ formData, setFormData }) => {
+const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      rebound_hammer_test: value === "yes" ? "" : null, // ✅ If "no", set it to null
+    }));
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChangeLocal = (e) => {
+    handleImageChange(e); // ✅ Pass to parent handler
   };
 
   // Calculate Rebound Index (Average of entered values)
@@ -39,31 +48,41 @@ const ReboundHammerTest = ({ formData, setFormData }) => {
     if (!index) return "";
 
     if (index > 40) {
-      return "✅ No immediate intervention required. Regular monitoring and preventive maintenance recommended.";
+      return "✅ Low Risk: No immediate intervention required. Regular monitoring and preventive maintenance recommended.";
     }
     if (index >= 30) {
-      return "✔️ Structural integrity is sound, but minor maintenance such as surface repairs and sealing of minor cracks may be required. Digital monitoring should be implemented for long-term tracking.";
+      return "✔️ Moderate Risk: Structural integrity is sound, but minor maintenance such as surface repairs and sealing of minor cracks may be required. Digital monitoring should be implemented for long-term tracking.";
     }
     if (index >= 20) {
-      return "⚠️ Possible degradation of concrete quality. Detailed investigation with ultrasonic pulse velocity (UPV) test recommended. Repairs such as grouting, polymer-based surface treatment, or strengthening measures should be considered.";
+      return "⚠️ High Risk: Possible degradation of concrete quality. Detailed investigation with ultrasonic pulse velocity (UPV) test recommended. Repairs such as grouting, polymer-based surface treatment, or strengthening measures should be considered.";
     }
-    if (index < 20 && index > 0) {
-      return "❌ Significant deterioration is likely. Immediate structural assessment with core cutting, carbonation depth testing, and corrosion potential assessment is necessary. Strengthening or retrofitting measures as per IS 456:2000 should be undertaken.";
-    }
-    return "🚨 Severe distress in structure. Emergency intervention required. Structural rehabilitation, load reduction, or reconstruction may be necessary based on the severity of deterioration.";
+    return "🚨 Severe Risk: Significant deterioration is likely. Immediate structural assessment with core cutting, carbonation depth testing, and corrosion potential assessment is necessary. Strengthening or retrofitting measures as per IS 456:2000 should be undertaken.";
   };
 
+  // Compute and store full test result
   const reboundIndex = calculateReboundIndex();
   const concreteQuality = determineConcreteQuality(reboundIndex);
   const recommendation = generateRecommendation(reboundIndex);
+
+  // ✅ Store full test result as JSON string
+  if (showFields) {
+    setFormData((prev) => ({
+      ...prev,
+      rebound_hammer_test: JSON.stringify({
+        value: reboundIndex,
+        quality: concreteQuality,
+        recommendation: recommendation,
+      }),
+    }));
+  }
 
   return (
     <div className="test-section">
       <h3>Rebound Hammer Test</h3>
 
       <label>Perform Test?</label>
-      <input type="radio" name="reboundTest" value="yes" onChange={handleRadioChange} /> Yes
-      <input type="radio" name="reboundTest" value="no" onChange={handleRadioChange} /> No
+      <input type="radio" name="rebound_hammer_test" value="yes" onChange={handleRadioChange} /> Yes
+      <input type="radio" name="rebound_hammer_test" value="no" onChange={handleRadioChange} /> No
 
       {showFields && (
         <>
@@ -81,6 +100,17 @@ const ReboundHammerTest = ({ formData, setFormData }) => {
 
           <label>Concrete Quality:</label>
           <input type="text" value={concreteQuality} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="reboundHammerImage" accept="image/*" onChange={handleImageChangeLocal} />
+
+          {imagePreviews.reboundHammerImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.reboundHammerImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
 
           {/* ✅ Recommendation Box */}
           {recommendation && (

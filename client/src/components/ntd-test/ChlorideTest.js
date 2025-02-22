@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const ChlorideTest = ({ formData, setFormData }) => {
+const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      chloride_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+    }));
   };
 
   const handleChange = (e) => {
@@ -37,6 +42,20 @@ const ChlorideTest = ({ formData, setFormData }) => {
   const corrosionRisk = determineCorrosionRisk(chlorideContent);
   const recommendation = generateRecommendation(chlorideContent);
 
+  // ✅ Store test result as a JSON string
+  useEffect(() => {
+    if (showFields) {
+      setFormData((prev) => ({
+        ...prev,
+        chloride_test: JSON.stringify({
+          chloride_content: formData.chlorideContent || "N/A",
+          corrosion_risk: corrosionRisk,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [chlorideContent, corrosionRisk, formData.chlorideContent, showFields, setFormData]);
+
   return (
     <div className="test-section">
       <h3>Chloride Test</h3>
@@ -52,6 +71,17 @@ const ChlorideTest = ({ formData, setFormData }) => {
 
           <label>Corrosion Risk:</label>
           <input type="text" value={corrosionRisk} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="chlorideImage" accept="image/*" onChange={handleImageChange} />
+
+          {imagePreviews.chlorideImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.chlorideImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
 
           {/* ✅ Recommendation Box */}
           {recommendation && (

@@ -751,7 +751,19 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
   }
 });
 
-app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (req, res) => {
+
+app.post("/api/ndt/:auditId", authenticate, upload.fields([
+  { name: "reboundHammerImage", maxCount: 1 },
+  { name: "ultrasonicImage", maxCount: 1 },
+  { name: "coreSamplingImage", maxCount: 1 },
+  { name: "carbonationImage", maxCount: 1 },
+  { name: "chlorideImage", maxCount: 1 },
+  { name: "sulfateImage", maxCount: 1 },
+  { name: "halfCellPotentialImage", maxCount: 1 },
+  { name: "concreteCoverImage", maxCount: 1 },
+  { name: "rebarDiameterImage", maxCount: 1 },
+  { name: "crushingStrengthImage", maxCount: 1 }
+]), async (req, res) => {
   try {
     const { auditId } = req.params;
     const {
@@ -760,25 +772,31 @@ app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (re
       concreteCoverRequired, concreteCoverMeasured, rebarDiameterReduction, crushingStrength
     } = req.body;
 
-    // Replace undefined or empty values with null
-    const safeValue = (value) => (value !== undefined && value !== "" ? value : null);
+    // Function to ensure safe values
+    const safeValue = (value) => (value !== undefined && value.trim() !== "" ? value.trim() : null);
 
-    // Get the uploaded photo filename
-    const ndtPhoto = req.file ? req.file.filename : null;
+    // Retrieve uploaded image buffers from `req.files`
+    const images = {
+      rebound_hammer_image: req.files?.reboundHammerImage ? req.files.reboundHammerImage[0].buffer : null,
+      ultrasonic_image: req.files?.ultrasonicImage ? req.files.ultrasonicImage[0].buffer : null,
+      core_sampling_image: req.files?.coreSamplingImage ? req.files.coreSamplingImage[0].buffer : null,
+      carbonation_image: req.files?.carbonationImage ? req.files.carbonationImage[0].buffer : null,
+      chloride_image: req.files?.chlorideImage ? req.files.chlorideImage[0].buffer : null,
+      sulfate_image: req.files?.sulfateImage ? req.files.sulfateImage[0].buffer : null,
+      half_cell_potential_image: req.files?.halfCellPotentialImage ? req.files.halfCellPotentialImage[0].buffer : null,
+      concrete_cover_image: req.files?.concreteCoverImage ? req.files.concreteCoverImage[0].buffer : null,
+      rebar_diameter_image: req.files?.rebarDiameterImage ? req.files.rebarDiameterImage[0].buffer : null,
+      crushing_strength_image: req.files?.crushingStrengthImage ? req.files.crushingStrengthImage[0].buffer : null
+    };
 
-    // Ensure only valid fields are inserted into SQL
-    const sql = `INSERT INTO NDTTests (
-                    audit_id, rebound_hammer_test, ultrasonic_test, core_sampling_test, carbonation_test, 
-                    chloride_test, sulfate_test, half_cell_potential_test, concrete_cover_test, 
-                    rebar_diameter_test, crushing_strength_test, concrete_cover_required, 
-                    concrete_cover_measured, rebar_diameter_reduction, crushing_strength
-                    ${ndtPhoto ? ", ndt_photo" : ""}
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                    ${ndtPhoto ? ", ?" : ""})`;
+    // Construct SQL query dynamically
+    let sql = `INSERT INTO NDTTests (
+                audit_id, rebound_hammer_test, ultrasonic_test, core_sampling_test, carbonation_test, 
+                chloride_test, sulfate_test, half_cell_potential_test, concrete_cover_test, 
+                rebar_diameter_test, crushing_strength_test, concrete_cover_required, 
+                concrete_cover_measured, rebar_diameter_reduction, crushing_strength`;
 
-    // Parameters list matching the exact columns
-    const params = [
-      auditId,
+    let values = [auditId, 
       safeValue(reboundHammerTest), safeValue(ultrasonicTest), safeValue(coreSamplingTest),
       safeValue(carbonationTest), safeValue(chlorideTest), safeValue(sulfateTest),
       safeValue(halfCellPotentialTest), safeValue(concreteCoverTest), safeValue(rebarDiameterTest),
@@ -786,12 +804,20 @@ app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (re
       safeValue(rebarDiameterReduction), safeValue(crushingStrength)
     ];
 
-    if (ndtPhoto) {
-      params.push(ndtPhoto);
-    }
+    // Dynamically add image columns and values
+    let placeholders = new Array(values.length).fill("?"); // For non-image values
+    Object.keys(images).forEach((key) => {
+      if (images[key] !== null) {
+        sql += `, ${key}`;
+        values.push(images[key]);
+        placeholders.push("?"); // Add placeholders for images
+      }
+    });
 
-    // Execute the SQL query
-    await db.execute(sql, params);
+    sql += `) VALUES (${placeholders.join(", ")})`;
+
+    // Execute SQL query with Binary Image Data
+    await db.execute(sql, values);
 
     // Log the audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
@@ -803,6 +829,8 @@ app.post("/api/ndt/:auditId", authenticate, upload.single("ndtPhoto"), async (re
     res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });
+
+
 
 app.post("/api/conclusion/:auditId", authenticate, async (req, res) => {
   try {

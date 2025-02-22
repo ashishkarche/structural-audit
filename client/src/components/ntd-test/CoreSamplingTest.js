@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const CoreSamplingTest = ({ formData, setFormData }) => {
+const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      core_sampling_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+    }));
   };
 
   const handleChange = (e) => {
@@ -45,9 +50,43 @@ const CoreSamplingTest = ({ formData, setFormData }) => {
     return volume > 0 ? (weight / volume).toFixed(2) : "";
   };
 
+  // Generate Recommendations
+  const generateRecommendation = (strength) => {
+    if (!strength) return "⚠️ No data available.";
+
+    if (strength >= 85) return "✅ The concrete meets the required strength criteria. No action required.";
+    if (strength >= 75) return "✔️ Strength is slightly lower. Monitoring & minor surface repairs recommended.";
+    if (strength >= 50) return "⚠️ Strength is weak. Structural strengthening using jacketing, grouting advised.";
+    return "❌ Highly defective concrete. Immediate intervention, retrofitting, or replacement needed.";
+  };
+
+  const lD_Ratio = computeLD();
+  const correctedStrength = computeCorrectedStrength();
+  const density = computeDensity();
+  const recommendation = generateRecommendation(parseFloat(correctedStrength));
+
+  // ✅ Store test result as a JSON string
+  useEffect(() => {
+    if (showFields) {
+      setFormData((prev) => ({
+        ...prev,
+        core_sampling_test: JSON.stringify({
+          core_diameter: formData.coreDiameter || "N/A",
+          core_length: formData.coreLength || "N/A",
+          lD_Ratio: lD_Ratio,
+          measured_strength: formData.coreStrength || "N/A",
+          corrected_strength: correctedStrength,
+          density: density,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [lD_Ratio, correctedStrength, density, formData.coreDiameter, formData.coreLength, formData.coreStrength, showFields, setFormData]);
+
   return (
     <div className="test-section">
       <h3>Core Sampling Test</h3>
+
       <label>Perform Test?</label>
       <input type="radio" name="coreSamplingTest" value="yes" onChange={handleRadioChange} /> Yes
       <input type="radio" name="coreSamplingTest" value="no" onChange={handleRadioChange} /> No
@@ -61,19 +100,38 @@ const CoreSamplingTest = ({ formData, setFormData }) => {
           <input type="number" name="coreLength" value={formData.coreLength || ""} onChange={handleChange} />
 
           <label>L/D Ratio:</label>
-          <input type="number" value={computeLD()} readOnly />
+          <input type="number" value={lD_Ratio} readOnly />
 
           <label>Measured Compressive Strength (MPa):</label>
           <input type="number" name="coreStrength" value={formData.coreStrength || ""} onChange={handleChange} />
 
           <label>Corrected Strength (MPa):</label>
-          <input type="number" value={computeCorrectedStrength()} readOnly />
+          <input type="number" value={correctedStrength} readOnly />
 
           <label>Core Weight (kg):</label>
           <input type="number" name="coreWeight" value={formData.coreWeight || ""} onChange={handleChange} />
 
           <label>Density (kg/m³):</label>
-          <input type="number" value={computeDensity()} readOnly />
+          <input type="number" value={density} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="coreSamplingImage" accept="image/*" onChange={handleImageChange} />
+
+          {imagePreviews.coreSamplingImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.coreSamplingImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
+
+          {/* ✅ Recommendation Box */}
+          {recommendation && (
+            <div className="recommendation-box">
+              <h4>Recommendation:</h4>
+              <p>{recommendation}</p>
+            </div>
+          )}
         </>
       )}
     </div>

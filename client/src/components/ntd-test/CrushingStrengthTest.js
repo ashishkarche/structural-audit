@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const CrushingStrengthTest = ({ formData, setFormData }) => {
+const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
   const [showFields, setShowFields] = useState(false);
 
   const handleRadioChange = (e) => {
-    setShowFields(e.target.value === "yes");
+    const value = e.target.value;
+    setShowFields(value === "yes");
+    setFormData((prev) => ({
+      ...prev,
+      crushing_strength_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+    }));
   };
 
   const handleChange = (e) => {
@@ -41,13 +46,27 @@ const CrushingStrengthTest = ({ formData, setFormData }) => {
   const strengthPerformance = determineStrengthPerformance(crushingStrength);
   const recommendation = generateRecommendation(crushingStrength);
 
+  // ✅ Store test result as a JSON string
+  useEffect(() => {
+    if (showFields) {
+      setFormData((prev) => ({
+        ...prev,
+        crushing_strength_test: JSON.stringify({
+          strength_value: crushingStrength || "N/A",
+          classification: strengthPerformance,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [crushingStrength, strengthPerformance, recommendation, showFields, setFormData]);
+
   return (
     <div className="test-section">
       <h3>Crushing Strength Test</h3>
 
       <label>Perform Test?</label>
-      <input type="radio" name="crushingStrengthTest" value="yes" onChange={handleRadioChange} /> Yes
-      <input type="radio" name="crushingStrengthTest" value="no" onChange={handleRadioChange} /> No
+      <input type="radio" name="crushing_strength_test" value="yes" onChange={handleRadioChange} /> Yes
+      <input type="radio" name="crushing_strength_test" value="no" onChange={handleRadioChange} /> No
 
       {showFields && (
         <>
@@ -56,6 +75,17 @@ const CrushingStrengthTest = ({ formData, setFormData }) => {
 
           <label>Strength Classification:</label>
           <input type="text" value={strengthPerformance} readOnly />
+
+          {/* ✅ Image Upload Section */}
+          <label>Upload Image:</label>
+          <input type="file" name="crushingStrengthImage" accept="image/*" onChange={handleImageChange} />
+
+          {imagePreviews.crushingStrengthImage && (
+            <div className="image-preview">
+              <p>Uploaded Image:</p>
+              <img src={imagePreviews.crushingStrengthImage} alt="Uploaded Test" width="200px" />
+            </div>
+          )}
 
           {/* ✅ Recommendation Box */}
           {recommendation && (
