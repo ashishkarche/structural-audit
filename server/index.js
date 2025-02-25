@@ -310,6 +310,23 @@ app.post("/api/upload-drawings", authenticate, upload.fields([
   }
 });
 
+app.get('/api/audits/:auditId/drawings', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const sql = `SELECT id, drawing_type, file_name FROM AuditDrawings WHERE audit_id = ?`;
+    const [drawings] = await db.execute(sql, [auditId]);
+
+    if (!drawings.length) {
+      return res.status(404).json({ message: "No drawings found for this audit." });
+    }
+
+    res.json(drawings);
+  } catch (error) {
+    console.error("Error fetching drawings:", error);
+    res.status(500).json({ message: "Failed to fetch drawings" });
+  }
+});
+
 
 app.get("/audit/:auditId/drawings", authenticate, async (req, res) => {
   try {
@@ -368,9 +385,7 @@ app.get("/api/files/:filename", async (req, res) => {
 
     // 🔍 Check if file exists in memory storage (Database)
     const [result] = await db.execute(
-      `SELECT damage_photo FROM Observations WHERE damage_photo = ? 
-       UNION 
-       SELECT previous_investigations FROM StructuralChanges WHERE previous_investigations = ?`,
+      `SELECT damage_photo FROM Observations WHERE damage_photos = ? `,
       [filename, filename]
     );
 
@@ -405,12 +420,13 @@ app.get('/api/audits/:auditId/full', async (req, res) => {
     // 🔍 Fetch related tables
     const [structuralChanges] = await db.execute(`SELECT * FROM StructuralChanges WHERE audit_id = ?`, [auditId]);
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
+    const [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
     const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
     const [auditDrawings] = await db.execute(`SELECT * FROM AuditDrawings WHERE audit_id = ?`, [auditId]);
 
     // 🔹 Return full audit details
-    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, auditDrawings });
+    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, auditDrawings, dataEntries });
   } catch (error) {
     console.error("Error fetching audit details:", error);
     res.status(500).json({ message: "Failed to fetch audit details" });
@@ -629,19 +645,17 @@ app.get('/api/structural-changes/:auditId', authenticate, async (req, res) => {
 });
 
 // Insert into Audit History
-
 app.post(
   "/api/observations/:auditId",
   authenticate,
-  upload.array("damagePhotos", 5),
+  upload.array("damagePhotos", 10), // Allow up to 10 photos
   async (req, res) => {
     try {
       const { auditId } = req.params;
       let {
         unexpectedLoad, unapprovedChanges, additionalFloor, vegetationGrowth, leakage,
         cracksBeams, cracksColumns, cracksFlooring, floorSagging, bulgingWalls,
-        windowProblems, heavingFloor, concreteTexture, algaeGrowth,
-        damageDescription, damageLocation, damageCause, damageClassification
+        windowProblems, heavingFloor, concreteTexture, algaeGrowth, damages
       } = req.body;
 
       // ✅ Convert "Yes"/"No" responses to boolean (1 or 0)
@@ -661,40 +675,60 @@ app.post(
       heavingFloor = toBoolean(heavingFloor);
       algaeGrowth = toBoolean(algaeGrowth);
 
-      // ✅ Validate required fields
       if (!auditId) {
         return res.status(400).json({ message: "Audit ID is required." });
       }
-      if (!damageDescription || !damageLocation || !damageCause || !damageClassification) {
-        return res.status(400).json({ message: "All damage details are required." });
-      }
 
-      // ✅ Extract damage classification (e.g., "Class 4" instead of "Class 4 - Major Repair")
-      if (damageClassification) {
-        damageClassification = damageClassification.split(" - ")[0];
-      }
-
-      // ✅ Handle file uploads (damage photos)
-      const damagePhotos = req.files ? req.files.map(file => file.filename).join(",") : null;
-
-      // ✅ Insert data into the database
-      const sql = `
+      // ✅ Insert General Observations
+      const sqlObservations = `
         INSERT INTO Observations (
           audit_id, unexpected_load, unapproved_changes, additional_floor,
           vegetation_growth, leakage, cracks_beams, cracks_columns, cracks_flooring,
           floor_sagging, bulging_walls, window_problems, heaving_floor, concrete_texture,
-          algae_growth, damage_description, damage_location, damage_cause, damage_classification, damage_photos
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          algae_growth
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
-      await db.execute(sql, [
+      await db.execute(sqlObservations, [
         auditId, unexpectedLoad, unapprovedChanges, additionalFloor,
         vegetationGrowth, leakage, cracksBeams, cracksColumns, cracksFlooring,
         floorSagging, bulgingWalls, windowProblems, heavingFloor, concreteTexture,
-        algaeGrowth, damageDescription, damageLocation, damageCause, damageClassification, damagePhotos
+        algaeGrowth
       ]);
 
-      // ✅ Log audit history
+      // ✅ Parse JSON String for `damages`
+      try {
+        damages = JSON.parse(damages);
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid damages format" });
+      }
+
+      if (!Array.isArray(damages)) {
+        return res.status(400).json({ message: "Damages must be an array" });
+      }
+
+      // ✅ Insert Damage Entries with BLOB Images
+      const damageSql = `
+        INSERT INTO DamageEntries (
+          audit_id, description, location, cause, classification, damage_photos
+        ) VALUES (?, ?, ?, ?, ?, ?)
+      `;
+
+      for (let i = 0; i < damages.length; i++) {
+        let { description, location, cause, classification } = damages[i];
+
+        if (!description || !location || !cause || !classification) {
+          return res.status(400).json({ message: "All damage details are required for each entry." });
+        }
+
+        classification = classification.split(" - ")[0];
+
+        // ✅ Convert image to BLOB
+        const imageBuffer = req.files[i] ? req.files[i].buffer : null;
+
+        await db.execute(damageSql, [auditId, description, location, cause, classification, imageBuffer]);
+      }
+
       await logAuditHistory(auditId, "Observations submitted", req.user.id);
 
       res.json({ message: "Observations submitted successfully." });
@@ -709,19 +743,31 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
 
-    // Fetch the observations from the database for the given auditId
-    const sql = `
-      SELECT * FROM Observations WHERE audit_id = ?
-    `;
+    // Fetch the general observations for the given auditId
+    const sqlObservations = `SELECT * FROM Observations WHERE audit_id = ?`;
+    const [observationRows] = await db.execute(sqlObservations, [auditId]);
 
-    const [rows] = await db.execute(sql, [auditId]);
-
-    if (rows.length === 0) {
+    if (observationRows.length === 0) {
       return res.status(404).json({ message: "Observations not found for this audit." });
     }
 
-    // Format the response data
-    const observation = rows[0];
+    const observation = observationRows[0];
+
+    // Fetch damage entries for the given auditId
+    const sqlDamage = `SELECT id, description, location, cause, classification, damage_photos FROM DamageEntries WHERE audit_id = ?`;
+    const [damageRows] = await db.execute(sqlDamage, [auditId]);
+
+    // Convert BLOB images to base64 for frontend compatibility
+    const damages = damageRows.map((damage) => ({
+      id: damage.id,
+      description: damage.description,
+      location: damage.location,
+      cause: damage.cause,
+      classification: damage.classification,
+      photo: damage.damage_photo ? `data:image/jpeg;base64,${damage.damage_photo.toString("base64")}` : null,
+    }));
+
+    // Prepare the final response
     const responseData = {
       unexpectedLoad: observation.unexpected_load,
       unapprovedChanges: observation.unapproved_changes,
@@ -737,11 +783,7 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
       heavingFloor: observation.heaving_floor,
       concreteTexture: observation.concrete_texture,
       algaeGrowth: observation.algae_growth,
-      damageDescription: observation.damage_description,
-      damageLocation: observation.damage_location,
-      damageCause: observation.damage_cause,
-      damageClassification: observation.damage_classification,
-      damagePhotos: observation.damage_photos ? observation.damage_photos.split(",") : [],
+      damages, // Include damage entries with decoded images
     };
 
     res.json(responseData);
@@ -750,7 +792,6 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch observations" });
   }
 });
-
 
 app.post("/api/ndt/:auditId", authenticate, upload.fields([
   { name: "reboundHammerImage", maxCount: 1 },
@@ -766,66 +807,67 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 ]), async (req, res) => {
   try {
     const { auditId } = req.params;
-    const {
-      reboundHammerTest, ultrasonicTest, coreSamplingTest, carbonationTest, chlorideTest, sulfateTest,
-      halfCellPotentialTest, concreteCoverTest, rebarDiameterTest, crushingStrengthTest,
-      concreteCoverRequired, concreteCoverMeasured, rebarDiameterReduction, crushingStrength
-    } = req.body;
-
-    // Function to ensure safe values
-    const safeValue = (value) => (value !== undefined && value.trim() !== "" ? value.trim() : null);
-
-    // Retrieve uploaded image buffers from `req.files`
-    const images = {
-      rebound_hammer_image: req.files?.reboundHammerImage ? req.files.reboundHammerImage[0].buffer : null,
-      ultrasonic_image: req.files?.ultrasonicImage ? req.files.ultrasonicImage[0].buffer : null,
-      core_sampling_image: req.files?.coreSamplingImage ? req.files.coreSamplingImage[0].buffer : null,
-      carbonation_image: req.files?.carbonationImage ? req.files.carbonationImage[0].buffer : null,
-      chloride_image: req.files?.chlorideImage ? req.files.chlorideImage[0].buffer : null,
-      sulfate_image: req.files?.sulfateImage ? req.files.sulfateImage[0].buffer : null,
-      half_cell_potential_image: req.files?.halfCellPotentialImage ? req.files.halfCellPotentialImage[0].buffer : null,
-      concrete_cover_image: req.files?.concreteCoverImage ? req.files.concreteCoverImage[0].buffer : null,
-      rebar_diameter_image: req.files?.rebarDiameterImage ? req.files.rebarDiameterImage[0].buffer : null,
-      crushing_strength_image: req.files?.crushingStrengthImage ? req.files.crushingStrengthImage[0].buffer : null
-    };
-
-    // Construct SQL query dynamically
-    let sql = `INSERT INTO NDTTests (
-                audit_id, rebound_hammer_test, ultrasonic_test, core_sampling_test, carbonation_test, 
-                chloride_test, sulfate_test, half_cell_potential_test, concrete_cover_test, 
-                rebar_diameter_test, crushing_strength_test, concrete_cover_required, 
-                concrete_cover_measured, rebar_diameter_reduction, crushing_strength`;
-
-    let values = [auditId, 
-      safeValue(reboundHammerTest), safeValue(ultrasonicTest), safeValue(coreSamplingTest),
-      safeValue(carbonationTest), safeValue(chlorideTest), safeValue(sulfateTest),
-      safeValue(halfCellPotentialTest), safeValue(concreteCoverTest), safeValue(rebarDiameterTest),
-      safeValue(crushingStrengthTest), safeValue(concreteCoverRequired), safeValue(concreteCoverMeasured),
-      safeValue(rebarDiameterReduction), safeValue(crushingStrength)
+    const testFields = [
+      "rebound_hammer_test", "ultrasonic_test", "core_sampling_test", "carbonation_test", "chloride_test",
+      "sulfate_test", "half_cell_potential_test", "concrete_cover_test", "rebar_diameter_test", "crushing_strength_test",
+      "concrete_cover_required", "concrete_cover_measured", "rebar_diameter_reduction", "crushing_strength"
     ];
 
-    // Dynamically add image columns and values
-    let placeholders = new Array(values.length).fill("?"); // For non-image values
-    Object.keys(images).forEach((key) => {
-      if (images[key] !== null) {
-        sql += `, ${key}`;
-        values.push(images[key]);
-        placeholders.push("?"); // Add placeholders for images
+    // ✅ Parse JSON test data safely
+    const testData = {};
+    testFields.forEach(field => {
+      if (req.body[field]) {
+        try {
+          testData[field] = JSON.parse(req.body[field]); // Store as object
+        } catch (error) {
+          testData[field] = req.body[field]; // Store as string if JSON parsing fails
+        }
+      } else {
+        testData[field] = null;
       }
     });
 
-    sql += `) VALUES (${placeholders.join(", ")})`;
+    // ✅ Retrieve uploaded images as binary buffers
+    const imageFields = {
+      rebound_hammer_image: req.files?.reboundHammerImage?.[0]?.buffer || null,
+      ultrasonic_image: req.files?.ultrasonicImage?.[0]?.buffer || null,
+      core_sampling_image: req.files?.coreSamplingImage?.[0]?.buffer || null,
+      carbonation_image: req.files?.carbonationImage?.[0]?.buffer || null,
+      chloride_image: req.files?.chlorideImage?.[0]?.buffer || null,
+      sulfate_image: req.files?.sulfateImage?.[0]?.buffer || null,
+      half_cell_potential_image: req.files?.halfCellPotentialImage?.[0]?.buffer || null,
+      concrete_cover_image: req.files?.concreteCoverImage?.[0]?.buffer || null,
+      rebar_diameter_image: req.files?.rebarDiameterImage?.[0]?.buffer || null,
+      crushing_strength_image: req.files?.crushingStrengthImage?.[0]?.buffer || null
+    };
 
-    // Execute SQL query with Binary Image Data
+    // ✅ Build SQL query dynamically
+    let columns = ["audit_id", ...Object.keys(testData).map(key => key.toLowerCase())];
+    let values = [auditId, ...Object.values(testData)];
+    let placeholders = new Array(values.length).fill("?");
+
+    // ✅ Add image columns dynamically
+    Object.keys(imageFields).forEach((key) => {
+      if (imageFields[key] !== null) {
+        columns.push(key);
+        values.push(imageFields[key]);
+        placeholders.push("?");
+      }
+    });
+
+    // ✅ Final SQL Query
+    const sql = `INSERT INTO NDTTests (${columns.join(", ")}) VALUES (${placeholders.join(", ")})`;
+
+    // ✅ Execute the SQL query
     await db.execute(sql, values);
 
-    // Log the audit history
+    // ✅ Log the audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "NDT results submitted successfully" });
 
   } catch (error) {
-    console.error("Error submitting NDT results:", error);
+    console.error("❌ Error submitting NDT results:", error);
     res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });

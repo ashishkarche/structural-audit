@@ -1,14 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(false);
+  const [showFields, setShowFields] = useState(formData.rebound_hammer_test !== null);
 
   const handleRadioChange = (e) => {
-    const value = e.target.value;
-    setShowFields(value === "yes");
+    const value = e.target.value === "yes";
+    setShowFields(value);
+
     setFormData((prev) => ({
       ...prev,
-      rebound_hammer_test: value === "yes" ? "" : null, // ✅ If "no", set it to null
+      rebound_hammer_test: value ? {} : null, // ✅ Reset test data if "No"
+      rebound1: value ? prev.rebound1 || "" : "",
+      rebound2: value ? prev.rebound2 || "" : "",
+      rebound3: value ? prev.rebound3 || "" : "",
     }));
   };
 
@@ -21,68 +25,59 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
     handleImageChange(e); // ✅ Pass to parent handler
   };
 
-  // Calculate Rebound Index (Average of entered values)
+  // ✅ Compute Rebound Index (Average)
   const calculateReboundIndex = () => {
-    const values = [
-      parseFloat(formData.rebound1) || 0,
-      parseFloat(formData.rebound2) || 0,
-      parseFloat(formData.rebound3) || 0,
-    ];
-    const validValues = values.filter((val) => val > 0);
-    if (validValues.length === 0) return "";
-    return (validValues.reduce((sum, val) => sum + val, 0) / validValues.length).toFixed(2);
+    const values = [formData.rebound1, formData.rebound2, formData.rebound3]
+      .map((val) => parseFloat(val) || 0)
+      .filter((val) => val > 0);
+
+    return values.length ? (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2) : "";
   };
 
-  // Determine Concrete Quality based on Rebound Index
+  // ✅ Determine Concrete Quality
   const determineConcreteQuality = (index) => {
     if (!index) return "";
     if (index > 40) return "Very Good";
     if (index >= 30) return "Good";
     if (index >= 20) return "Fair";
-    if (index < 20 && index > 0) return "Poor";
-    return "Very Poor";
+    return "Poor";
   };
 
-  // Generate Recommendations based on Concrete Quality
+  // ✅ Generate Recommendation
   const generateRecommendation = (index) => {
     if (!index) return "";
-
-    if (index > 40) {
-      return "✅ Low Risk: No immediate intervention required. Regular monitoring and preventive maintenance recommended.";
-    }
-    if (index >= 30) {
-      return "✔️ Moderate Risk: Structural integrity is sound, but minor maintenance such as surface repairs and sealing of minor cracks may be required. Digital monitoring should be implemented for long-term tracking.";
-    }
-    if (index >= 20) {
-      return "⚠️ High Risk: Possible degradation of concrete quality. Detailed investigation with ultrasonic pulse velocity (UPV) test recommended. Repairs such as grouting, polymer-based surface treatment, or strengthening measures should be considered.";
-    }
-    return "🚨 Severe Risk: Significant deterioration is likely. Immediate structural assessment with core cutting, carbonation depth testing, and corrosion potential assessment is necessary. Strengthening or retrofitting measures as per IS 456:2000 should be undertaken.";
+    if (index > 40) return "✅ Low Risk: No intervention required. Regular monitoring recommended.";
+    if (index >= 30) return "✔️ Moderate Risk: Surface repairs and monitoring required.";
+    if (index >= 20) return "⚠️ High Risk: Detailed investigation and strengthening advised.";
+    return "🚨 Severe Risk: Immediate assessment and retrofitting necessary.";
   };
 
-  // Compute and store full test result
+  // ✅ Memoized Computations
   const reboundIndex = calculateReboundIndex();
   const concreteQuality = determineConcreteQuality(reboundIndex);
   const recommendation = generateRecommendation(reboundIndex);
 
-  // ✅ Store full test result as JSON string
-  if (showFields) {
-    setFormData((prev) => ({
-      ...prev,
-      rebound_hammer_test: JSON.stringify({
-        value: reboundIndex,
-        quality: concreteQuality,
-        recommendation: recommendation,
-      }),
-    }));
-  }
+  // ✅ Store only when fields are displayed to prevent unnecessary re-renders
+  useEffect(() => {
+    if (showFields && reboundIndex) {
+      setFormData((prev) => ({
+        ...prev,
+        rebound_hammer_test: JSON.stringify({
+          value: reboundIndex,
+          quality: concreteQuality,
+          recommendation: recommendation,
+        }),
+      }));
+    }
+  }, [reboundIndex, concreteQuality, recommendation, showFields, setFormData]);
 
   return (
     <div className="test-section">
       <h3>Rebound Hammer Test</h3>
 
       <label>Perform Test?</label>
-      <input type="radio" name="rebound_hammer_test" value="yes" onChange={handleRadioChange} /> Yes
-      <input type="radio" name="rebound_hammer_test" value="no" onChange={handleRadioChange} /> No
+      <input type="radio" name="rebound_hammer_test" value="yes" checked={showFields} onChange={handleRadioChange} /> Yes
+      <input type="radio" name="rebound_hammer_test" value="no" checked={!showFields} onChange={handleRadioChange} /> No
 
       {showFields && (
         <>
@@ -105,7 +100,7 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
           <label>Upload Image:</label>
           <input type="file" name="reboundHammerImage" accept="image/*" onChange={handleImageChangeLocal} />
 
-          {imagePreviews.reboundHammerImage && (
+          {imagePreviews?.reboundHammerImage && (
             <div className="image-preview">
               <p>Uploaded Image:</p>
               <img src={imagePreviews.reboundHammerImage} alt="Uploaded Test" width="200px" />
@@ -113,12 +108,8 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
           )}
 
           {/* ✅ Recommendation Box */}
-          {recommendation && (
-            <div className="recommendation-box">
-              <h4>Recommendation (As per IS 13311 Part-1:1992 & IS 456:2000):</h4>
-              <p>{recommendation}</p>
-            </div>
-          )}
+          <label>Recommendation:</label>
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

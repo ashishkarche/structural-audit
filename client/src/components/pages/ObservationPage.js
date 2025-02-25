@@ -23,11 +23,7 @@ function ObservationPage() {
     heavingFloor: "",
     concreteTexture: "",
     algaeGrowth: "",
-    damagePhotos: [],
-    damageDescription: "",
-    damageLocation: "",
-    damageCause: "",
-    damageClassification: "",
+    damages: [],
   });
 
   const [error, setError] = useState("");
@@ -58,24 +54,74 @@ function ObservationPage() {
     }
   };
 
+  const handleDamageChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedDamages = [...formData.damages];
+    updatedDamages[index][name] = value;
+    setFormData({ ...formData, damages: updatedDamages });
+  };
+
+  const handleDamageImageChange = (index, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = () => {
+        const updatedDamages = [...formData.damages];
+        updatedDamages[index].photo = {
+          preview: reader.result, // Base64 preview
+          file,
+        };
+        setFormData({ ...formData, damages: updatedDamages });
+      };
+    }
+  };
+  
+
+  const handleDamageClassificationChange = (index, value) => {
+    const updatedDamages = [...formData.damages];
+    updatedDamages[index].classification = value;
+    setFormData({ ...formData, damages: updatedDamages });
+  };
+  const addDamage = () => {
+    setFormData({
+      ...formData,
+      damages: [...formData.damages, { photo: null, description: "", location: "", cause: "", classification: "" }],
+    });
+  };
+  const removeDamage = (index) => {
+    const updatedDamages = [...formData.damages];
+    updatedDamages.splice(index, 1);
+    setFormData({ ...formData, damages: updatedDamages });
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } };
-
+  
     const formDataToSend = new FormData();
+  
+    // Append general observations
     Object.keys(formData).forEach((key) => {
-      if (key === "damagePhotos") {
-        for (let i = 0; i < formData[key].length; i++) {
-          formDataToSend.append("damagePhotos", formData[key][i]);
-        }
-      } else {
+      if (key !== "damages") {
         formDataToSend.append(key, formData[key]);
       }
     });
-
+  
+    // Append damages as JSON
+    formDataToSend.append("damages", JSON.stringify(formData.damages));
+  
+    // Append images as BLOB
+    formData.damages.forEach((damage, index) => {
+      if (damage.photo?.file) {
+        formDataToSend.append("damagePhotos", damage.photo.file);
+      }
+    });
+  
     try {
       const method = formData.id ? "put" : "post";
       await axios[method](`https://structural-audit.vercel.app/api/observations/${auditId}`, formDataToSend, config);
@@ -84,6 +130,8 @@ function ObservationPage() {
       setError("Failed to submit observations.");
     }
   };
+  
+  
 
   return (
     <div className="obs-page-container">
@@ -92,7 +140,7 @@ function ObservationPage() {
 
       <form onSubmit={handleSubmit} className="obs-form">
         {/* 🔹 General Observations with Yes/No Radio Buttons */}
-        {[ 
+        {[
           { name: "unexpectedLoad", label: "Any unprecedented loading observed (e.g., wall on slab)" },
           { name: "unapprovedChanges", label: "Any changes done that are not as per the original plan" },
           { name: "additionalFloor", label: "Any wing or floor added that looks out of character" },
@@ -114,7 +162,7 @@ function ObservationPage() {
 
         {/* 🔹 Types of Cracks & Structural Issues */}
         <h3>Cracks & Structural Issues</h3>
-        {[ 
+        {[
           { name: "cracksBeams", label: "Cracks in Beams" },
           { name: "cracksColumns", label: "Cracks in Columns" },
           { name: "cracksFlooring", label: "Cracks in Flooring" },
@@ -137,30 +185,51 @@ function ObservationPage() {
         ))}
 
         {/* 🔹 Damage Assessment */}
+        {/* 🔹 Damage Assessment (Supports Multiple Entries) */}
         <h3>Damage Assessment</h3>
-        <div className="obs-form-group">
-          <label htmlFor="damagePhotos">Upload Damage Photos</label>
-          <input type="file" id="damagePhotos" name="damagePhotos" accept="image/*" multiple onChange={handleChange} />
-        </div>
-        <div className="obs-form-group">
-          <label htmlFor="damageDescription">Description</label>
-          <textarea id="damageDescription" name="damageDescription" value={formData.damageDescription} onChange={handleChange} />
-        </div>
-        <div className="obs-form-group">
-          <label htmlFor="damageLocation">Location of Damage</label>
-          <input type="text" id="damageLocation" name="damageLocation" value={formData.damageLocation} onChange={handleChange} />
-        </div>
-        <div className="obs-form-group">
-          <label htmlFor="damageCause">Cause of Damage</label>
-          <input type="text" id="damageCause" name="damageCause" value={formData.damageCause} onChange={handleChange} />
-        </div>
 
-        {/* 🔹 Damage Classification */}
-        <h3>Classification of Damage</h3>
-        <DamageClassification
-          classification={formData.damageClassification}
-          setClassification={(value) => setFormData({ ...formData, damageClassification: value })}
-        />
+        {formData.damages.map((damage, index) => (
+          <div className="obs-damage-section" key={index}>
+            <h4>Damage {index + 1}</h4>
+
+            {/* 📷 Upload Damage Photo */}
+            <div className="obs-form-group">
+              <label>Upload Damage Photo</label>
+              <input type="file" accept="image/*" onChange={(e) => handleDamageImageChange(index, e)} />
+              {damage.photo?.preview && <img src={damage.photo.preview} alt="Damage" width="200px" />}
+            </div>
+
+            {/* 📝 Description */}
+            <div className="obs-form-group">
+              <label>Description</label>
+              <textarea name="description" value={damage.description} onChange={(e) => handleDamageChange(index, e)} />
+            </div>
+
+            {/* 📍 Location */}
+            <div className="obs-form-group">
+              <label>Location</label>
+              <input type="text" name="location" value={damage.location} onChange={(e) => handleDamageChange(index, e)} />
+            </div>
+
+            {/* ⚠️ Cause of Damage */}
+            <div className="obs-form-group">
+              <label>Cause</label>
+              <input type="text" name="cause" value={damage.cause} onChange={(e) => handleDamageChange(index, e)} />
+            </div>
+
+            {/* 📊 Damage Classification */}
+            <DamageClassification
+              classification={damage.classification}
+              setClassification={(value) => handleDamageClassificationChange(index, value)}
+            />
+
+            {/* ❌ Remove Damage Entry */}
+            <button type="button" className="obs-remove-btn" onClick={() => removeDamage(index)}>🗑️ Remove</button>
+          </div>
+        ))}
+
+        {/* ➕ Add New Damage Entry */}
+        <button type="button" className="obs-add-btn" onClick={addDamage}>➕ Add Damage</button>
 
         <button type="submit" className="obs-submit-btn">✅ Save & Next</button>
       </form>

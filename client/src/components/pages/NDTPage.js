@@ -17,7 +17,7 @@ function NDTPage() {
   const { auditId } = useParams();
   const navigate = useNavigate();
 
-  // Initialize formData with fields for tests & images
+  // ✅ Initialize formData with test fields as JSON
   const [formData, setFormData] = useState({
     reboundHammerTest: null,
     ultrasonicTest: null,
@@ -31,45 +31,46 @@ function NDTPage() {
     crushingStrengthTest: null,
   });
 
-  const [imagePreviews, setImagePreviews] = useState({});
+  // ✅ Separate state for images (previews & files)
+  const [imageData, setImageData] = useState({});
   const [error, setError] = useState("");
 
-  // ✅ Handle Image Uploads (for multiple test images)
+  // ✅ Handle Image Uploads
   const handleImageChange = (e) => {
     const { name, files } = e.target;
     if (files.length > 0) {
       const file = files[0];
 
-      setFormData((prev) => ({
+      setImageData((prev) => ({
         ...prev,
-        [name]: file, // Store image file
-      }));
-
-      setImagePreviews((prev) => ({
-        ...prev,
-        [name]: URL.createObjectURL(file), // Store preview
+        [name]: { file, preview: URL.createObjectURL(file) },
       }));
     }
   };
 
-  // ✅ Collects and formats test data properly
+  // ✅ Prepare form data for API submission
   const prepareFormData = () => {
     const formDataToSend = new FormData();
 
+    
     // ✅ Append test results (convert JSON)
     Object.keys(formData).forEach((key) => {
       if (formData[key]) {
-        if (typeof formData[key] === "object" && !formData[key].type) {
-          formDataToSend.append(key, JSON.stringify(formData[key])); // Convert objects to JSON
-        } else {
-          formDataToSend.append(key, formData[key]); // Append other values
-        }
+        formDataToSend.append(key, JSON.stringify(formData[key])); // Convert objects to JSON
+      }
+    });
+
+    // ✅ Append image files
+    Object.keys(imageData).forEach((key) => {
+      if (imageData[key].file) {
+        formDataToSend.append(key, imageData[key].file);
       }
     });
 
     return formDataToSend;
   };
 
+  // ✅ Submit form data
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -84,7 +85,7 @@ function NDTPage() {
 
     try {
       const formDataToSend = prepareFormData();
-      await axios.post(`http://localhost:5000/api/ndt/${auditId}`, formDataToSend, config);
+      await axios.post(`https://structural-audit.vercel.app/api/ndt/${auditId}`, formDataToSend, config);
       navigate(`/audit/${auditId}/conclusion`);
     } catch (err) {
       setError("Failed to submit NDT results. Please try again.");
@@ -97,17 +98,17 @@ function NDTPage() {
       {error && <p className="ndt-error-message">{error}</p>}
 
       <form onSubmit={handleSubmit} className="ndt-form">
-        {/* ✅ Test Components - Now pass handleImageChange & imagePreviews */}
-        <ReboundHammerTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <UltrasonicTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <CoreSamplingTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <CarbonationTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <ChlorideTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <SulfateTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <HalfCellPotentialTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <ConcreteCoverTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <RebarDiameterReductionTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
-        <CrushingStrengthTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imagePreviews={imagePreviews} />
+        {/* ✅ Pass image handling & previews to components */}
+        <ReboundHammerTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <UltrasonicTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <CoreSamplingTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <CarbonationTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <ChlorideTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <SulfateTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <HalfCellPotentialTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <ConcreteCoverTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <RebarDiameterReductionTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
+        <CrushingStrengthTest formData={formData} setFormData={setFormData} handleImageChange={handleImageChange} imageData={imageData} />
 
         <button type="submit" className="ndt-submit-btn">Save & Finish</button>
       </form>

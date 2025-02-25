@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 
 const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(false);
+  const [showFields, setShowFields] = useState(formData.chloride_test !== null);
 
   const handleRadioChange = (e) => {
-    const value = e.target.value;
-    setShowFields(value === "yes");
+    const value = e.target.value === "yes";
+    setShowFields(value);
+
     setFormData((prev) => ({
       ...prev,
-      chloride_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+      chloride_test: value ? {} : null,
+      chlorideContent: value ? prev.chlorideContent || "" : "",
     }));
   };
 
@@ -17,32 +19,31 @@ const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Determine Corrosion Risk based on Chloride Content (As per IS 456:2000)
-  const determineCorrosionRisk = (chloride) => {
-    if (!chloride) return "";
-    if (chloride >= 0.3) return "High Risk";
-    if (chloride >= 0.15) return "Moderate Risk";
+  // ✅ Compute Corrosion Risk
+  const computeCorrosionRisk = () => {
+    const chlorideContent = parseFloat(formData.chlorideContent) || 0;
+    if (chlorideContent >= 0.3) return "High Risk";
+    if (chlorideContent >= 0.15) return "Moderate Risk";
     return "Low Risk";
   };
 
-  // Generate Recommendations based on Corrosion Risk
-  const generateRecommendation = (chloride) => {
-    if (!chloride) return "";
-
-    if (chloride >= 0.3) {
+  // ✅ Generate Recommendation
+  const generateRecommendation = () => {
+    const chlorideContent = parseFloat(formData.chlorideContent) || 0;
+    if (chlorideContent >= 0.3) {
       return "❌ High Risk: Immediate protective measures required. Use low-permeability concrete, increase cover thickness, apply corrosion inhibitors, and ensure waterproofing.";
     }
-    if (chloride >= 0.15) {
+    if (chlorideContent >= 0.15) {
       return "⚠️ Moderate Risk: Monitor structure regularly. Apply anti-corrosion coatings and ensure proper drainage to prevent chloride penetration.";
     }
     return "✅ Low Risk: No immediate action required. Continue regular structural monitoring and maintenance.";
   };
 
-  const chlorideContent = parseFloat(formData.chlorideContent);
-  const corrosionRisk = determineCorrosionRisk(chlorideContent);
-  const recommendation = generateRecommendation(chlorideContent);
+  // ✅ Memoized Computations
+  const corrosionRisk = computeCorrosionRisk();
+  const recommendation = generateRecommendation();
 
-  // ✅ Store test result as a JSON string
+  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields) {
       setFormData((prev) => ({
@@ -54,15 +55,23 @@ const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews 
         }),
       }));
     }
-  }, [chlorideContent, corrosionRisk, formData.chlorideContent, showFields, setFormData]);
+  }, [formData.chlorideContent, corrosionRisk, recommendation, showFields, setFormData]);
+
+  // ✅ Safely parse stored JSON data
+  let testData = {};
+  try {
+    testData = JSON.parse(formData.chloride_test || "{}");
+  } catch (error) {
+    testData = {};
+  }
 
   return (
     <div className="test-section">
       <h3>Chloride Test</h3>
 
       <label>Perform Test?</label>
-      <input type="radio" name="chlorideTest" value="yes" onChange={handleRadioChange} /> Yes
-      <input type="radio" name="chlorideTest" value="no" onChange={handleRadioChange} /> No
+      <input type="radio" name="chloride_test" value="yes" checked={showFields} onChange={handleRadioChange} /> Yes
+      <input type="radio" name="chloride_test" value="no" checked={!showFields} onChange={handleRadioChange} /> No
 
       {showFields && (
         <>
@@ -70,13 +79,13 @@ const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews 
           <input type="number" name="chlorideContent" step="0.01" value={formData.chlorideContent || ""} onChange={handleChange} />
 
           <label>Corrosion Risk:</label>
-          <input type="text" value={corrosionRisk} readOnly />
+          <input type="text" value={testData.corrosion_risk || ""} readOnly />
 
           {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="chlorideImage" accept="image/*" onChange={handleImageChange} />
 
-          {imagePreviews.chlorideImage && (
+          {imagePreviews?.chlorideImage && (
             <div className="image-preview">
               <p>Uploaded Image:</p>
               <img src={imagePreviews.chlorideImage} alt="Uploaded Test" width="200px" />
@@ -84,12 +93,8 @@ const ChlorideTest = ({ formData, setFormData, handleImageChange, imagePreviews 
           )}
 
           {/* ✅ Recommendation Box */}
-          {recommendation && (
-            <div className="recommendation-box">
-              <h4>Recommendation (As per IS 456:2000):</h4>
-              <p>{recommendation}</p>
-            </div>
-          )}
+          <label>Recommendation:</label>
+          <input type="text" value={testData.recommendation || ""} readOnly />
         </>
       )}
     </div>

@@ -11,6 +11,9 @@ function ViewSubmittedAudit() {
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedPDF, setSelectedPDF] = useState(null);
+  
+  const [uploadedDrawings, setUploadedDrawings] = useState([]);
+  
 
   useEffect(() => {
     const fetchFullAudit = async () => {
@@ -18,19 +21,26 @@ function ViewSubmittedAudit() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/full`, config);
+        
         setFullAudit(response.data);
+        
+        // Fetch uploaded drawings separately
+        const drawingsResponse = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/drawings`, config);
+        setUploadedDrawings(drawingsResponse.data);
+        
       } catch (err) {
-        console.error("Error fetching full audit details:", err);
+        console.error("Error fetching audit details:", err);
         setError("Failed to load audit details.");
       }
     };
+    
     fetchFullAudit();
   }, [auditId]);
-
+  
   if (error) return <div className="error-message">{error}</div>;
   if (!fullAudit) return <div className="loading-message">Loading audit details...</div>;
 
-  const { audit, structuralChanges, observations, immediateConcerns, ndtTests } = fullAudit;
+  const { audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries } = fullAudit;
 
   const handleGenerateReport = async () => {
     try {
@@ -126,9 +136,6 @@ function ViewSubmittedAudit() {
                       </button>
                     ) : "No File"}
                   </td>
-                <td>{item.repair_year || "N/A"}</td>
-                <td>{item.repair_type || "N/A"}</td>
-                <td>{item.repair_efficacy || "N/A"}</td>
                 <td>
                   {item.repair_cost && !isNaN(item.repair_cost)
                     ? `$${parseFloat(item.repair_cost).toFixed(2)}`
@@ -146,107 +153,117 @@ function ViewSubmittedAudit() {
         <p>No structural changes recorded.</p>
       )}</div>
 
-      <h3>Uploaded Drawings</h3>
-      <div className="table-container">{structuralChanges.length > 0 ? (
-        <table className="audit-table">
-          <thead>
-            <tr>
-              <th>Architectural Drawing</th>
-              <th>Structural Drawing</th>
+<h3>Uploaded Drawings</h3>
+<div className="table-container">
+  {uploadedDrawings.length > 0 ? (
+    <table className="audit-table">
+      <thead>
+        <tr>
+          <th>Architectural Drawing</th>
+          <th>Structural Drawing</th>
+        </tr>
+      </thead>
+      <tbody>
+        {uploadedDrawings.map((drawing) => (
+          <tr key={drawing.id}>
+            <td>
+              {drawing.drawing_type === "architecturalDrawing" ? (
+                <button onClick={() => setSelectedPDF(drawing.file_name)}>
+                  <FaEye /> View PDF
+                </button>
+              ) : "No File"}
+            </td>
+            <td>
+              {drawing.drawing_type === "structuralDrawing" ? (
+                <button onClick={() => setSelectedPDF(drawing.file_name)}>
+                  <FaEye /> View PDF
+                </button>
+              ) : "No File"}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p>No uploaded drawings found.</p>
+  )}
+</div>
+
+
+
+      {/* 🔹 Observations Table (Now Includes Damage Photos from DamageEntries) */}
+<h3>Observations</h3>
+<div className="table-container">
+  {observations?.length > 0 ? (
+    <table className="audit-table">
+      <thead>
+        <tr>
+          <th>Unexpected Load</th>
+          <th>Unapproved Changes</th>
+          <th>Additional Floor</th>
+          <th>Vegetation Growth</th>
+          <th>Leakage</th>
+          <th>Cracks (Beams)</th>
+          <th>Cracks (Columns)</th>
+          <th>Cracks (Flooring)</th>
+          <th>Floor Sagging</th>
+          <th>Bulging Walls</th>
+          <th>Window Problems</th>
+          <th>Heaving Floor</th>
+          <th>Concrete Texture</th>
+          <th>Algae Growth</th>
+          <th>Damage Description</th>
+          <th>Damage Location</th>
+          <th>Damage Cause</th>
+          <th>Damage Classification</th>
+          <th>Damage Photo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {observations.map((item) => {
+          // ✅ Ensure `dataEntries` exists before calling `.find()`
+          const damageEntry = dataEntries?.find((d) => d.audit_id === item.audit_id);
+
+          return (
+            <tr key={item.id}>
+              <td>{item.unexpected_load ? "Yes" : "No"}</td>
+              <td>{item.unapproved_changes ? "Yes" : "No"}</td>
+              <td>{item.additional_floor ? "Yes" : "No"}</td>
+              <td>{item.vegetation_growth ? "Yes" : "No"}</td>
+              <td>{item.leakage ? "Yes" : "No"}</td>
+              <td>{item.cracks_beams ? "Yes" : "No"}</td>
+              <td>{item.cracks_columns ? "Yes" : "No"}</td>
+              <td>{item.cracks_flooring ? "Yes" : "No"}</td>
+              <td>{item.floor_sagging ? "Yes" : "No"}</td>
+              <td>{item.bulging_walls ? "Yes" : "No"}</td>
+              <td>{item.window_problems ? "Yes" : "No"}</td>
+              <td>{item.heaving_floor ? "Yes" : "No"}</td>
+              <td>{item.algae_growth ? "Yes" : "No"}</td>
+              
+              {/* 🔹 Ensure damage data exists */}
+              <td>{damageEntry?.description || "N/A"}</td>
+              <td>{damageEntry?.location || "N/A"}</td>
+              <td>{damageEntry?.cause || "N/A"}</td>
+              <td>{damageEntry?.classification || "N/A"}</td>
+
+              {/* 🔹 View Damage Photo (Stored as BLOB) */}
+              <td>
+                {damageEntry?.damage_photos ? (
+                  <button onClick={() => setSelectedImage(damageEntry.damage_photos)}>
+                    <FaEye /> View Image
+                  </button>
+                ) : "No Photo"}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {structuralChanges.map((item) => (
-              <tr key={item.id}>
-                <td>
-                    {item.auditDrawings ? (
-                      <button onClick={() => setSelectedPDF(item.file_name)}>
-                        <FaEye /> View PDF
-                      </button>
-                    ) : "No File"}
-                  </td>
-                <td>
-                    {item.auditDrawings ? (
-                      <button onClick={() => setSelectedPDF(item.file_name)}>
-                        <FaEye /> View PDF
-                      </button>
-                    ) : "No File"}
-                  </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No structural changes recorded.</p>
-      )}</div>
+          );
+        })}
+      </tbody>
+    </table>
+  ) : (
+    <p>No observations recorded.</p>
+  )}
+</div>
 
-
-
-      {/* Observations Table */}
-      <h3>Observations</h3>
-      <div className="table-container">{observations.length > 0 ? (
-        <table className="audit-table">
-          <thead>
-            <tr>
-              <th>Unexpected Load</th>
-              <th>Unapproved Changes</th>
-              <th>Additional Floor</th>
-              <th>Vegetation Growth</th>
-              <th>Leakage</th>
-              <th>Cracks (Beams)</th>
-              <th>Cracks (Columns)</th>
-              <th>Cracks (Flooring)</th>
-              <th>Floor Sagging</th>
-              <th>Bulging Walls</th>
-              <th>Window Problems</th>
-              <th>Heaving Floor</th>
-              <th>Concrete Texture</th>
-              <th>Algae Growth</th>
-              <th>Damage Description</th>
-              <th>Damage location</th>
-              <th>Damage Cause</th>
-              <th>Damage classification</th>
-              <th>Damage Photo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {observations.map((item) => (
-              <tr key={item.id}>
-                <td>{item.unexpected_load ? "Yes" : "No"}</td>
-                <td>{item.unapproved_changes ? "Yes" : "No"}</td>
-                <td>{item.additional_floor ? "Yes" : "No"}</td>
-                <td>{item.vegetation_growth ? "Yes" : "No"}</td>
-                <td>{item.leakage ? "Yes" : "No"}</td>
-                <td>{item.cracks_beams ? "Yes" : "No"}</td>
-                <td>{item.cracks_columns ? "Yes" : "No"}</td>
-                <td>{item.cracks_flooring ? "Yes" : "No"}</td>
-                <td>{item.floor_sagging ? "Yes" : "No"}</td>
-                <td>{item.bulging_walls ? "Yes" : "No"}</td>
-                <td>{item.window_problems ? "Yes" : "No"}</td>
-                <td>{item.heaving_floor ? "Yes" : "No"}</td>
-                <td>{item.concrete_texture ? "Yes" : "No"}</td>
-                <td>{item.algae_growth ? "Yes" : "No"}</td>
-                <td>{item.damage_description || "N/A"}</td>
-                <td>{item.damage_location || "N/A"}</td>
-                <td>{item.damage_cause || "N/A"}</td>
-                <td>{item.damage_classification || "N/A"}</td>
-                <td>
-                    {item.damage_photo ? (
-                      <button
-                        onClick={() => setSelectedImage(item.damage_photo)}
-                      >
-                        <FaEye /> View Image
-                      </button>
-                    ) : "No Photo"}
-                  </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No observations recorded.</p>
-      )}</div>
-      
 
 
       {/* Immediate Concerns Table */}
@@ -273,28 +290,235 @@ function ViewSubmittedAudit() {
 
       {/* NDT Test Results Table */}
       <h3>NDT Test Results</h3>
-      <div className="table-container">{ndtTests.length > 0 ? (
-        <table className="audit-table">
-          <thead>
-            <tr><th>Rebound Hammer</th><th>Ultrasonic Test</th><th>Core Sampling</th><th>Carbonation Test</th><th>chloride_test</th><th>sulfate_test</th><th>half_cell_potential_test</th><th>concrete_cover_measurement</th><th>rebar_diameter_reduction</th></tr>
-          </thead>
-          <tbody>
-            {ndtTests.map((item) => (
-              <tr key={item.id}>
-                <td>{item.rebound_hammer_test || "N/A"}</td>
-                <td>{item.ultrasonic_test || "N/A"}</td>
-                <td>{item.core_sampling_test || "N/A"}</td>
-                <td>{item.carbonation_test || "N/A"}</td>
-                <td>{item.chloride_test || "N/A"}</td>
-                <td>{item.sulfate_test || "N/A"}</td>
-                <td>{item.half_cell_potential_test || "N/A"}</td>
-                <td>{item.concrete_cover_measurement || "N/A"}</td>
-                <td>{item.rebar_diameter_reduction || "N/A"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : <p>No NDT test results recorded.</p>}</div>
+<div className="table-container">
+  {ndtTests.length > 0 ? (
+    <table className="audit-table">
+      <thead>
+        <tr>
+          <th>Test Type</th>
+          <th>Value</th>
+          <th>Quality</th>
+          <th>Recommendation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {ndtTests.map((item) => (
+          <>
+            {/* 🔹 Rebound Hammer Test */}
+            <tr key={`${item.id}-rebound`}>
+              <td><strong>Rebound Hammer</strong></td>
+              {item.rebound_hammer_test ? (
+                (() => {
+                  const data = JSON.parse(item.rebound_hammer_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Ultrasonic Test */}
+            <tr key={`${item.id}-ultrasonic`}>
+              <td><strong>Ultrasonic Test</strong></td>
+              {item.ultrasonic_test ? (
+                (() => {
+                  const data = JSON.parse(item.ultrasonic_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Core Sampling Test */}
+            <tr key={`${item.id}-core-sampling`}>
+              <td><strong>Core Sampling Test</strong></td>
+              {item.core_sampling_test ? (
+                (() => {
+                  const data = JSON.parse(item.core_sampling_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Carbonation Test */}
+            <tr key={`${item.id}-carbonation`}>
+              <td><strong>Carbonation Test</strong></td>
+              {item.carbonation_test ? (
+                (() => {
+                  const data = JSON.parse(item.carbonation_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Chloride Test */}
+            <tr key={`${item.id}-chloride`}>
+              <td><strong>Chloride Test</strong></td>
+              {item.chloride_test ? (
+                (() => {
+                  const data = JSON.parse(item.chloride_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Sulfate Test */}
+            <tr key={`${item.id}-sulfate`}>
+              <td><strong>Sulfate Test</strong></td>
+              {item.sulfate_test ? (
+                (() => {
+                  const data = JSON.parse(item.sulfate_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Half Cell Potential Test */}
+            <tr key={`${item.id}-half-cell`}>
+              <td><strong>Half Cell Potential Test</strong></td>
+              {item.half_cell_potential_test ? (
+                (() => {
+                  const data = JSON.parse(item.half_cell_potential_test);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Concrete Cover Measurement */}
+            <tr key={`${item.id}-concrete-cover`}>
+              <td><strong>Concrete Cover Measurement</strong></td>
+              {item.concrete_cover_measurement ? (
+                (() => {
+                  const data = JSON.parse(item.concrete_cover_measurement);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+
+            {/* 🔹 Rebar Diameter Reduction */}
+            <tr key={`${item.id}-rebar-diameter`}>
+              <td><strong>Rebar Diameter Reduction</strong></td>
+              {item.rebar_diameter_reduction ? (
+                (() => {
+                  const data = JSON.parse(item.rebar_diameter_reduction);
+                  return (
+                    <>
+                      <td>{data.value || "N/A"}</td>
+                      <td>{data.quality || "N/A"}</td>
+                      <td>{data.recommendation || "N/A"}</td>
+                    </>
+                  );
+                })()
+              ) : (
+                <>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                  <td>N/A</td>
+                </>
+              )}
+            </tr>
+          </>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <p>No NDT test results recorded.</p>
+  )}
+</div>
+
       
       {/* Image & PDF Modal Viewer */}
       {selectedImage && (

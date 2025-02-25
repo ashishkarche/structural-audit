@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 
 const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(false);
+  const [showFields, setShowFields] = useState(formData.concrete_cover_test !== null);
 
   const handleRadioChange = (e) => {
-    const value = e.target.value;
-    setShowFields(value === "yes");
+    const value = e.target.value === "yes";
+    setShowFields(value);
+
     setFormData((prev) => ({
       ...prev,
-      concrete_cover_test: value === "yes" ? "" : null, // ✅ If "no", set to null
+      concrete_cover_test: value ? {} : null,
+      concreteCoverRequired: value ? prev.concreteCoverRequired || "" : "",
+      concreteCoverMeasured: value ? prev.concreteCoverMeasured || "" : "",
     }));
   };
 
@@ -17,14 +20,14 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Compute Cover Deficiency
+  // ✅ Compute Cover Deficiency
   const computeCoverDeficiency = () => {
     const requiredCover = parseFloat(formData.concreteCoverRequired) || 0;
     const measuredCover = parseFloat(formData.concreteCoverMeasured) || 0;
     return (requiredCover - measuredCover).toFixed(2);
   };
 
-  // Determine Structural Risk based on Cover Deficiency
+  // ✅ Determine Structural Risk
   const determineStructuralRisk = (deficiency) => {
     if (!deficiency || deficiency <= 0) return "Adequate Cover";
     if (deficiency > 10) return "Severe Cover Deficiency";
@@ -32,7 +35,7 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "Minor Cover Deficiency";
   };
 
-  // Generate Recommendations based on Cover Deficiency
+  // ✅ Generate Recommendation
   const generateRecommendation = (deficiency) => {
     if (!deficiency || deficiency <= 0) {
       return "✅ Adequate Cover: Continue regular structural monitoring and maintenance.";
@@ -46,11 +49,12 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "✔️ Minor Cover Deficiency: No immediate action needed, but monitor regularly. Ensure proper curing and maintenance practices.";
   };
 
+  // ✅ Memoized Computations
   const coverDeficiency = computeCoverDeficiency();
   const structuralRisk = determineStructuralRisk(parseFloat(coverDeficiency));
   const recommendation = generateRecommendation(parseFloat(coverDeficiency));
 
-  // ✅ Store test result as a JSON string
+  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields) {
       setFormData((prev) => ({
@@ -66,13 +70,21 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     }
   }, [coverDeficiency, structuralRisk, formData.concreteCoverRequired, formData.concreteCoverMeasured, showFields, setFormData]);
 
+  // ✅ Safely parse stored JSON data
+  let testData = {};
+  try {
+    testData = JSON.parse(formData.concrete_cover_test || "{}");
+  } catch (error) {
+    testData = {};
+  }
+
   return (
     <div className="test-section">
       <h3>Concrete Cover Test</h3>
 
       <label>Perform Test?</label>
-      <input type="radio" name="concreteCoverTest" value="yes" onChange={handleRadioChange} /> Yes
-      <input type="radio" name="concreteCoverTest" value="no" onChange={handleRadioChange} /> No
+      <input type="radio" name="concrete_cover_test" value="yes" checked={showFields} onChange={handleRadioChange} /> Yes
+      <input type="radio" name="concrete_cover_test" value="no" checked={!showFields} onChange={handleRadioChange} /> No
 
       {showFields && (
         <>
@@ -83,16 +95,16 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
           <input type="number" name="concreteCoverMeasured" value={formData.concreteCoverMeasured || ""} onChange={handleChange} />
 
           <label>Cover Deficiency (mm):</label>
-          <input type="number" value={coverDeficiency} readOnly />
+          <input type="number" value={testData.cover_deficiency || ""} readOnly />
 
           <label>Structural Risk:</label>
-          <input type="text" value={structuralRisk} readOnly />
+          <input type="text" value={testData.structural_risk || ""} readOnly />
 
           {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="concreteCoverImage" accept="image/*" onChange={handleImageChange} />
 
-          {imagePreviews.concreteCoverImage && (
+          {imagePreviews?.concreteCoverImage && (
             <div className="image-preview">
               <p>Uploaded Image:</p>
               <img src={imagePreviews.concreteCoverImage} alt="Uploaded Test" width="200px" />
@@ -100,12 +112,8 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
           )}
 
           {/* ✅ Recommendation Box */}
-          {recommendation && (
-            <div className="recommendation-box">
-              <h4>Recommendation (As per IS 13620, IS 9077, IS 2645, IS 13935):</h4>
-              <p>{recommendation}</p>
-            </div>
-          )}
+          <label>Recommendation:</label>
+          <input type="text" value={testData.recommendation || ""} readOnly />
         </>
       )}
     </div>

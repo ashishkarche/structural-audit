@@ -1,74 +1,125 @@
-/* 📌 Conclusion Page Styling */
-.conclusion-container {
-    max-width: 800px;
-    margin: auto;
+/* 🌟 Modern & Aesthetic Conclusion Page Styles */
+.conclusion-page-container {
+  max-width: 800px;
+  margin: 50px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  font-family: "Poppins", sans-serif;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.conclusion-page-title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.conclusion-error-message {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff453a;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.conclusion-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.conclusion-form .form-group {
+  margin-bottom: 20px;
+}
+
+.conclusion-form label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.conclusion-form textarea,
+.conclusion-form input {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+}
+
+.conclusion-form textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.conclusion-form textarea:focus,
+.conclusion-form input:focus {
+  border-color: #4A90E2;
+  box-shadow: 0 0 6px rgba(74, 144, 226, 0.3);
+  outline: none;
+}
+
+/* 🌟 Submit Button Styling */
+.conclusion-submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(to right, #4A90E2, #1363DF);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-transform: uppercase;
+}
+
+.conclusion-submit-btn:hover {
+  background: linear-gradient(to right, #1363DF, #4A90E2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(19, 99, 223, 0.2);
+}
+
+.conclusion-submit-btn:active {
+  transform: translateY(1px);
+}
+
+/* 🌟 Responsive Design */
+@media (max-width: 768px) {
+  .conclusion-page-container {
     padding: 20px;
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
   }
   
-  .conclusion-title {
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 15px;
+  .conclusion-page-title {
+    font-size: 22px;
   }
-  
-  .conclusion-form {
-    display: flex;
-    flex-direction: column;
+
+  .conclusion-form textarea,
+  .conclusion-form input {
+    font-size: 13px;
   }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    display: block;
-  }
-  
-  .form-group textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+
+  .conclusion-submit-btn {
     font-size: 14px;
-    transition: 0.3s;
   }
-  
-  .form-group textarea:focus {
-    border-color: #667eea;
-    outline: none;
-    box-shadow: 0px 0px 5px rgba(102, 126, 234, 0.5);
+}
+
+/* 🌟 Smooth Fade-in Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
   }
-  
-  .submit-btn {
-    background: #667eea;
-    color: #fff;
-    font-size: 16px;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s ease-in-out;
-    margin-top: 10px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .submit-btn:hover {
-    background: #5563c1;
-    transform: scale(1.05);
-  }
-  
-  .error-message {
-    color: #ff4d4d;
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-  
+}
