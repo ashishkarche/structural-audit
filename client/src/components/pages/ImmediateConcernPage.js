@@ -29,31 +29,24 @@ function ImmediateConcernPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
+  
     const token = localStorage.getItem("token");
     const config = { 
-      headers: { 
-        Authorization: `Bearer ${token}`, 
-        "Content-Type": "multipart/form-data" 
-      } 
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } 
     };
-
+  
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) =>
-      formDataToSend.append(key, formData[key])
-    );
-
+    Object.keys(formData).forEach((key) => formDataToSend.append(key, formData[key]));
+  
     try {
-      // Updated API endpoint to include auditId
       await axios.post(`https://structural-audit.vercel.app/api/immediate-concern/${auditId}`, formDataToSend, config);
-      // After successful submission, navigate to the next step (e.g., ndt-tests)
       navigate(`/audit/${auditId}/ndt-tests`);
     } catch (err) {
       console.error(err);
       setError("Failed to submit immediate concern.");
     }
   };
-
+  
   return (
     <div className="immediate-concern-container">
       <h2>Immediate Concerns</h2>
@@ -99,7 +92,6 @@ function ImmediateConcernPage() {
           accept="image/*"
           onChange={handleChange}
         />
-
         <button type="submit">Save & Next</button>
       </form>
     </div>

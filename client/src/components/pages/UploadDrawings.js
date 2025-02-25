@@ -6,19 +6,46 @@ import "../../static/UploadDrawings.css";
 function UploadDrawings() {
   const { auditId } = useParams();
   const navigate = useNavigate();
-  
+
   const [drawings, setDrawings] = useState({
     architecturalDrawing: null,
     structuralDrawing: null,
   });
 
-  const [uploadedFiles, setUploadedFiles] = useState({}); // Stores uploaded file names
-  const [error, setError] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState({
+    architecturalDrawing: null,
+    structuralDrawing: null,
+  });
 
-  // Load previously uploaded file names from localStorage
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Load uploaded PDFs from backend
   useEffect(() => {
-    const savedFiles = JSON.parse(localStorage.getItem(`audit_${auditId}_drawings`)) || {};
-    setUploadedFiles(savedFiles);
+    const fetchDrawings = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token"); // ✅ Get Token
+    
+        const response = await axios.get(
+          `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
+          {
+            headers: { Authorization: `Bearer ${token}` }, // ✅ Include Token
+            responseType: "blob",
+          }
+        );
+    
+        const pdfUrl = URL.createObjectURL(response.data);
+        setUploadedFiles({ architecturalDrawing: pdfUrl, structuralDrawing: pdfUrl });
+    
+      } catch (err) {
+        console.error("Error fetching uploaded drawings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDrawings();
   }, [auditId]);
 
   const handleFileChange = (e) => {
@@ -29,6 +56,7 @@ function UploadDrawings() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const token = localStorage.getItem("token");
     const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } };
@@ -37,20 +65,25 @@ function UploadDrawings() {
       const formData = new FormData();
       formData.append("auditId", auditId);
 
-      // Append both files if selected
       if (drawings.architecturalDrawing) formData.append("architecturalDrawing", drawings.architecturalDrawing);
       if (drawings.structuralDrawing) formData.append("structuralDrawing", drawings.structuralDrawing);
 
-      const response = await axios.post("https://structural-audit.vercel.app/api/upload-drawings", formData, config);
+      await axios.post("https://structural-audit.vercel.app/api/upload-drawings", formData, config);
 
-      // Save uploaded file info in localStorage
-      localStorage.setItem(`audit_${auditId}_drawings`, JSON.stringify(response.data.uploadedFiles));
-      setUploadedFiles(response.data.uploadedFiles);
+      // ✅ Fetch updated PDFs after upload
+      const updatedResponse = await axios.get(
+        `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
+        { headers: { Authorization: `Bearer ${token}` },responseType: "blob" }
+      );
+      const updatedPdfUrl = URL.createObjectURL(updatedResponse.data);
+      setUploadedFiles({ architecturalDrawing: updatedPdfUrl, structuralDrawing: updatedPdfUrl });
 
-      // Redirect to Structural Changes page
+      // ✅ Navigate to next page
       navigate(`/audit/${auditId}/structural-changes`);
     } catch (err) {
       setError("Failed to upload drawings. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,22 +91,42 @@ function UploadDrawings() {
     <div className="upload-drawings-container">
       <h2>Upload Drawings</h2>
       {error && <p className="text-danger text-center">{error}</p>}
+      {loading && <p className="text-center">Uploading files...</p>}
 
       <form onSubmit={handleSubmit} className="upload-form">
+        {/* Architectural Drawing Upload */}
         <div className="form-group">
           <label>Architectural Drawing (PDF)</label>
           <input type="file" name="architecturalDrawing" accept="application/pdf" onChange={handleFileChange} />
-          {uploadedFiles.architecturalDrawing && <p className="uploaded-file">Uploaded: {uploadedFiles.architecturalDrawing}</p>}
         </div>
 
+        {/* Structural Drawing Upload */}
         <div className="form-group">
           <label>Structural Drawing (PDF)</label>
           <input type="file" name="structuralDrawing" accept="application/pdf" onChange={handleFileChange} />
-          {uploadedFiles.structuralDrawing && <p className="uploaded-file">Uploaded: {uploadedFiles.structuralDrawing}</p>}
+        </div>
+
+        {/* Uploaded File Previews */}
+        <div className="uploaded-files">
+          {uploadedFiles.architecturalDrawing && (
+            <div className="pdf-preview">
+              <h4>📄 Architectural Drawing Preview</h4>
+              <iframe src={uploadedFiles.architecturalDrawing} width="100%" height="400px" title="Architectural Drawing"></iframe>
+            </div>
+          )}
+
+          {uploadedFiles.structuralDrawing && (
+            <div className="pdf-preview">
+              <h4>📄 Structural Drawing Preview</h4>
+              <iframe src={uploadedFiles.structuralDrawing} width="100%" height="400px" title="Structural Drawing"></iframe>
+            </div>
+          )}
         </div>
 
         <div className="form-group submit-btn-container">
-          <button type="submit" className="submit-btn">Upload & Next</button>
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? "Uploading..." : "Upload & Next"}
+          </button>
         </div>
       </form>
     </div>

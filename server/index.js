@@ -285,42 +285,41 @@ app.post("/api/upload-drawings", authenticate, upload.fields([
       return res.status(400).json({ message: "Audit ID and files are required" });
     }
 
-    // Check if files exist
-    const files = {};
+    const files = [];
     if (req.files["architecturalDrawing"]) {
-      files.architecturalDrawing = req.files["architecturalDrawing"][0].originalname;
+      const fileBuffer = req.files["architecturalDrawing"][0].buffer;
+      files.push([auditId, req.user.id, "architecturalDrawing", fileBuffer]);
     }
     if (req.files["structuralDrawing"]) {
-      files.structuralDrawing = req.files["structuralDrawing"][0].originalname;
+      const fileBuffer = req.files["structuralDrawing"][0].buffer;
+      files.push([auditId, req.user.id, "structuralDrawing", fileBuffer]);
     }
 
-    // Insert file metadata into DB
-    const sql = `INSERT INTO AuditDrawings (audit_id, auditor_id, drawing_type, file_name) VALUES ?`;
-    const values = Object.keys(files).map((key) => [auditId, req.user.id, key, files[key]]);
+    // ✅ Insert file as BLOB into DB
+    const sql = `INSERT INTO AuditDrawings (audit_id, auditor_id, drawing_type, file_data) VALUES ?`;
+    await db.query(sql, [files]);
 
-    await db.query(sql, [values]);
-
-    res.json({
-      message: "Drawings uploaded successfully",
-      uploadedFiles: files,
-    });
+    res.json({ message: "Drawings uploaded successfully" });
   } catch (error) {
     console.error("Error uploading drawings:", error);
     res.status(500).json({ message: "Failed to upload drawings" });
   }
 });
 
-app.get('/api/audits/:auditId/drawings', authenticate, async (req, res) => {
+
+app.get("/api/files/:auditId/drawings", authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
-    const sql = `SELECT id, drawing_type, file_name FROM AuditDrawings WHERE audit_id = ?`;
+    const sql = `SELECT drawing_type, file_data FROM AuditDrawings WHERE audit_id = ?`;
     const [drawings] = await db.execute(sql, [auditId]);
 
     if (!drawings.length) {
       return res.status(404).json({ message: "No drawings found for this audit." });
     }
 
-    res.json(drawings);
+    const drawing = drawings[0]; // Fetch first drawing
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(drawing.file_data); // Serve the PDF directly
   } catch (error) {
     console.error("Error fetching drawings:", error);
     res.status(500).json({ message: "Failed to fetch drawings" });
@@ -903,14 +902,12 @@ app.post("/api/conclusion/:auditId", authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to submit conclusion & recommendations" });
   }
 });
-
-
-// Immediate Concern Submission
 app.post("/api/immediate-concern/:auditId", authenticate, upload.single("damagePhoto"), async (req, res) => {
   try {
     const { auditId } = req.params;
     const { concernDescription, location, effectDescription, recommendedMeasures } = req.body;
-    const damagePhoto = req.file ? req.file.originalname : null;
+    const damagePhoto = req.file ? req.file.buffer : null; // Store image as binary
+
     const sql = `INSERT INTO ImmediateConcerns (audit_id, concern_description, location, effect_description, recommended_measures, damage_photo) 
                  VALUES (?, ?, ?, ?, ?, ?)`;
     await db.execute(sql, [auditId, concernDescription, location, effectDescription, recommendedMeasures, damagePhoto]);
@@ -923,6 +920,23 @@ app.post("/api/immediate-concern/:auditId", authenticate, upload.single("damageP
   }
 });
 
+app.get("/api/immediate-concern/image/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = `SELECT damage_photo FROM ImmediateConcerns WHERE id = ?`;
+    const [rows] = await db.execute(sql, [id]);
+
+    if (rows.length === 0 || !rows[0].damage_photo) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.setHeader("Content-Type", "image/jpeg"); // Adjust MIME type as needed
+    res.send(rows[0].damage_photo);
+  } catch (error) {
+    console.error("Error fetching image:", error);
+    res.status(500).json({ message: "Failed to fetch image" });
+  }
+});
 
 // Notification endpoint
 app.get('/api/notifications', authenticate, async (req, res) => {
