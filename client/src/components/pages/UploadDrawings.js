@@ -20,31 +20,30 @@ function UploadDrawings() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Load uploaded PDFs from backend
+  // ✅ Load PDFs from backend
   useEffect(() => {
     const fetchDrawings = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token"); // ✅ Get Token
-    
+        const token = localStorage.getItem("token");
+
         const response = await axios.get(
           `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
-          {
-            headers: { Authorization: `Bearer ${token}` }, // ✅ Include Token
-            responseType: "blob",
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-    
-        const pdfUrl = URL.createObjectURL(response.data);
-        setUploadedFiles({ architecturalDrawing: pdfUrl, structuralDrawing: pdfUrl });
-    
+
+        // ✅ Set separate URLs for architectural & structural drawings
+        setUploadedFiles({
+          architecturalDrawing: response.data.architecturalDrawing || null,
+          structuralDrawing: response.data.structuralDrawing || null,
+        });
       } catch (err) {
         console.error("Error fetching uploaded drawings:", err);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchDrawings();
   }, [auditId]);
 
@@ -73,10 +72,13 @@ function UploadDrawings() {
       // ✅ Fetch updated PDFs after upload
       const updatedResponse = await axios.get(
         `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
-        { headers: { Authorization: `Bearer ${token}` },responseType: "blob" }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      const updatedPdfUrl = URL.createObjectURL(updatedResponse.data);
-      setUploadedFiles({ architecturalDrawing: updatedPdfUrl, structuralDrawing: updatedPdfUrl });
+
+      setUploadedFiles({
+        architecturalDrawing: updatedResponse.data.architecturalDrawing || null,
+        structuralDrawing: updatedResponse.data.structuralDrawing || null,
+      });
 
       // ✅ Navigate to next page
       navigate(`/audit/${auditId}/structural-changes`);
@@ -106,7 +108,7 @@ function UploadDrawings() {
           <input type="file" name="structuralDrawing" accept="application/pdf" onChange={handleFileChange} />
         </div>
 
-        {/* Uploaded File Previews */}
+        {/* ✅ Corrected Uploaded File Previews */}
         <div className="uploaded-files">
           {uploadedFiles.architecturalDrawing && (
             <div className="pdf-preview">

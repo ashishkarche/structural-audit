@@ -306,7 +306,6 @@ app.post("/api/upload-drawings", authenticate, upload.fields([
   }
 });
 
-
 app.get("/api/files/:auditId/drawings", authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
@@ -317,34 +316,19 @@ app.get("/api/files/:auditId/drawings", authenticate, async (req, res) => {
       return res.status(404).json({ message: "No drawings found for this audit." });
     }
 
-    const drawing = drawings[0]; // Fetch first drawing
-    res.setHeader("Content-Type", "application/pdf");
-    res.send(drawing.file_data); // Serve the PDF directly
+    // ✅ Convert BLOBs to base64 and return both PDFs
+    const response = {};
+    drawings.forEach((drawing) => {
+      response[drawing.drawing_type] = `data:application/pdf;base64,${drawing.file_data.toString("base64")}`;
+    });
+
+    res.json(response);
   } catch (error) {
     console.error("Error fetching drawings:", error);
     res.status(500).json({ message: "Failed to fetch drawings" });
   }
 });
 
-
-app.get("/audit/:auditId/drawings", authenticate, async (req, res) => {
-  try {
-    const { auditId } = req.params;
-
-    const sql = `
-      SELECT drawing_type, file_path, uploaded_at
-      FROM AuditDrawings
-      WHERE audit_id = ?
-    `;
-
-    const [drawings] = await db.execute(sql, [auditId]);
-
-    res.json(drawings);
-  } catch (error) {
-    console.error("Error fetching drawings:", error);
-    res.status(500).json({ message: "Failed to retrieve drawings" });
-  }
-});
 
 
 app.get('/api/audits/:id', authenticate, async (req, res) => {
@@ -422,10 +406,9 @@ app.get('/api/audits/:auditId/full', async (req, res) => {
     const [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
     const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
-    const [auditDrawings] = await db.execute(`SELECT * FROM AuditDrawings WHERE audit_id = ?`, [auditId]);
 
     // 🔹 Return full audit details
-    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, auditDrawings, dataEntries });
+    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries });
   } catch (error) {
     console.error("Error fetching audit details:", error);
     res.status(500).json({ message: "Failed to fetch audit details" });
@@ -509,96 +492,69 @@ app.delete('/api/audits/:id', authenticate, async (req, res) => {
 app.post(
   "/api/structural-changes/:auditId",
   authenticate,
-  upload.fields([
-    { name: "previousInvestigations", maxCount: 1 },
-    { name: "previousInvestigationReports", maxCount: 1 }
-  ]),
+  upload.single("investigationFile"), // ✅ Handle single file upload
   async (req, res) => {
     try {
       const { auditId } = req.params;
       let {
         briefBackgroundHistory,
+        briefHistoryDetails,
         dateOfChange,
+        structuralChanges,
         changeDetails,
-        previousInvestigationDone, // ✅ Yes/No field
-        repairDone, // ✅ Yes/No field
-        repairYear,
-        repairType,
-        repairEfficacy,
-        repairCost,
+        previousInvestigation,
         conclusionFromPreviousReport,
         scopeOfWork,
-        purposeOfInvestigation
+        purposeOfInvestigation,
       } = req.body;
 
-      // 🛠️ Convert "Yes"/"No" to boolean values (1 for Yes, 0 for No)
-      previousInvestigationDone = previousInvestigationDone === "Yes" ? 1 : 0;
-      repairDone = repairDone === "Yes" ? 1 : 0;
+      // ✅ Convert "Yes"/"No" to boolean (1 or 0)
+      briefBackgroundHistory = briefBackgroundHistory === "Yes" ? 1 : 0;
+      structuralChanges = structuralChanges === "Yes" ? 1 : 0;
+      previousInvestigation = previousInvestigation === "Yes" ? 1 : 0;
 
-      // 🛠️ Convert empty date to NULL
-      dateOfChange = dateOfChange && dateOfChange.trim() !== "" ? dateOfChange : null;
-      repairYear = repairYear && repairYear.trim() !== "" ? new Date(repairYear).getFullYear() : null;
+      // ✅ Convert empty date to NULL
+      dateOfChange = dateOfChange?.trim() ? dateOfChange : null;
 
-      // 🛠️ Handle File Uploads
-      const previousInvestigations = req.files["previousInvestigations"]
-        ? req.files["previousInvestigations"][0].originalname
-        : null;
+      // ✅ Handle File Uploads (Store as BLOB)
+      const previousInvestigationReports = req.file ? req.file.buffer : null;
 
-      const previousInvestigationReports = req.files["previousInvestigationReports"]
-        ? req.files["previousInvestigationReports"][0].originalname
-        : null;
-
-      // ✅ Insert into DB with all required fields
+      // ✅ Insert into DB
       const sql = `
         INSERT INTO StructuralChanges (
           audit_id, 
           brief_background_history, 
+          brief_history_details, 
           date_of_change, 
+          structural_changes, 
           change_details, 
-          previous_investigation_done, 
-          previous_investigations, 
+          previous_investigation, 
           previous_investigation_reports, 
-          repair_done, 
-          repair_year, 
-          repair_type, 
-          repair_efficacy, 
-          repair_cost, 
           conclusion_from_previous_report, 
           scope_of_work, 
           purpose_of_investigation
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       await db.execute(sql, [
         auditId,
         briefBackgroundHistory,
+        briefHistoryDetails,
         dateOfChange,
+        structuralChanges,
         changeDetails,
-        previousInvestigationDone,
-        previousInvestigations,
+        previousInvestigation,
         previousInvestigationReports,
-        repairDone,
-        repairYear,
-        repairType,
-        repairEfficacy,
-        repairCost,
         conclusionFromPreviousReport,
         scopeOfWork,
-        purposeOfInvestigation
+        purposeOfInvestigation,
       ]);
 
       await logAuditHistory(auditId, "Structural changes submitted", req.user.id);
 
       res.json({ message: "Structural changes submitted successfully" });
-
     } catch (error) {
       console.error("Error submitting structural changes:", error);
-
-      // 🔴 Specific Error Handling
-      if (error.code === "ER_TRUNCATED_WRONG_VALUE") {
-        return res.status(400).json({ message: "Invalid data format. Please check input values." });
-      }
-
       res.status(500).json({ message: "Failed to submit structural changes" });
     }
   }
@@ -618,6 +574,76 @@ app.get('/api/audits/:auditId/history', authenticate, async (req, res) => {
   } catch (error) {
     console.error("Error fetching audit history:", error);
     res.status(500).json({ message: "Failed to fetch audit history" });
+  }
+});
+
+app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const sql = `
+      SELECT brief_background_history, brief_history_details, date_of_change, 
+             structural_changes, change_details, previous_investigation 
+      FROM StructuralChanges 
+      WHERE audit_id = ?`;
+
+    const [structuralChanges] = await db.execute(sql, [auditId]);
+
+    if (structuralChanges.length === 0) {
+      return res.status(404).json({ message: "No structural changes found for this audit." });
+    }
+
+    res.json(structuralChanges);
+  } catch (error) {
+    console.error("Error fetching structural changes:", error);
+    res.status(500).json({ message: "Failed to fetch structural changes." });
+  }
+});
+
+app.get('/api/audits/:auditId/immediate-concerns', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const sql = `
+      SELECT concern_description, location, effect_description, recommended_measures 
+      FROM ImmediateConcerns 
+      WHERE audit_id = ?`;
+
+    const [immediateConcerns] = await db.execute(sql, [auditId]);
+
+    if (immediateConcerns.length === 0) {
+      return res.status(404).json({ message: "No immediate concerns found for this audit." });
+    }
+
+    res.json(immediateConcerns);
+  } catch (error) {
+    console.error("Error fetching immediate concerns:", error);
+    res.status(500).json({ message: "Failed to fetch immediate concerns." });
+  }
+});
+
+app.get('/api/audits/:auditId/drawings', authenticate, async (req, res) => {
+  try {
+    const { auditId } = req.params;
+    const sql = `
+      SELECT drawing_type, file_data 
+      FROM AuditDrawings 
+      WHERE audit_id = ?`;
+
+    const [drawings] = await db.execute(sql, [auditId]);
+
+    if (drawings.length === 0) {
+      return res.status(404).json({ message: "No drawings found for this audit." });
+    }
+
+    // Convert BLOB to Base64
+    const drawingsWithBase64 = drawings.map((drawing) => ({
+      ...drawing,
+      file_data: drawing.file_data ? drawing.file_data.toString('base64') : null
+    }));
+
+    res.json(drawingsWithBase64);
+  } catch (error) {
+    console.error("Error fetching audit drawings:", error);
+    res.status(500).json({ message: "Failed to fetch audit drawings." });
   }
 });
 
@@ -1013,6 +1039,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
     const [conclusion] = await db.execute(`SELECT * FROM AuditConclusions WHERE audit_id = ?`, [auditId]);
+    const [damageEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
 
     // Create PDF document
     const doc = new PDFDocument();
@@ -1071,7 +1098,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       doc.fontSize(16).text("Background History", { underline: true });
       structuralChanges.forEach((change) => {
         doc.fontSize(12).text(`- Brief Background History: ${change.brief_background_history}`);
-        doc.fontSize(12).text(`- Date of Change: ${change.date_of_change}`);
+        doc.fontSize(12).text(`- Date of Change: ${change.date_of_change || "Data Not Availble"}`);
         doc.text(`  Details: ${change.change_details}`);
         doc.text(`  Conclusion From Previous Report: ${change.conclusion_from_previous_report}`);
         doc.text(`  Scope Of Work: ${change.scope_of_work}`);
@@ -1084,74 +1111,220 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     if (observations.length > 0) {
       doc.fontSize(16).text("Visual Observations", { underline: true });
       observations.forEach((obs) => {
-        doc.fontSize(12).text(` Unexpected Load: ${obs.unexpected_load}`);
-        doc.fontSize(12).text(` Unapproved Changes: ${obs.unapproved_changes}`);
-        doc.fontSize(12).text(` Additional Floor: ${obs.additional_floor}`);
-        doc.fontSize(12).text(` Vegetation Growth: ${obs.vegetation_growth}`);
-        doc.fontSize(12).text(` Leakage Load: ${obs.leakage}`);
-        doc.fontSize(12).text(` Cracks Beams: ${obs.cracks_beams}`);
-        doc.fontSize(12).text(` Cracks Columns: ${obs.cracks_columns}`);
-        doc.fontSize(12).text(` Cracks Flooring: ${obs.cracks_flooring}`);
-        doc.fontSize(12).text(` Floor Sagging: ${obs.floor_sagging}`);
-        doc.fontSize(12).text(` Bulging Walls: ${obs.bulging_walls}`);
-        doc.fontSize(12).text(` Window Pronlems: ${obs.window_problems}`);
-        doc.fontSize(12).text(` Heaving Floor: ${obs.heaving_floor}`);
-        doc.fontSize(12).text(` Concrete Texture: ${obs.concrete_texture}`);
-        doc.fontSize(12).text(` Algae Growth: ${obs.algae_growth}`);
-        doc.fontSize(12).text(` Damage Description: ${obs.damage_description}`);
-        doc.fontSize(12).text(` Damage Location: ${obs.damage_location}`);
-        doc.fontSize(12).text(` Damage Cause: ${obs.damage_cause}`);
-        doc.fontSize(12).text(` Damage Classification: ${obs.damage_classification}`);
+        doc.fontSize(12).text(` Unexpected Load: ${obs.unexpected_load ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Unapproved Changes: ${obs.unapproved_changes ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Additional Floor: ${obs.additional_floor ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Vegetation Growth: ${obs.vegetation_growth ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Leakage Load: ${obs.leakage ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Cracks Beams: ${obs.cracks_beams ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Cracks Columns: ${obs.cracks_columns ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Cracks Flooring: ${obs.cracks_flooring ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Floor Sagging: ${obs.floor_sagging ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Bulging Walls: ${obs.bulging_walls ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Window Pronlems: ${obs.window_problems ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Heaving Floor: ${obs.heaving_floor ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Concrete Texture: ${obs.concrete_texture ? "Yes" : "No"}`);
+        doc.fontSize(12).text(` Algae Growth: ${obs.algae_growth ? "Yes" : "No"}`);
       });
-      doc.moveDown();
     }
 
-    // 📌 NDT Test Results (Page 7)
-    if (ndtTests.length > 0) {
-      doc.fontSize(16).text("Non-Destructive Testing (NDT) Results", { underline: true });
-      ndtTests.forEach((ndt) => {
-        doc.fontSize(12).text(`- Round Hammer Test: ${ndt.rebound_hammer_test}`);
-        doc.text(`  Ultersonic Test: ${ndt.ultrasonic_test}`);
-        doc.text(`  Core Sampling Test: ${ndt.core_sampling_test}`);
-        doc.text(`  Carbonation Test: ${ndt.carbonation_test}`);
-        doc.text(`  Chloride Test: ${ndt.chloride_test}`);
-        doc.text(`  Sulfate Test: ${ndt.sulfate_test}`);
-        doc.text(`  Half Cell Potential Test: ${ndt.half_cell_potential_test}`);
-        doc.text(`  Concrete Cover Test: ${ndt.concrete_cover_test}`);
-        doc.text(`  Rebar Diameter Test: ${ndt.rebar_diameter_test}`);
-        doc.text(`  Crushing Strength Test: ${ndt.crushing_strength_test}`);
+    // 📌 Damage Entries
+    if (damageEntries.length > 0) {
+      doc.fontSize(16).text("Damage Observations", { underline: true });
+      damageEntries.forEach((damage) => {
+        doc.fontSize(12).text(`- Description: ${damage.description || "N/A"}`);
+        doc.text(`  Location: ${damage.location || "N/A"}`);
+        doc.text(`  Cause: ${damage.cause || "N/A"}`);
+        doc.text(`  Classification: ${damage.classification || "N/A"}`);
         doc.moveDown();
       });
+    }
+
+    // 📌 NDT Test Results Table
+    if (ndtTests.length > 0) {
+      doc.addPage();
+      doc.fontSize(16).text("Non-Destructive Testing (NDT) Results", { underline: true });
+      doc.moveDown(1);
+
+      const ndtTable = {
+        headers: ["Test Type", "Value", "Quality", "Recommendation"],
+        rows: [],
+      };
+
+      // Loop through all tests and parse JSON data
+      ndtTests.forEach((ndt) => {
+        Object.keys(ndt).forEach((key) => {
+          if (key !== "id" && ndt[key]) {
+            try {
+              const data = JSON.parse(ndt[key]); // Parse stored JSON test results
+              ndtTable.rows.push([
+                key.replace(/_/g, " "), // Format test type name (e.g., "rebound_hammer_test" → "Rebound Hammer Test")
+                data.value || "N/A",
+                data.quality || "N/A",
+                data.recommendation || "N/A",
+              ]);
+            } catch (error) {
+              ndtTable.rows.push([
+                key.replace(/_/g, " "),
+                "Invalid Data",
+                "Invalid Data",
+                "Invalid Data",
+              ]);
+            }
+          }
+        });
+      });
+
+      // Function to draw table
+      const drawTable1 = (doc, table, startX, startY, rowHeight = 25, colWidths = [150, 100, 100, 200]) => {
+        let y = startY;
+
+        // Draw headers
+        doc.font("Helvetica-Bold").fontSize(12);
+        colWidths.forEach((width, index) => {
+          doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+          doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+        });
+        y += rowHeight;
+
+        // Draw rows
+        doc.font("Helvetica").fontSize(11);
+        table.rows.forEach((row) => {
+          colWidths.forEach((width, index) => {
+            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+          });
+          y += rowHeight;
+        });
+      };
+
+      // Draw the NDT Test Table at position (50, 150)
+      drawTable1(doc, ndtTable, 50, 150);
     }
 
     // 📌 Proforma (Page 4)
     doc.addPage();
     doc.fontSize(16).text("Proforma", { underline: true });
-    doc.fontSize(12).text(`Subject: Structural Audit of ${audit.name} at ${audit.location}`);
-    doc.text(`Date of Audit: ${audit.date_of_audit}`);
-    doc.text(`1. Name of the Project: ${audit.name}`);
-    doc.text(`   a. Location: ${audit.location}`);
-    doc.text(`   b. Area of Building: ${audit.area}`);
-    doc.text(`   c. Type of Structure: ${audit.structure_type}`);
-    doc.text(`   d. Number of Stories: ${audit.stories}`);
-    doc.text(`2. Year of Construction: ${audit.year_of_construction}`);
-    doc.text(`3. Use of the Building:`);
-    doc.text(`   a. Designed Use: ${audit.designed_use}`);
-    doc.text(`   b. Present Use: ${audit.present_use}`);
-    doc.text(`   c. Changes in Building: ${audit.changes_in_building}`);
-    doc.text(`4. History of Structure:`);
-    doc.text(`   a. Year of carrying out  Repairs: ${structuralChanges[0]?.date_of_change || "N/A"}`);
-    doc.text(`   b. Type of Repairs: ${structuralChanges[0]?.repair_type || "N/A"}`);
-    doc.text(`   c. Efficacy of Repairs: ${structuralChanges[0]?.repair_efficacy || "N/A"}`);
-    doc.text(`   d. Cost of Repairs: ${structuralChanges[0]?.repair_cost || "N/A"}`);
-    doc.text(`5. Type of Cement Used: ${audit.cement_type}`);
-    doc.text(`6. Type of Steel Reinforcement: ${audit.steel_type}`);
-    doc.text(`7. Visual Observations Conclusion: ${conclusion[0]?.conclusion || "N/A"}`);
-    doc.text(`8. Areas of Immediate Concern: ${immediateConcerns[0]?.description || "N/A"}`);
-    doc.text(`9. NDT Test Results:`);
-    ndtTests.forEach((ndt, index) => {
-      doc.text(`   ${index + 1}. ${ndt.test_type}: ${ndt.conclusion}`);
-    });
+    doc.moveDown(1);
+
+    const table = {
+      headers: ["#", "Details"],
+      rows: [
+        ["Subject", `Structural Audit of ${audit.name} at ${audit.location}`],
+        ["Date of Audit", audit.date_of_audit],
+        ["1. Name of the Project", audit.name],
+        ["   a. Location", audit.location],
+        ["   b. Area of Building", audit.area],
+        ["   c. Type of Structure", audit.structure_type],
+        ["   d. Number of Stories", audit.number_of_stories],
+        ["2. Year of Construction", audit.year_of_construction],
+        ["3. Use of the Building", ""],
+        ["   a. Designed Use", audit.designed_use],
+        ["   b. Present Use", audit.present_use],
+        ["   c. Changes in Building", audit.changes_in_building],
+        ["4. History of Structure", ""],
+        ["   a. carrying out Repairs", structuralChanges[0]?.date_of_change || "Data Not Availble"],
+        ["   b. Type of Repairs", structuralChanges[0]?.repair_type || "Data Not Availble"],
+        ["   c. Efficacy of Repairs", structuralChanges[0]?.repair_efficacy || "Data Not Availble"],
+        ["   d. Cost of Repairs", structuralChanges[0]?.repair_cost || "Data Not Availble"],
+        ["5. Type of Cement Used", audit.cement_type],
+        ["6. Type of Steel ", audit.steel_type],
+        ["7. Observations", conclusion[0]?.conclusion || "Data Not Availble"],
+        ["8. Areas of Immediate Concern", immediateConcerns[0]?.description || "Data Not Availble"],
+      ],
+    };
+
+    // Function to draw a table
+    const drawTable = (doc, table, startX, startY, rowHeight = 20, colWidths = [150, 350]) => {
+      let y = startY;
+
+      // Draw headers
+      doc.font("Helvetica-Bold").fontSize(12);
+      doc.rect(startX, y, colWidths[0], rowHeight).stroke();
+      doc.rect(startX + colWidths[0], y, colWidths[1], rowHeight).stroke();
+      doc.text(table.headers[0], startX + 5, y + 5);
+      doc.text(table.headers[1], startX + colWidths[0] + 5, y + 5);
+      y += rowHeight;
+
+      // Draw rows
+      doc.font("Helvetica").fontSize(11);
+      table.rows.forEach((row) => {
+        doc.rect(startX, y, colWidths[0], rowHeight).stroke();
+        doc.rect(startX + colWidths[0], y, colWidths[1], rowHeight).stroke();
+        doc.text(row[0], startX + 5, y + 5);
+        doc.text(row[1], startX + colWidths[0] + 5, y + 5);
+        y += rowHeight;
+      });
+    };
+
+    // Draw the table at position (50, 150)
+    drawTable(doc, table, 50, 150);
+
+    /// 📌 NDT Test Results Table
+    if (ndtTests.length > 0) {
+      doc.addPage();
+      doc.fontSize(16).text("NDT Test Results", { underline: true });
+      doc.moveDown(1);
+
+      const ndtTable = {
+        headers: ["Test Type", "Value", "Quality", "Recommendation", "Conclusion"],
+        rows: [],
+      };
+
+      // Loop through all tests and parse JSON data
+      ndtTests.forEach((ndt) => {
+        Object.keys(ndt).forEach((key) => {
+          if (key !== "id" && ndt[key]) {
+            try {
+              const data = JSON.parse(ndt[key]); // Parse stored JSON test results
+              ndtTable.rows.push([
+                key.replace(/_/g, " "), // Format test type name
+                data.value || "N/A",
+                data.quality || "N/A",
+                data.recommendation || "N/A",
+                ndt.conclusion || "N/A",
+              ]);
+            } catch (error) {
+              ndtTable.rows.push([
+                key.replace(/_/g, " "),
+                "Invalid Data",
+                "Invalid Data",
+                "Invalid Data",
+                ndt.conclusion || "N/A",
+              ]);
+            }
+          }
+        });
+      });
+
+      // Function to draw table
+      const drawTable3 = (doc, table, startX, startY, rowHeight = 25, colWidths = [150, 80, 100, 200, 120]) => {
+        let y = startY;
+
+        // Draw headers
+        doc.font("Helvetica-Bold").fontSize(12);
+        colWidths.forEach((width, index) => {
+          doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+          doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+        });
+        y += rowHeight;
+
+        // Draw rows
+        doc.font("Helvetica").fontSize(11);
+        table.rows.forEach((row) => {
+          colWidths.forEach((width, index) => {
+            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+          });
+          y += rowHeight;
+        });
+      };
+
+      // Draw the NDT Test Table at position (50, 150)
+      drawTable3(doc, ndtTable, 50, 150);
+    }
+
+
     if (conclusion.length > 0) {
       doc.addPage(); // Ensure conclusion starts on new page
       doc.fontSize(16).text("Conclusion & Recommendations", { underline: true });

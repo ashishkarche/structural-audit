@@ -15,12 +15,6 @@ function StructuralChangesPage() {
     changeDetails: "",
     previousInvestigation: "No",
     investigationFile: null,
-    concreteRepair: "No",
-    repairYear: "",
-    repairType: "",
-    repairEfficacy: "",
-    repairCost: "",
-    previousInvestigationReports: null,
     conclusionFromPreviousReport: "",
     scopeOfWork: "",
     purposeOfInvestigation: "",
@@ -28,6 +22,7 @@ function StructuralChangesPage() {
 
   const [error, setError] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [uploadedPDF, setUploadedPDF] = useState(null); // ✅ Store the uploaded PDF
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,7 +31,7 @@ function StructuralChangesPage() {
 
         if (!token) {
           setError("Session expired. Please log in again.");
-          navigate("/"); // Redirect to login page
+          navigate("/");
           return;
         }
 
@@ -48,35 +43,28 @@ function StructuralChangesPage() {
 
         if (response.status === 200 && response.data) {
           setFormData(response.data);
-          setIsSubmitted(response.data.isSubmitted || false); // Ensure proper flag setting
+          setIsSubmitted(response.data.isSubmitted || false);
+
+          // Fetch uploaded investigation report (PDF) if available
+          if (response.data.previousInvestigationReport) {
+            const pdfBlob = new Blob([response.data.previousInvestigationReport], {
+              type: "application/pdf",
+            });
+            setUploadedPDF(URL.createObjectURL(pdfBlob));
+          }
         } else {
           setError("No structural changes found for this audit.");
         }
       } catch (err) {
-        if (err.response) {
-          // Handle specific HTTP errors
-          if (err.response.status === 401) {
-            setError("Session expired. Please log in again.");
-            localStorage.removeItem("token"); // Clear expired token
-            navigate("/"); // Redirect to login
-          } else if (err.response.status === 404) {
-            setError("No structural changes found for this audit.");
-          } else {
-            setError("An error occurred while fetching data.");
-          }
-        } else {
-          setError("Network error. Please check your connection.");
-        }
+        setError("An error occurred while fetching data.");
       }
     };
 
     fetchData();
   }, [auditId, navigate]);
 
-
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
-
     setFormData((prevFormData) => ({
       ...prevFormData,
       [name]: type === "file" ? files[0] : value,
@@ -106,6 +94,7 @@ function StructuralChangesPage() {
         formDataToSend,
         config
       );
+
       navigate(`/audit/${auditId}/observations`);
     } catch (err) {
       setError("Failed to submit structural changes.");
@@ -153,7 +142,12 @@ function StructuralChangesPage() {
             <>
               <div className="form-group">
                 <label>Details of Brief Background History</label>
-                <textarea name="briefHistoryDetails" value={formData.briefHistoryDetails} onChange={handleChange} required />
+                <textarea
+                  name="briefHistoryDetails"
+                  value={formData.briefHistoryDetails}
+                  onChange={handleChange}
+                  required
+                />
               </div>
 
               {/* Structural Changes */}
@@ -182,20 +176,6 @@ function StructuralChangesPage() {
                   </label>
                 </div>
               </div>
-
-              {formData.structuralChanges === "Yes" && (
-                <>
-                  <div className="form-group">
-                    <label>Date of Previous Structural Changes</label>
-                    <input type="date" name="dateOfChange" value={formData.dateOfChange} onChange={handleChange} required />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Details of Changes Carried Out</label>
-                    <textarea name="changeDetails" value={formData.changeDetails} onChange={handleChange} required />
-                  </div>
-                </>
-              )}
 
               {/* Previous Investigations */}
               <div className="form-group">
@@ -227,31 +207,63 @@ function StructuralChangesPage() {
               {formData.previousInvestigation === "Yes" && (
                 <div className="form-group">
                   <label>Upload Investigation Report (PDF)</label>
-                  <input type="file" name="investigationFile" accept="application/pdf" onChange={handleChange} />
+                  <input
+                    type="file"
+                    name="investigationFile"
+                    accept="application/pdf"
+                    onChange={handleChange}
+                  />
+                </div>
+              )}
+
+              {/* 🔹 Display Previously Uploaded Investigation Report */}
+              {uploadedPDF && (
+                <div className="form-group">
+                  <h4>📄 Previously Uploaded Investigation Report</h4>
+                  <iframe
+                    src={uploadedPDF}
+                    width="100%"
+                    height="400px"
+                    title="Investigation Report"
+                  ></iframe>
                 </div>
               )}
 
               {/* Conclusion from Previous Report */}
               <div className="form-group">
                 <label>Conclusion from Previous Report</label>
-                <textarea name="conclusionFromPreviousReport" value={formData.conclusionFromPreviousReport} onChange={handleChange} />
+                <textarea
+                  name="conclusionFromPreviousReport"
+                  value={formData.conclusionFromPreviousReport}
+                  onChange={handleChange}
+                />
               </div>
 
               {/* Scope of Work */}
               <div className="form-group">
                 <label>Scope of Work</label>
-                <textarea name="scopeOfWork" value={formData.scopeOfWork} onChange={handleChange} />
+                <textarea
+                  name="scopeOfWork"
+                  value={formData.scopeOfWork}
+                  onChange={handleChange}
+                />
               </div>
 
               {/* Purpose of Investigation */}
               <div className="form-group">
                 <label>Purpose of Investigation</label>
-                <textarea name="purposeOfInvestigation" value={formData.purposeOfInvestigation} onChange={handleChange} />
+                <textarea
+                  name="purposeOfInvestigation"
+                  value={formData.purposeOfInvestigation}
+                  onChange={handleChange}
+                />
               </div>
             </>
           )}
 
-          <button type="submit" className="structural-changes-submit-btn">Save & Next</button>
+          <button type="submit" className="structural-changes-submit-btn">
+            Save & Next
+          </button>
         </form>
       )}
     </div>
