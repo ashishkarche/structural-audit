@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/StructuralChangesPage.css";
@@ -7,11 +7,14 @@ function StructuralChangesPage() {
   const { auditId } = useParams();
   const navigate = useNavigate();
 
+  // ✅ Track if form is already submitted
+  const [isSubmitted, setIsSubmitted] = useState(localStorage.getItem(`structuralChanges_${auditId}`) === "submitted");
+
   const [formData, setFormData] = useState({
     briefBackgroundHistory: "No",
     briefHistoryDetails: "",
-    dateOfChange: "",
     structuralChanges: "No",
+    dateOfChange: "",
     changeDetails: "",
     previousInvestigation: "No",
     investigationFile: null,
@@ -21,49 +24,10 @@ function StructuralChangesPage() {
   });
 
   const [error, setError] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [uploadedPDF, setUploadedPDF] = useState(null); // ✅ Store the uploaded PDF
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          setError("Session expired. Please log in again.");
-          navigate("/");
-          return;
-        }
-
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(
-          `https://structural-audit.vercel.app/api/structural-changes/${auditId}`,
-          config
-        );
-
-        if (response.status === 200 && response.data) {
-          setFormData(response.data);
-          setIsSubmitted(response.data.isSubmitted || false);
-
-          // Fetch uploaded investigation report (PDF) if available
-          if (response.data.previousInvestigationReport) {
-            const pdfBlob = new Blob([response.data.previousInvestigationReport], {
-              type: "application/pdf",
-            });
-            setUploadedPDF(URL.createObjectURL(pdfBlob));
-          }
-        } else {
-          setError("No structural changes found for this audit.");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching data.");
-      }
-    };
-
-    fetchData();
-  }, [auditId, navigate]);
-
   const handleChange = (e) => {
+    if (isSubmitted) return; // Prevent changes if already submitted
     const { name, value, type, files } = e.target;
     setFormData((prevFormData) => ({
       ...prevFormData,
@@ -95,6 +59,9 @@ function StructuralChangesPage() {
         config
       );
 
+      // ✅ Mark form as submitted
+      localStorage.setItem(`structuralChanges_${auditId}`, "submitted");
+      setIsSubmitted(true);
       navigate(`/audit/${auditId}/observations`);
     } catch (err) {
       setError("Failed to submit structural changes.");
@@ -108,7 +75,7 @@ function StructuralChangesPage() {
       {error && <p className="structural-changes-error-message">{error}</p>}
 
       {isSubmitted ? (
-        <p>Your data has already been submitted. You can view or edit other sections.</p>
+        <p>Your data has already been submitted. You can view the details below.</p>
       ) : (
         <form onSubmit={handleSubmit} className="structural-changes-form">
           {/* Brief Background History */}
@@ -122,6 +89,7 @@ function StructuralChangesPage() {
                   value="Yes"
                   checked={formData.briefBackgroundHistory === "Yes"}
                   onChange={handleChange}
+                  disabled={isSubmitted}
                 />
                 Yes
               </label>
@@ -132,6 +100,7 @@ function StructuralChangesPage() {
                   value="No"
                   checked={formData.briefBackgroundHistory === "No"}
                   onChange={handleChange}
+                  disabled={isSubmitted}
                 />
                 No
               </label>
@@ -147,6 +116,7 @@ function StructuralChangesPage() {
                   value={formData.briefHistoryDetails}
                   onChange={handleChange}
                   required
+                  disabled={isSubmitted}
                 />
               </div>
 
@@ -161,6 +131,7 @@ function StructuralChangesPage() {
                       value="Yes"
                       checked={formData.structuralChanges === "Yes"}
                       onChange={handleChange}
+                      disabled={isSubmitted}
                     />
                     Yes
                   </label>
@@ -171,11 +142,39 @@ function StructuralChangesPage() {
                       value="No"
                       checked={formData.structuralChanges === "No"}
                       onChange={handleChange}
+                      disabled={isSubmitted}
                     />
                     No
                   </label>
                 </div>
               </div>
+
+              {formData.structuralChanges === "Yes" && !isSubmitted && (
+                <>
+                  <div className="form-group">
+                    <label>Date of Previous Structural Changes</label>
+                    <input
+                      type="date"
+                      name="dateOfChange"
+                      value={formData.dateOfChange}
+                      onChange={handleChange}
+                      required
+                      disabled={isSubmitted}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Details of Changes Carried Out</label>
+                    <textarea
+                      name="changeDetails"
+                      value={formData.changeDetails}
+                      onChange={handleChange}
+                      required
+                      disabled={isSubmitted}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Previous Investigations */}
               <div className="form-group">
@@ -188,6 +187,7 @@ function StructuralChangesPage() {
                       value="Yes"
                       checked={formData.previousInvestigation === "Yes"}
                       onChange={handleChange}
+                      disabled={isSubmitted}
                     />
                     Yes
                   </label>
@@ -198,13 +198,14 @@ function StructuralChangesPage() {
                       value="No"
                       checked={formData.previousInvestigation === "No"}
                       onChange={handleChange}
+                      disabled={isSubmitted}
                     />
                     No
                   </label>
                 </div>
               </div>
 
-              {formData.previousInvestigation === "Yes" && (
+              {formData.previousInvestigation === "Yes" && !isSubmitted && (
                 <div className="form-group">
                   <label>Upload Investigation Report (PDF)</label>
                   <input
@@ -212,6 +213,7 @@ function StructuralChangesPage() {
                     name="investigationFile"
                     accept="application/pdf"
                     onChange={handleChange}
+                    disabled={isSubmitted}
                   />
                 </div>
               )}
@@ -236,6 +238,7 @@ function StructuralChangesPage() {
                   name="conclusionFromPreviousReport"
                   value={formData.conclusionFromPreviousReport}
                   onChange={handleChange}
+                  disabled={isSubmitted}
                 />
               </div>
 
@@ -246,6 +249,7 @@ function StructuralChangesPage() {
                   name="scopeOfWork"
                   value={formData.scopeOfWork}
                   onChange={handleChange}
+                  disabled={isSubmitted}
                 />
               </div>
 
@@ -256,14 +260,17 @@ function StructuralChangesPage() {
                   name="purposeOfInvestigation"
                   value={formData.purposeOfInvestigation}
                   onChange={handleChange}
+                  disabled={isSubmitted}
                 />
               </div>
             </>
           )}
 
-          <button type="submit" className="structural-changes-submit-btn">
-            Save & Next
-          </button>
+          {!isSubmitted && (
+            <button type="submit" className="structural-changes-submit-btn">
+              Save & Next
+            </button>
+          )}
         </form>
       )}
     </div>

@@ -466,32 +466,37 @@ app.get("/api/files/:filename", async (req, res) => {
   }
 });
 
-// ✅ Get Full Audit Details (Includes PDFs & Images)
-app.get('/api/audits/:auditId/full', async (req, res) => {
+app.get("/api/audits/:auditId/full", async (req, res) => {
   try {
     const { auditId } = req.params;
 
-    // 🔍 Fetch audit details
+    // Fetch audit details
     const [auditResult] = await db.execute(`SELECT * FROM Audits WHERE id = ?`, [auditId]);
     if (auditResult.length === 0) {
       return res.status(404).json({ message: "Audit not found" });
     }
     const audit = auditResult[0];
 
-    // 🔍 Fetch related tables
-    const [structuralChanges] = await db.execute(`SELECT * FROM StructuralChanges WHERE audit_id = ?`, [auditId]);
+    // Fetch related tables
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
-    const [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
-    const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
+    let [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
+
+    // 🔹 Convert `damage_photos` BLOB to Base64
+    dataEntries = dataEntries.map((entry) => ({
+      ...entry,
+      damage_photos: entry.damage_photos ? entry.damage_photos.toString("base64") : null,
+    }));
+
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
 
     // 🔹 Return full audit details
-    res.json({ audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries });
+    res.json({ audit, observations, ndtTests, dataEntries });
   } catch (error) {
     console.error("Error fetching audit details:", error);
     res.status(500).json({ message: "Failed to fetch audit details" });
   }
 });
+
 
 // Update audit
 app.put('/api/audits/:id', authenticate, async (req, res) => {
@@ -681,7 +686,8 @@ app.get('/api/audits/:auditId/immediate-concerns', authenticate, async (req, res
   try {
     const { auditId } = req.params;
     const sql = `
-      SELECT concern_description, location, effect_description, recommended_measures 
+      SELECT concern_description, location, effect_description, recommended_measures, 
+             TO_BASE64(damage_photo) AS damage_photo 
       FROM ImmediateConcerns 
       WHERE audit_id = ?`;
 
@@ -697,6 +703,7 @@ app.get('/api/audits/:auditId/immediate-concerns', authenticate, async (req, res
     res.status(500).json({ message: "Failed to fetch immediate concerns." });
   }
 });
+
 
 app.get('/api/audits/:auditId/drawings', authenticate, async (req, res) => {
   try {
@@ -1171,12 +1178,18 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     );
     doc.moveDown();
 
+    const formatDate = (dateString) => {
+      if (!dateString) return "Data Not Available";
+      const date = new Date(dateString);
+      return isNaN(date) ? "Invalid Date" : date.toLocaleDateString("en-GB"); // Formats as DD/MM/YYYY
+    };
+
     // 📌 Background History (Page 4)
     if (structuralChanges.length > 0) {
       doc.fontSize(16).text("Background History", { underline: true });
       structuralChanges.forEach((change) => {
         doc.fontSize(12).text(`- Brief Background History: ${change.brief_background_history}`);
-        doc.fontSize(12).text(`- Date of Change: ${change.date_of_change || "Data Not Availble"}`);
+        doc.fontSize(12).text(`- Date of Change: ${formatDate(change.date_of_change)}`);
         doc.text(`  Details: ${change.change_details}`);
         doc.text(`  Conclusion From Previous Report: ${change.conclusion_from_previous_report}`);
         doc.text(`  Scope Of Work: ${change.scope_of_work}`);
@@ -1185,38 +1198,110 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       });
     }
 
-    // 📌 Visual Observations (Page 5)
     if (observations.length > 0) {
+      doc.addPage();
       doc.fontSize(16).text("Visual Observations", { underline: true });
-      observations.forEach((obs) => {
-        doc.fontSize(12).text(` Unexpected Load: ${obs.unexpected_load ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Unapproved Changes: ${obs.unapproved_changes ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Additional Floor: ${obs.additional_floor ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Vegetation Growth: ${obs.vegetation_growth ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Leakage Load: ${obs.leakage ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Cracks Beams: ${obs.cracks_beams ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Cracks Columns: ${obs.cracks_columns ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Cracks Flooring: ${obs.cracks_flooring ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Floor Sagging: ${obs.floor_sagging ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Bulging Walls: ${obs.bulging_walls ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Window Pronlems: ${obs.window_problems ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Heaving Floor: ${obs.heaving_floor ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Concrete Texture: ${obs.concrete_texture ? "Yes" : "No"}`);
-        doc.fontSize(12).text(` Algae Growth: ${obs.algae_growth ? "Yes" : "No"}`);
-      });
+      doc.moveDown(1);
+    
+      // Define headers & rows dynamically
+      const obsTable = {
+        headers: ["Observation Name", "Status"],
+        rows: [
+          ["Unexpected Load", observations[0].unexpected_load ? "Yes" : "No"],
+          ["Unapproved Changes", observations[0].unapproved_changes ? "Yes" : "No"],
+          ["Additional Floor", observations[0].additional_floor ? "Yes" : "No"],
+          ["Vegetation Growth", observations[0].vegetation_growth ? "Yes" : "No"],
+          ["Leakage", observations[0].leakage ? "Yes" : "No"],
+          ["Cracks in Beams", observations[0].cracks_beams ? "Yes" : "No"],
+          ["Cracks in Columns", observations[0].cracks_columns ? "Yes" : "No"],
+          ["Cracks in Flooring", observations[0].cracks_flooring ? "Yes" : "No"],
+          ["Floor Sagging", observations[0].floor_sagging ? "Yes" : "No"],
+          ["Bulging Walls", observations[0].bulging_walls ? "Yes" : "No"],
+          ["Window Problems", observations[0].window_problems ? "Yes" : "No"],
+          ["Heaving Floor", observations[0].heaving_floor ? "Yes" : "No"],
+          ["Concrete Texture", observations[0].concrete_texture ? "Yes" : "No"],
+          ["Algae Growth", observations[0].algae_growth ? "Yes" : "No"]
+        ]
+      };
+    
+      // Function to draw a responsive table
+      const drawTable = (doc, table, startX, startY, rowHeight = 25, colWidths = [300, 100]) => {
+        let y = startY;
+    
+        // Draw headers
+        doc.font("Helvetica-Bold").fontSize(10);
+        colWidths.forEach((width, index) => {
+          doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+          doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+        });
+        y += rowHeight;
+    
+        // Draw rows
+        doc.font("Helvetica").fontSize(10);
+        table.rows.forEach((row) => {
+          colWidths.forEach((width, index) => {
+            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+          });
+          y += rowHeight;
+        });
+      };
+    
+      // Draw the table at (50, 150) position
+      drawTable(doc, obsTable, 50, 150);
     }
+    
 
-    // 📌 Damage Entries
     if (damageEntries.length > 0) {
+      doc.addPage();
       doc.fontSize(16).text("Damage Observations", { underline: true });
-      damageEntries.forEach((damage) => {
-        doc.fontSize(12).text(`- Description: ${damage.description || "N/A"}`);
-        doc.text(`  Location: ${damage.location || "N/A"}`);
-        doc.text(`  Cause: ${damage.cause || "N/A"}`);
-        doc.text(`  Classification: ${damage.classification || "N/A"}`);
-        doc.moveDown();
-      });
+      doc.moveDown(1);
+    
+      // Define table headers & rows dynamically
+      const damageTable = {
+        headers: ["Description", "Location", "Cause", "Classification"],
+        rows: damageEntries.map((damage) => [
+          damage.description || "N/A",
+          damage.location || "N/A",
+          damage.cause || "N/A",
+          damage.classification || "N/A"
+        ])
+      };
+    
+      // Function to draw a responsive table
+      const drawTable4 = (doc, table, startX, startY, rowHeight = 25, colWidths = []) => {
+        let y = startY;
+    
+        // Auto-assign column widths if not provided
+        if (colWidths.length === 0) {
+          const totalWidth = 500; // Max table width
+          const numCols = table.headers.length;
+          colWidths = new Array(numCols).fill(totalWidth / numCols);
+        }
+    
+        // Draw headers
+        doc.font("Helvetica-Bold").fontSize(10);
+        colWidths.forEach((width, index) => {
+          doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+          doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 2, y + 7, { width: width - 4, align: "center" });
+        });
+        y += rowHeight;
+    
+        // Draw rows
+        doc.font("Helvetica").fontSize(9);
+        table.rows.forEach((row) => {
+          colWidths.forEach((width, index) => {
+            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
+            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 2, y + 7, { width: width - 4, align: "center" });
+          });
+          y += rowHeight;
+        });
+      };
+    
+      // Draw the Damage Observations table at (50, 150) position
+      drawTable4(doc, damageTable, 50, 150);
     }
+    
 
     // 📌 NDT Test Results Table
     if (ndtTests.length > 0) {
@@ -1236,7 +1321,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
             try {
               const data = JSON.parse(ndt[key]); // Parse stored JSON test results
               ndtTable.rows.push([
-                key.replace(/_/g, " "), // Format test type name (e.g., "rebound_hammer_test" → "Rebound Hammer Test")
+                key.replace(/_/g, " "), // Format test type name
                 data.value || "N/A",
                 data.quality || "N/A",
                 data.recommendation || "N/A",
@@ -1253,32 +1338,80 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         });
       });
 
-      // Function to draw table
-      const drawTable1 = (doc, table, startX, startY, rowHeight = 25, colWidths = [150, 100, 100, 200]) => {
-        let y = startY;
+      // 📌 Function to Wrap Text Manually
+      const wrapText = (doc, text, maxWidth) => {
+        const words = text.split(" ");
+        let line = "";
+        const lines = [];
 
-        // Draw headers
+        words.forEach((word) => {
+          const testLine = line + word + " ";
+          const testWidth = doc.widthOfString(testLine);
+
+          if (testWidth > maxWidth) {
+            lines.push(line.trim());
+            line = word + " ";
+          } else {
+            line = testLine;
+          }
+        });
+
+        lines.push(line.trim()); // Push the last line
+        return lines;
+      };
+
+      // 📌 Function to Draw a Dynamic Table
+      const drawTable1 = (doc, table, startX, startY, colWidths) => {
+        let y = startY;
+        const rowHeight = 20; // Default row height
+
+        const pageHeight = doc.page.height - 50; // Adjust for footer/margins
+        let maxRowHeight = rowHeight; // Keep track of the largest row height
+
+        // 📌 Draw Headers
         doc.font("Helvetica-Bold").fontSize(12);
         colWidths.forEach((width, index) => {
           doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
           doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
         });
-        y += rowHeight;
+        y += maxRowHeight;
 
-        // Draw rows
+        // 📌 Draw Rows
         doc.font("Helvetica").fontSize(11);
         table.rows.forEach((row) => {
-          colWidths.forEach((width, index) => {
-            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
-            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
+          maxRowHeight = rowHeight; // Reset maxRowHeight for each row
+
+          // Determine row height dynamically
+          const cellHeights = row.map((text, index) => wrapText(doc, text, colWidths[index] - 10).length * 12 + 8);
+          maxRowHeight = Math.max(...cellHeights);
+
+          // Check if we need a new page
+          if (y + maxRowHeight > pageHeight) {
+            doc.addPage();
+            y = 50; // Reset Y position for new page
+          }
+
+          // Draw each cell with wrapped text
+          row.forEach((text, index) => {
+            const textLines = wrapText(doc, text, colWidths[index] - 10);
+            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, colWidths[index], maxRowHeight).stroke();
+            textLines.forEach((line, i) => {
+              doc.text(line, startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 5 + i * 12);
+            });
           });
-          y += rowHeight;
+
+          y += maxRowHeight;
         });
       };
 
-      // Draw the NDT Test Table at position (50, 150)
-      drawTable1(doc, ndtTable, 50, 150);
+      // 📌 Define Column Widths (Adjustable for Responsive Layout)
+      const pageWidth = doc.page.width - 100;
+      const colWidths = [pageWidth * 0.25, pageWidth * 0.2, pageWidth * 0.2, pageWidth * 0.35];
+
+      // 📌 Draw the NDT Test Table at position (50, 150)
+      drawTable1(doc, ndtTable, 50, 150, colWidths);
     }
+
 
     // 📌 Proforma (Page 4)
     doc.addPage();
@@ -1308,7 +1441,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         ["5. Type of Cement Used", audit.cement_type],
         ["6. Type of Steel ", audit.steel_type],
         ["7. Observations", conclusion[0]?.conclusion || "Data Not Availble"],
-        ["8. Areas of Immediate Concern", immediateConcerns[0]?.description || "Data Not Availble"],
+        ["8. Immediate Concern", immediateConcerns[0]?.concern_description || "Data Not Availble"],
       ],
     };
 
@@ -1338,69 +1471,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Draw the table at position (50, 150)
     drawTable(doc, table, 50, 150);
 
-    /// 📌 NDT Test Results Table
-    if (ndtTests.length > 0) {
-      doc.addPage();
-      doc.fontSize(16).text("NDT Test Results", { underline: true });
-      doc.moveDown(1);
-
-      const ndtTable = {
-        headers: ["Test Type", "Value", "Quality", "Recommendation", "Conclusion"],
-        rows: [],
-      };
-
-      // Loop through all tests and parse JSON data
-      ndtTests.forEach((ndt) => {
-        Object.keys(ndt).forEach((key) => {
-          if (key !== "id" && ndt[key]) {
-            try {
-              const data = JSON.parse(ndt[key]); // Parse stored JSON test results
-              ndtTable.rows.push([
-                key.replace(/_/g, " "), // Format test type name
-                data.value || "N/A",
-                data.quality || "N/A",
-                data.recommendation || "N/A",
-                ndt.conclusion || "N/A",
-              ]);
-            } catch (error) {
-              ndtTable.rows.push([
-                key.replace(/_/g, " "),
-                "Invalid Data",
-                "Invalid Data",
-                "Invalid Data",
-                ndt.conclusion || "N/A",
-              ]);
-            }
-          }
-        });
-      });
-
-      // Function to draw table
-      const drawTable3 = (doc, table, startX, startY, rowHeight = 25, colWidths = [150, 80, 100, 200, 120]) => {
-        let y = startY;
-
-        // Draw headers
-        doc.font("Helvetica-Bold").fontSize(12);
-        colWidths.forEach((width, index) => {
-          doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
-          doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
-        });
-        y += rowHeight;
-
-        // Draw rows
-        doc.font("Helvetica").fontSize(11);
-        table.rows.forEach((row) => {
-          colWidths.forEach((width, index) => {
-            doc.rect(startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0), y, width, rowHeight).stroke();
-            doc.text(row[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
-          });
-          y += rowHeight;
-        });
-      };
-
-      // Draw the NDT Test Table at position (50, 150)
-      drawTable3(doc, ndtTable, 50, 150);
-    }
 
 
     if (conclusion.length > 0) {

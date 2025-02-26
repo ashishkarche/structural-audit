@@ -84,7 +84,7 @@ function ReportPage() {
                 <tr key={report.id}>
                   <td>{report.name}</td>
                   <td>{report.location}</td>
-                  <td>{report.date_of_audit}</td>
+                  <td>{report.date_of_audit ? new Date(report.date_of_audit).toLocaleDateString("en-GB") : "N/A"}</td>
                   <td>
                     <button onClick={() => handleDownloadReport(report.id)} className="download-btn">
                       📥 Download

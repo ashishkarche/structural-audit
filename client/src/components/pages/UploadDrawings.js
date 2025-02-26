@@ -19,6 +19,7 @@ function UploadDrawings() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false); // ✅ Track if drawings are already uploaded
 
   // ✅ Load PDFs from backend
   useEffect(() => {
@@ -31,6 +32,10 @@ function UploadDrawings() {
           `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
+        if (response.data.architecturalDrawing || response.data.structuralDrawing) {
+          setIsSubmitted(true); // ✅ Disable fields if drawings are already uploaded
+        }
 
         // ✅ Set separate URLs for architectural & structural drawings
         setUploadedFiles({
@@ -48,6 +53,7 @@ function UploadDrawings() {
   }, [auditId]);
 
   const handleFileChange = (e) => {
+    if (isSubmitted) return; // Prevent changes if already submitted
     const { name, files } = e.target;
     setDrawings((prevDrawings) => ({ ...prevDrawings, [name]: files[0] }));
   };
@@ -80,7 +86,7 @@ function UploadDrawings() {
         structuralDrawing: updatedResponse.data.structuralDrawing || null,
       });
 
-      // ✅ Navigate to next page
+      setIsSubmitted(true); // ✅ Lock fields after submission
       navigate(`/audit/${auditId}/structural-changes`);
     } catch (err) {
       setError("Failed to upload drawings. Please try again.");
@@ -99,16 +105,28 @@ function UploadDrawings() {
         {/* Architectural Drawing Upload */}
         <div className="form-group">
           <label>Architectural Drawing (PDF)</label>
-          <input type="file" name="architecturalDrawing" accept="application/pdf" onChange={handleFileChange} />
+          <input
+            type="file"
+            name="architecturalDrawing"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            disabled={isSubmitted} // ✅ Disable if already submitted
+          />
         </div>
 
         {/* Structural Drawing Upload */}
         <div className="form-group">
           <label>Structural Drawing (PDF)</label>
-          <input type="file" name="structuralDrawing" accept="application/pdf" onChange={handleFileChange} />
+          <input
+            type="file"
+            name="structuralDrawing"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            disabled={isSubmitted} // ✅ Disable if already submitted
+          />
         </div>
 
-        {/* ✅ Corrected Uploaded File Previews */}
+        {/* ✅ Uploaded File Previews */}
         <div className="uploaded-files">
           {uploadedFiles.architecturalDrawing && (
             <div className="pdf-preview">
@@ -125,11 +143,14 @@ function UploadDrawings() {
           )}
         </div>
 
-        <div className="form-group submit-btn-container">
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? "Uploading..." : "Upload & Next"}
-          </button>
-        </div>
+        {/* ✅ Only show submit button if user hasn’t submitted yet */}
+        {!isSubmitted && (
+          <div className="form-group submit-btn-container">
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? "Uploading..." : "Upload & Next"}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

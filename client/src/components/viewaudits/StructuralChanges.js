@@ -46,7 +46,7 @@ function StructuralChanges() {
               <tr key={item.id}>
                 <td>{item.brief_background_history ? "Yes" : "No"}</td>
                 <td>{item.brief_history_details || "N/A"}</td>
-                <td>{item.date_of_change || "N/A"}</td>
+                <td>{item.date_of_change ? new Date(item.date_of_change).toLocaleDateString("en-GB") : "N/A"}</td>
                 <td>{item.structural_changes ? "Yes" : "No"}</td>
                 <td>{item.change_details || "N/A"}</td>
                 <td>{item.previous_investigation ? "Yes" : "No"}</td>

@@ -35,7 +35,13 @@ function ViewSubmittedAudit() {
   if (error) return <div className="error-message">{error}</div>;
   if (!fullAudit) return <div className="loading-message">Loading audit details...</div>;
 
-  const { audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries,auditDrawings } = fullAudit;
+  const { audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries, auditDrawings } = fullAudit;
+
+  const handleViewImage = (base64Data) => {
+    if (!base64Data) return;
+    const imageUrl = `data:image/jpeg;base64,${base64Data}`;
+    setSelectedImage(imageUrl);
+  };
 
   const handleGenerateReport = async () => {
     try {
@@ -64,12 +70,6 @@ function ViewSubmittedAudit() {
     }
   };
 
-  // ✅ Convert BLOB to Image URL
-  const handleViewImage = (blobData) => {
-    if (!blobData) return;
-    const imageUrl = `data:image/jpeg;base64,${blobData}`;
-    setSelectedImage(imageUrl);
-  };
 
   return (
     <div className="view-audit-container">
@@ -81,19 +81,19 @@ function ViewSubmittedAudit() {
       </button>
 
       <h2>Audit Details</h2>
-<div className="table-container">
-  <table className="audit-table">
-    <tbody>
-      <tr><td><strong>Project Name:</strong></td><td>{audit.name}</td></tr>
-      <tr><td><strong>Location:</strong></td><td>{audit.location}</td></tr>
-      <tr><td><strong>Year Of Construction:</strong></td><td>{audit.year_of_construction}</td></tr>
-      <tr>
-        <td><strong>Date of Audit:</strong></td>
-        <td>{audit.date_of_audit ? new Date(audit.date_of_audit).toLocaleDateString("en-GB") : "N/A"}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      <div className="table-container">
+        <table className="audit-table">
+          <tbody>
+            <tr><td><strong>Project Name:</strong></td><td>{audit.name}</td></tr>
+            <tr><td><strong>Location:</strong></td><td>{audit.location}</td></tr>
+            <tr><td><strong>Year Of Construction:</strong></td><td>{audit.year_of_construction}</td></tr>
+            <tr>
+              <td><strong>Date of Audit:</strong></td>
+              <td>{audit.date_of_audit ? new Date(audit.date_of_audit).toLocaleDateString("en-GB") : "N/A"}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
 
       {/* ✅ Import Structural Changes Component */}

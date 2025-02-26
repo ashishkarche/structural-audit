@@ -28,7 +28,7 @@ const AuditLayout = lazy(() => import("./components/layouts/AuditLayout"));
 const MainLayout = lazy(() => import("./components/layouts/MainLayout"));
 const AuditHistory = lazy(() => import("./components/audit/AuditHistory"));
 const ReportPage = lazy(() => import("./components/pages/ReportPage"));
-const ConclusionPage = lazy(() => import("./components/audit/ConclusionPage"));
+const ConclusionPage = lazy(() => import("./components/pages/ConclusionPage"));
 const UploadDrawings = lazy(() => import("./components/pages/UploadDrawings"));
 
 function App() {
