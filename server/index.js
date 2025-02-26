@@ -81,26 +81,78 @@ app.get("/", (req, res) => {
 // ------------------------------
 
 // Register auditor
-app.post('/register', async (req, res) => {
-  try {
-    const { name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, password, termsAccepted } = req.body;
 
-    // Ensure terms are accepted
+app.post("/register", async (req, res) => {
+  try {
+    const {
+      name,
+      qualification,
+      specialization,
+      firmName,
+      generalExperience,
+      specializedExperience,
+      employmentPeriod,
+      email,
+      password,
+      termsAccepted,
+    } = req.body;
+
+    // ✅ Ensure Terms are Accepted
     if (!termsAccepted) {
-      return res.status(400).json({ message: 'You must accept the terms and conditions' });
+      return res.status(400).json({ message: "You must accept the terms and conditions." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = `INSERT INTO Auditors (name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email, password, terms_accepted)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    await db.execute(sql, [name, qualification, specialization, firmName, generalExperience, specializedExperience, employmentPeriod, email, hashedPassword, termsAccepted]);
+    // ✅ Email Format Validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
 
-    res.status(201).json({ message: 'Auditor registered successfully' });
+    // ✅ Check if Email Already Exists
+    const [existingUser] = await db.execute(`SELECT email FROM Auditors WHERE email = ?`, [email]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ message: "Email is already registered." });
+    }
+
+    // ✅ Password Validation
+    const passwordRegex = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-zA-Z]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters, include 1 number & 1 special character.",
+      });
+    }
+
+    // ✅ Hash Password Before Storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // ✅ Insert Data into DB
+    const sql = `
+      INSERT INTO Auditors 
+      (name, qualification, specialization, firm_name, general_experience, specialized_experience, employment_period, email, password, terms_accepted) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    await db.execute(sql, [
+      name,
+      qualification,
+      specialization,
+      firmName,
+      generalExperience,
+      specializedExperience,
+      employmentPeriod,
+      email,
+      hashedPassword,
+      termsAccepted,
+    ]);
+
+    res.status(201).json({ message: "Auditor registered successfully." });
   } catch (error) {
-    console.error('Error registering:', error);
-    res.status(500).json({ message: 'Failed to register auditor' });
+    console.error("Error registering:", error);
+    res.status(500).json({ message: "Failed to register auditor. Please try again later." });
   }
 });
+
+
+
 
 
 // Login endpoint (generates token with expiration)
@@ -119,6 +171,32 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Failed to log in' });
   }
 });
+
+// ✅ Check if email is registered
+app.post("/api/check-email", async (req, res) => {
+  try {
+    const { email } = req.body;
+    const [rows] = await db.execute("SELECT * FROM Auditors WHERE email = ?", [email]);
+    res.json({ exists: rows.length > 0 });
+  } catch (error) {
+    console.error("Error checking email:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ✅ Update Password
+app.post("/api/update-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.execute("UPDATE Auditors SET password = ? WHERE email = ?", [hashedPassword, email]);
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 // Get auditor profile
 app.get('/api/auditors/me', authenticate, async (req, res) => {

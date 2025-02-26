@@ -11,6 +11,7 @@ import MaintenancePage from "./MaintenancePage";
 // Lazy load components
 const Login = lazy(() => import("./components/auth/Login"));
 const Register = lazy(() => import("./components/auth/Register"));
+const ForgetPassword = lazy(() => import("./components/auth/ForgotPassword"));
 const Dashboard = lazy(() => import("./components/dashboard/Dashboard"));
 const SubmitAudit = lazy(() => import("./components/audit/SubmitAudit"));
 const ViewAudits = lazy(() => import("./components/audit/ViewAudits"));
@@ -80,6 +81,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgetPassword />} />
 
             {/* Protected Routes Wrapped in MainLayout */}
             <Route
