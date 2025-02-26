@@ -258,7 +258,7 @@ app.get('/api/audits/recent', authenticate, async (req, res) => {
   try {
     const [results] = await db.execute(`
       SELECT id, name, location, date_of_audit 
-      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC LIMIT 5`,
+      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit `,
       [req.user.id]
     );
     res.json(results);
