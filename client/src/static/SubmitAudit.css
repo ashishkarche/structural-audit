@@ -1,162 +1,120 @@
-/* Container */
-.submit-audit-container {
-  padding: 20px;
-  font-family: "Poppins", sans-serif;
-  animation: fadeIn 0.5s ease-in-out;
-
+/* Standard Styles */
+.audit-form-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 30px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
 }
 
-/* Title */
-.form-title {
+.audit-form-title {
   text-align: center;
-  color: #333;
-  font-size: 24px;
-  font-weight: bold;
+  font-size: 26px;
+  color: #2c3e50;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 
-/* Grid Layout */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
+.audit-form-error {
+  color: #e74c3c;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
 }
 
-.form-group {
+.audit-form-box {
   display: flex;
   flex-direction: column;
+  gap: 20px;
 }
 
-/* Labels */
-.audit-form .form-group label {
+.audit-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.audit-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-form-label {
   font-weight: 600;
-  color: #333;
-  margin-bottom: 5px;
+  color: #34495e;
 }
 
-/* Input Fields */
-.audit-form .form-group input,
-.audit-form .form-group textarea {
-  width: 100%;
+.audit-form-input {
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid #bdc3c7;
   border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.3s ease-in-out;
-}
-
-.audit-form .form-group input:focus,
-.audit-form .form-group textarea:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-}
-
-/* Textarea */
-.audit-form .form-group textarea {
-  height: 100px;
-  resize: none;
-}
-
-/* File Input */
-.audit-form .form-group input[type="file"] {
-  padding: 8px;
-}
-
-/* Submit Button */
-.submit-btn-container {
-  text-align: center;
-  margin-top: 15px;
-}
-
-.submit-btn {
-  background: #007bff;
-  width: 50%;
-  color: white;
-  padding: 12px 20px;
   font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s;
 }
 
-.submit-btn:hover {
-  background: #0056b3;
+.audit-form-input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.2);
+}
+
+.audit-submit-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.audit-submit-btn:hover {
+  background: linear-gradient(135deg, #2575fc, #6a11cb);
   transform: scale(1.05);
 }
 
-/* Extra Audit Actions */
-.extra-audit-actions {
-  margin-top: 20px;
-  padding: 15px;
-  text-align: center;
-  background: #f9f9f9;
-  border-radius: 6px;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-}
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .audit-form-container {
+    padding: 25px;
+  }
 
-.extra-audit-actions h3 {
-  color: #333;
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-
-/* Additional Buttons */
-.extra-audit-actions button {
-  background: #6c757d;
-  color: white;
-  padding: 10px 15px;
-  margin: 5px;
-  font-size: 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-}
-
-.extra-audit-actions .btn-secondary:hover {
-  background: #5a6268;
-}
-
-.extra-audit-actions .btn-danger {
-  background: #dc3545;
-}
-
-.extra-audit-actions .btn-danger:hover {
-  background: #c82333;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) { /* Tablets */
-  .form-grid {
-    grid-template-columns: 1fr;
+  .audit-form-title {
+    font-size: 24px;
   }
 }
 
-@media (max-width: 768px) { /* Mobile */
-  .submit-audit-container {
-    max-width: 100%;
+@media (max-width: 768px) {
+  .audit-form-container {
+    padding: 20px;
+    max-width: 90%;
+  }
+
+  .audit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audit-form-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .audit-form-container {
     padding: 15px;
   }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  .submit-btn {
-    width: 100%;
-  }
-  .extra-audit-actions button {
-    width: 100%;
-  }
-}
 
-/* Fade In Animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+  .audit-form-title {
+    font-size: 20px;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .audit-submit-btn {
+    font-size: 14px;
+    padding: 10px;
   }
 }

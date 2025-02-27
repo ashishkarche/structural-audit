@@ -51,15 +51,13 @@ function SubmitAudit() {
     }
   };
   
-
   return (
-    <div className="submit-audit-container">
-      <h2 className="form-title">Submit New Audit</h2>
-      {error && <p className="text-danger text-center">{error}</p>}
+    <div className="audit-form-container">
+      <h2 className="audit-form-title">Submit New Audit</h2>
+      {error && <p className="audit-form-error">{error}</p>}
       
-      <form onSubmit={handleSubmit} className="audit-form">
-        <div className="form-grid">
-          {/* Text Fields */}
+      <form onSubmit={handleSubmit} className="audit-form-box">
+        <div className="audit-form-grid">
           {[
             { key: "name", label: "Project Name" },
             { key: "location", label: "Location" },
@@ -76,9 +74,10 @@ function SubmitAudit() {
             { key: "distressYear", label: "Year of First Distress Noticed", type: "number" },
             { key: "distressNature", label: "Nature of Distress Noticed" },
           ].map(({ key, label, type }) => (
-            <div className="form-group" key={key}>
-              <label>{label}</label>
+            <div className="audit-form-group" key={key}>
+              <label className="audit-form-label">{label}</label>
               <input
+                className="audit-form-input"
                 type={type || "text"}
                 placeholder={`Enter ${label}`}
                 value={formData[key]}
@@ -87,13 +86,10 @@ function SubmitAudit() {
               />
             </div>
           ))}
-
-          {/* File Upload Fields */}
         </div>
 
-        {/* Submit Button */}
-        <div className="form-group submit-btn-container">
-          <button type="submit" className="submit-btn">Save & Next</button>
+        <div className="audit-form-group submit-btn-container">
+          <button type="submit" className="audit-submit-btn">Save & Next</button>
         </div>
       </form>
     </div>

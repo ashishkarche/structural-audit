@@ -1,19 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { FaBell, FaTimes, FaCheck } from "react-icons/fa"; // Icons for UI
+import { FaBell, FaTimes, FaCheck } from "react-icons/fa";
 import "../../static/NotificationPanel.css";
 
 function NotificationPanel() {
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState("");
-  const [showPanel, setShowPanel] = useState(false); // Toggle state for mobile
+  const [showPanel, setShowPanel] = useState(false);
+  const panelRef = useRef(null);
 
   useEffect(() => {
     fetchNotifications();
-
-    // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target)) {
+        setShowPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchNotifications = async () => {
@@ -27,13 +36,27 @@ function NotificationPanel() {
     }
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Unknown Date";
+  
+    // Convert "YYYY-MM-DD HH:mm:ss" → "YYYY-MM-DDTHH:mm:ss"
+    const fixedTimestamp = timestamp.replace(" ", "T"); 
+  
+    // Try creating a Date object
+    const date = new Date(fixedTimestamp);
+  
+    // If invalid, return a fallback message
+    if (isNaN(date.getTime())) return "Invalid Date";
+  
+    return date.toLocaleString(); // Convert to readable format
+  };
+  
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.put(`https://structural-audit.vercel.app/api/notifications/${id}/read`, {}, config);
-
-      setNotifications(notifications.filter((notif) => notif.id !== id));
+      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
     } catch (err) {
       setError("Failed to mark notification as read.");
     }
@@ -52,22 +75,19 @@ function NotificationPanel() {
 
   return (
     <div className="notification-container">
-      {/* 🔔 Bell Button for Mobile/Tablet */}
       <button className="toggle-btn" onClick={() => setShowPanel(!showPanel)}>
         <FaBell />
         {notifications.length > 0 && <span className="badge">{notifications.length}</span>}
       </button>
 
-      {/* Notification Panel (Toggles on click) */}
       {showPanel && (
-        <div className="notification-panel">
+        <div className="notification-panel" ref={panelRef}>
           <div className="panel-header">
             <h3>🔔 Notifications</h3>
             <button className="close-btn" onClick={() => setShowPanel(false)}>
               <FaTimes />
             </button>
           </div>
-
           {error && <p className="error">{error}</p>}
           {notifications.length === 0 ? (
             <p className="empty-message">No new notifications.</p>
@@ -77,9 +97,14 @@ function NotificationPanel() {
               <ul className="notification-list">
                 {notifications.map((notification) => (
                   <li key={notification.id} className={`notification-item ${notification.type}`}>
-                    {notification.message}
+                    <div>
+                      <p>{notification.message}</p>
+                      <span className="timestamp">
+                        {formatTimestamp(notification.timestamp)}
+                      </span>
+                    </div>
                     <button className="mark-read-btn" onClick={() => markAsRead(notification.id)}>
-                      <FaCheck /> Mark Read
+                      <FaCheck />
                     </button>
                   </li>
                 ))}

@@ -258,7 +258,7 @@ app.get('/api/audits/recent', authenticate, async (req, res) => {
   try {
     const [results] = await db.execute(`
       SELECT id, name, location, date_of_audit 
-      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit `,
+      FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC`,
       [req.user.id]
     );
     res.json(results);
@@ -1049,19 +1049,23 @@ app.get("/api/immediate-concern/image/:id", async (req, res) => {
   }
 });
 
-// Notification endpoint
 app.get('/api/notifications', authenticate, async (req, res) => {
   try {
     const [notifications] = await db.execute(
-      `SELECT id, message, is_read, created_at FROM Notifications WHERE user_id = ? ORDER BY created_at DESC`,
+      `SELECT id, message, is_read, type, 
+       DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') AS timestamp
+       FROM Notifications WHERE user_id = ? 
+       ORDER BY created_at DESC`,
       [req.user.id]
     );
+    
     res.json(notifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
     res.status(500).json({ message: "Failed to fetch notifications" });
   }
 });
+
 
 app.put('/api/notifications/:id/read', authenticate, async (req, res) => {
   try {
@@ -1076,18 +1080,21 @@ app.put('/api/notifications/:id/read', authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to mark notification as read" });
   }
 });
+
+
 app.delete('/api/notifications/clear', authenticate, async (req, res) => {
   try {
     await db.execute(
-      `DELETE FROM Notifications WHERE user_id = ?`,
+      `DELETE FROM Notifications WHERE user_id = ? AND is_read = TRUE`,
       [req.user.id]
     );
-    res.json({ message: "All notifications cleared successfully" });
+    res.json({ message: "All read notifications cleared successfully" });
   } catch (error) {
     console.error("Error clearing notifications:", error);
     res.status(500).json({ message: "Failed to clear notifications" });
   }
 });
+
 
 
 app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
