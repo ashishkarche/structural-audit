@@ -55,13 +55,15 @@ function NotificationPanel() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.put(`https://structural-audit.vercel.app/api/notifications/${id}/read`, {}, config);
+      await axios.delete(`https://structural-audit.vercel.app/api/notifications/${id}`, config);
+      
+      // Remove from state immediately
       setNotifications((prev) => prev.filter((notif) => notif.id !== id));
     } catch (err) {
-      setError("Failed to mark notification as read.");
+      setError("Failed to delete notification.");
     }
   };
-
+  
   const clearAllNotifications = async () => {
     try {
       const token = localStorage.getItem("token");

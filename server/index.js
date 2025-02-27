@@ -1067,20 +1067,19 @@ app.get('/api/notifications', authenticate, async (req, res) => {
 });
 
 
-app.put('/api/notifications/:id/read', authenticate, async (req, res) => {
+app.delete('/api/notifications/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     await db.execute(
-      `UPDATE Notifications SET is_read = TRUE WHERE id = ? AND user_id = ?`,
+      `DELETE FROM Notifications WHERE id = ? AND user_id = ?`,
       [id, req.user.id]
     );
-    res.json({ message: "Notification marked as read" });
+    res.json({ message: "Notification deleted" });
   } catch (error) {
-    console.error("Error marking notification as read:", error);
-    res.status(500).json({ message: "Failed to mark notification as read" });
+    console.error("Error deleting notification:", error);
+    res.status(500).json({ message: "Failed to delete notification" });
   }
 });
-
 
 app.delete('/api/notifications/clear', authenticate, async (req, res) => {
   try {
