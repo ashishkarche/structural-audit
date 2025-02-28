@@ -1432,9 +1432,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       drawTable1(doc, ndtTable, 50, 150, colWidths);
     }
 
-
     doc.addPage();
-
     if (conclusion.length > 0) {
       doc.addPage(); // Ensure conclusion starts on new page
       doc.fontSize(16).text("Conclusion & Recommendations", { underline: true });
@@ -1473,6 +1471,28 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
   }
 });
 
+function drawProformaTable(doc, table) {
+  const startX = 50, startY = 150, colWidths = [200, 300];
+  let y = startY;
+
+  // Headers
+  doc.font("Helvetica-Bold")
+     .rect(startX, y, colWidths[0], 20).stroke()
+     .text(table.headers[0], startX + 5, y + 5)
+     .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
+     .text(table.headers[1], startX + colWidths[0] + 5, y + 5);
+  y += 20;
+
+  // Rows
+  doc.font("Helvetica");
+  table.rows.forEach(row => {
+    doc.rect(startX, y, colWidths[0], 20).stroke()
+       .text(row[0], startX + 5, y + 5)
+       .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
+       .text(row[1], startX + colWidths[0] + 5, y + 5);
+    y += 20;
+  });
+}
 // 📌 Fetch All Reports Available for Download
 app.get('/api/reports', authenticate, async (req, res) => {
   try {
