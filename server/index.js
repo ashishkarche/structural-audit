@@ -1147,15 +1147,15 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.fontSize(20).text("Table of Contents", { underline: true });
     doc.moveDown();
     const contents = [
-      "1. Introduction",
-      "2. Scope of Work",
-      "3. Purpose of Investigation",
-      "4. History / Salient Features",
-      "5. Proforma-B",
-      "6. Visual Observations",
-      "7. Damage Observations",
-      "8. Non-Destructive Testing (NDT) Results",
-      "9. Conclusion & Recommendations"
+      "Introduction",
+      "Scope of Work",
+      "Purpose of Investigation",
+      "History / Salient Features",
+      "Proforma-B",
+      "Visual Observations",
+      "Damage Observations",
+      "Non-Destructive Testing (NDT) Results",
+      "Conclusion & Recommendations"
     ];
     contents.forEach((item, idx) => {
       doc.fontSize(12).text(`${idx + 1}. ${item}`);
