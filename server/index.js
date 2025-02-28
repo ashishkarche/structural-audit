@@ -1058,7 +1058,7 @@ app.get('/api/notifications', authenticate, async (req, res) => {
        ORDER BY created_at DESC`,
       [req.user.id]
     );
-    
+
     res.json(notifications);
   } catch (error) {
     console.error("Error fetching notifications:", error);
@@ -1093,7 +1093,6 @@ app.delete('/api/notifications/clear', authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to clear notifications" });
   }
 });
-
 
 
 app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
@@ -1141,48 +1140,77 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // 📌 Title Page
     doc.fontSize(20).text("Structural Audit Report", { align: "center" });
     doc.moveDown();
-    doc.fontSize(14).text(`Prepared by: ${auditor.firm_name}`, { align: "center" });
-    doc.moveDown(2);
+    doc.fontSize(16).text(`${audit.name}`, { align: "center" });
+    doc.fontSize(14).text(`${audit.location}`, { align: "center" });
+    doc.addPage()
 
-    // 📌 Auditor Details (Page 1)
-    doc.fontSize(16).text("Auditor Details", { underline: true });
-    doc.fontSize(12).text(`Name: ${auditor.name}`);
-    doc.text(`Qualification: ${auditor.qualification}`);
-    doc.text(`Specialization: ${auditor.specialization}`);
-    doc.text(`Firm Name: ${auditor.firm_name}`);
-    doc.text(`General Professional Experience: ${auditor.general_experience} years`);
-    doc.text(`Specialized Experience: ${auditor.specialized_experience} years`);
-    doc.text(`Employment Period: ${auditor.employment_period} years`);
-    doc.moveDown();
+    // ===== Page 2: Table of Contents =====
+    doc.fontSize(16).text("CONTENTS", { underline: true });
+    const contents = [
+      "1. Introduction ....................................... 3",
+      "2. Scope of Work ..................................... 4",
+      "3. Purpose of Investigation .......................... 4",
+      "4. History/Salient Features .......................... 5",
+      "5. Limitations ........................................ 6",
+      "6. Proforma-B ......................................... 7",
+      "7. Detailed Observations ............................. 13",
+      "8. Non-Destructive Testing .......................... 31",
+      "9. Recommendations .................................. 39",
+      "10. Conclusion ....................................... 40"
+    ];
+    contents.forEach(item => doc.fontSize(12).text(item));
+    doc.addPage();
 
-    // 📌 Project Details (Page 2)
-    doc.fontSize(16).text("Project Details", { underline: true });
-    doc.fontSize(12).text(`Name: ${audit.name}`);
-    doc.text(`Location: ${audit.location}`);
-    doc.text(`Year of Construction: ${audit.year_of_construction}`);
-    doc.text(`Date of Audit: ${audit.date_of_audit}`);
-    doc.text(`Area of Building: ${audit.area}`);
-    doc.text(`Type of Structure: ${audit.structure_type}`);
-    doc.text(`Type of Cement: ${audit.cement_type}`);
-    doc.text(`Type of Steel: ${audit.steel_type}`);
-    doc.text(`Number of Stories: ${audit.number_of_stories}`);
-    doc.text(`Use of Building:`);
-    doc.text(`  - Designed Use: ${audit.designed_use}`);
-    doc.text(`  - Present Use: ${audit.present_use}`);
-    doc.text(`  - Changes in Building: ${audit.changes_in_building}`);
-    doc.text(`  - Distress Year: ${audit.distress_year}`);
-    doc.text(`  - Distress Nature: ${audit.distress_nature}`);
-    doc.moveDown();
-
-    // 📌 Introduction (Page 3)
-    doc.fontSize(16).text("Introduction", { underline: true });
+    // ===== Page 3: Introduction =====
+    doc.fontSize(16).text("1. INTRODUCTION", { underline: true });
     doc.fontSize(12).text(
-      `${auditor.firm_name} has been appointed to inspect and analyze the condition of ${audit.name} situated at ${audit.location} and subsequently submit an audit report.`
+      `M/s ${auditor.firm_name} was appointed to inspect and analyze the condition of "${audit.name}" situated at ${audit.location} and subsequently submit an audit report.`,
+      { paragraphGap: 5 }
     );
-    doc.text(
-      "A team of experts and engineers carried out a series of detailed visual inspections. Material testing using specialized Non-Destructive Testing (NDT) techniques was also performed."
-    );
-    doc.moveDown();
+    doc.fontSize(12).text("Accordingly, a team of expert and engineers carried out a series of detailed visual inspection. Besides the inspection, material testing by adopting specialized 'Non Destructive Testing' techniques was also carried out in a proper sequence. In line with this, Non-Destructive Tests (N.D.T) like Ultrasonic Pulse Velocity (USPV), Cover Meter, Carbonation, Concrete Core Strength, Rebound Hammer, Half-Cell Potential, Chemical Analysis etc. were conducted.", { paragraphGap: 5 });
+    doc.fontSize(12).text("This was done mainly to identify distresses; if any, and their effects on the structural stability and serviceability of the structure.", { paragraphGap: 5 });
+    doc.fontSize(12).text("The Inspection Report' comprising of Observations, Non Destructive Testing Reports, Inference of NDT, Photographs of distresses and Emerging Recommendations etc. is attached herewith.", { paragraphGap: 5 });
+
+    // ===== Page 4: Scope & Purpose ===== 
+    doc.addPage();
+    doc.fontSize(16).text("2. SCOPE OF WORK", { underline: true });
+    doc.fontSize(12).text(`${structuralChanges.scope_of_work}`, { paragraphGap: 5 });
+
+    doc.fontSize(16).text("3. PURPOSE OF INVESTIGATION", { underline: true });
+    doc.fontSize(12).text(`${structuralChanges.purpose_of_investigation}`);
+
+    doc.fontSize(16).text("3. HISTORY/SALIENT FEATURES OF THE STRUCTURE", { underline: true });
+    doc.fontSize(12).text(`${structuralChanges.brief_history_details}`);
+
+
+     // ===== Proforma-B =====
+     doc.addPage();
+     doc.fontSize(16).text("6. PROFORMA-B", { underline: true });
+     const proformaB = {
+       headers: ["Item", "Details"],
+       rows: [
+         ["1. Name of Building", audit.name || "No data availble."],
+         ["a. Location", audit.location || "No data availble."],
+         ["b. Area Of Building", audit.area || "No data availble."],
+         ["c. Types Of Structure", audit.structure_type || "No data availble."],
+         ["d. Number of Stories", audit.number_of_stories || "No data availble."],
+         ["2. Year of Construction", audit.year_of_construction || "No data availble."],
+         ["3. Uses Of Building"],
+         ["a. Designed Use", audit.designed_use || "No data availble."],
+         ["b. Present Use", audit.present_use || "No data availble."],
+         ["c. Any other change in building use", audit.changes_in_building || "No data availble."],
+         ["4. History of structure"],
+         ["a. Year of carrying out repairs:", structuralChanges.date_of_change || "No data availble."],
+
+         ["5. Type of cement used (OPC/PPC)/ SRC/ any other in original construction):",audit.cement_type || "No data availble."],
+         ["6. Type of steel reinforcement (Mild steel/Cold twisted steel/TMT/any other steel",audit.steel_type || "No data availble."],
+         ["7. Visual observations Conclusion:",damageEntries.description || "No data availble."],
+         ["8. Areas of immediate concern: ",immediateConcerns.concern_description || "No data availble."],
+
+       ]
+     };
+     drawProformaTable(doc, proformaB);
+     
 
     const formatDate = (dateString) => {
       if (!dateString) return "Data Not Available";
@@ -1190,25 +1218,11 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       return isNaN(date) ? "Invalid Date" : date.toLocaleDateString("en-GB"); // Formats as DD/MM/YYYY
     };
 
-    // 📌 Background History (Page 4)
-    if (structuralChanges.length > 0) {
-      doc.fontSize(16).text("Background History", { underline: true });
-      structuralChanges.forEach((change) => {
-        doc.fontSize(12).text(`- Brief Background History: ${change.brief_background_history}`);
-        doc.fontSize(12).text(`- Date of Change: ${formatDate(change.date_of_change)}`);
-        doc.text(`  Details: ${change.change_details}`);
-        doc.text(`  Conclusion From Previous Report: ${change.conclusion_from_previous_report}`);
-        doc.text(`  Scope Of Work: ${change.scope_of_work}`);
-        doc.text(`  Purpose Of investigation: ${change.purpose_of_investigation}`);
-        doc.moveDown();
-      });
-    }
-
     if (observations.length > 0) {
       doc.addPage();
       doc.fontSize(16).text("Visual Observations", { underline: true });
       doc.moveDown(1);
-    
+
       // Define headers & rows dynamically
       const obsTable = {
         headers: ["Observation Name", "Status"],
@@ -1229,11 +1243,11 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           ["Algae Growth", observations[0].algae_growth ? "Yes" : "No"]
         ]
       };
-    
+
       // Function to draw a responsive table
       const drawTable = (doc, table, startX, startY, rowHeight = 25, colWidths = [300, 100]) => {
         let y = startY;
-    
+
         // Draw headers
         doc.font("Helvetica-Bold").fontSize(10);
         colWidths.forEach((width, index) => {
@@ -1241,7 +1255,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 5, y + 7);
         });
         y += rowHeight;
-    
+
         // Draw rows
         doc.font("Helvetica").fontSize(10);
         table.rows.forEach((row) => {
@@ -1252,17 +1266,17 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           y += rowHeight;
         });
       };
-    
+
       // Draw the table at (50, 150) position
       drawTable(doc, obsTable, 50, 150);
     }
-    
+
 
     if (damageEntries.length > 0) {
       doc.addPage();
       doc.fontSize(16).text("Damage Observations", { underline: true });
       doc.moveDown(1);
-    
+
       // Define table headers & rows dynamically
       const damageTable = {
         headers: ["Description", "Location", "Cause", "Classification"],
@@ -1273,18 +1287,18 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           damage.classification || "N/A"
         ])
       };
-    
+
       // Function to draw a responsive table
       const drawTable4 = (doc, table, startX, startY, rowHeight = 25, colWidths = []) => {
         let y = startY;
-    
+
         // Auto-assign column widths if not provided
         if (colWidths.length === 0) {
           const totalWidth = 500; // Max table width
           const numCols = table.headers.length;
           colWidths = new Array(numCols).fill(totalWidth / numCols);
         }
-    
+
         // Draw headers
         doc.font("Helvetica-Bold").fontSize(10);
         colWidths.forEach((width, index) => {
@@ -1292,7 +1306,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           doc.text(table.headers[index], startX + colWidths.slice(0, index).reduce((a, b) => a + b, 0) + 2, y + 7, { width: width - 4, align: "center" });
         });
         y += rowHeight;
-    
+
         // Draw rows
         doc.font("Helvetica").fontSize(9);
         table.rows.forEach((row) => {
@@ -1303,11 +1317,11 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           y += rowHeight;
         });
       };
-    
+
       // Draw the Damage Observations table at (50, 150) position
       drawTable4(doc, damageTable, 50, 150);
     }
-    
+
 
     // 📌 NDT Test Results Table
     if (ndtTests.length > 0) {
@@ -1419,65 +1433,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     }
 
 
-    // 📌 Proforma (Page 4)
     doc.addPage();
-    doc.fontSize(16).text("Proforma", { underline: true });
-    doc.moveDown(1);
-
-    const table = {
-      headers: ["#", "Details"],
-      rows: [
-        ["Subject", `Structural Audit of ${audit.name} at ${audit.location}`],
-        ["Date of Audit", audit.date_of_audit],
-        ["1. Name of the Project", audit.name],
-        ["   a. Location", audit.location],
-        ["   b. Area of Building", audit.area],
-        ["   c. Type of Structure", audit.structure_type],
-        ["   d. Number of Stories", audit.number_of_stories],
-        ["2. Year of Construction", audit.year_of_construction],
-        ["3. Use of the Building", ""],
-        ["   a. Designed Use", audit.designed_use],
-        ["   b. Present Use", audit.present_use],
-        ["   c. Changes in Building", audit.changes_in_building],
-        ["4. History of Structure", ""],
-        ["   a. carrying out Repairs", structuralChanges[0]?.date_of_change || "Data Not Availble"],
-        ["   b. Type of Repairs", structuralChanges[0]?.repair_type || "Data Not Availble"],
-        ["   c. Efficacy of Repairs", structuralChanges[0]?.repair_efficacy || "Data Not Availble"],
-        ["   d. Cost of Repairs", structuralChanges[0]?.repair_cost || "Data Not Availble"],
-        ["5. Type of Cement Used", audit.cement_type],
-        ["6. Type of Steel ", audit.steel_type],
-        ["7. Observations", conclusion[0]?.conclusion || "Data Not Availble"],
-        ["8. Immediate Concern", immediateConcerns[0]?.concern_description || "Data Not Availble"],
-      ],
-    };
-
-    // Function to draw a table
-    const drawTable = (doc, table, startX, startY, rowHeight = 20, colWidths = [150, 350]) => {
-      let y = startY;
-
-      // Draw headers
-      doc.font("Helvetica-Bold").fontSize(12);
-      doc.rect(startX, y, colWidths[0], rowHeight).stroke();
-      doc.rect(startX + colWidths[0], y, colWidths[1], rowHeight).stroke();
-      doc.text(table.headers[0], startX + 5, y + 5);
-      doc.text(table.headers[1], startX + colWidths[0] + 5, y + 5);
-      y += rowHeight;
-
-      // Draw rows
-      doc.font("Helvetica").fontSize(11);
-      table.rows.forEach((row) => {
-        doc.rect(startX, y, colWidths[0], rowHeight).stroke();
-        doc.rect(startX + colWidths[0], y, colWidths[1], rowHeight).stroke();
-        doc.text(row[0], startX + 5, y + 5);
-        doc.text(row[1], startX + colWidths[0] + 5, y + 5);
-        y += rowHeight;
-      });
-    };
-
-    // Draw the table at position (50, 150)
-    drawTable(doc, table, 50, 150);
-
-
 
     if (conclusion.length > 0) {
       doc.addPage(); // Ensure conclusion starts on new page
