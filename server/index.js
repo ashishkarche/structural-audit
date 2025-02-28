@@ -1142,7 +1142,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.moveDown();
     doc.fontSize(16).text(`${audit.name}`, { align: "center" });
     doc.fontSize(14).text(`${audit.location}`, { align: "center" });
-    doc.addPage()
 
     // ===== Page 2: Table of Contents =====
     doc.fontSize(16).text("CONTENTS", { underline: true });
@@ -1172,45 +1171,65 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.fontSize(12).text("The Inspection Report' comprising of Observations, Non Destructive Testing Reports, Inference of NDT, Photographs of distresses and Emerging Recommendations etc. is attached herewith.", { paragraphGap: 5 });
 
     // ===== Page 4: Scope & Purpose ===== 
-    doc.addPage();
+    // Display all entries for Scope of Work
     doc.fontSize(16).text("2. SCOPE OF WORK", { underline: true });
-    doc.fontSize(12).text(`${structuralChanges.scope_of_work}`, { paragraphGap: 5 });
+    if (structuralChanges.length > 0) {
+      structuralChanges.forEach((change, index) => {
+        doc.fontSize(12).text(`${index + 1}. ${change.scope_of_work || "Data Not Available"}`, { paragraphGap: 5 });
+      });
+    } else {
+      doc.fontSize(12).text("Data Not Available", { paragraphGap: 5 });
+    }
 
+    // Display all entries for Purpose of Investigation
     doc.fontSize(16).text("3. PURPOSE OF INVESTIGATION", { underline: true });
-    doc.fontSize(12).text(`${structuralChanges.purpose_of_investigation}`);
+    if (structuralChanges.length > 0) {
+      structuralChanges.forEach((change, index) => {
+        doc.fontSize(12).text(`${index + 1}. ${change.purpose_of_investigation || "Data Not Available"}`);
+      });
+    } else {
+      doc.fontSize(12).text("Data Not Available");
+    }
 
-    doc.fontSize(16).text("3. HISTORY/SALIENT FEATURES OF THE STRUCTURE", { underline: true });
-    doc.fontSize(12).text(`${structuralChanges.brief_history_details}`);
+    // Display all entries for History/Salient Features
+    doc.fontSize(16).text("4. HISTORY/SALIENT FEATURES OF THE STRUCTURE", { underline: true });
+    if (structuralChanges.length > 0) {
+      structuralChanges.forEach((change, index) => {
+        doc.fontSize(12).text(`${index + 1}. ${change.brief_history_details || "Data Not Available"}`);
+      });
+    } else {
+      doc.fontSize(12).text("Data Not Available");
+    }
 
 
-     // ===== Proforma-B =====
-     doc.addPage();
-     doc.fontSize(16).text("6. PROFORMA-B", { underline: true });
-     const proformaB = {
-       headers: ["Item", "Details"],
-       rows: [
-         ["1. Name of Building", audit.name || "No data availble."],
-         ["a. Location", audit.location || "No data availble."],
-         ["b. Area Of Building", audit.area || "No data availble."],
-         ["c. Types Of Structure", audit.structure_type || "No data availble."],
-         ["d. Number of Stories", audit.number_of_stories || "No data availble."],
-         ["2. Year of Construction", audit.year_of_construction || "No data availble."],
-         ["3. Uses Of Building"],
-         ["a. Designed Use", audit.designed_use || "No data availble."],
-         ["b. Present Use", audit.present_use || "No data availble."],
-         ["c. Any other change in building use", audit.changes_in_building || "No data availble."],
-         ["4. History of structure"],
-         ["a. Year of carrying out repairs:", structuralChanges.date_of_change || "No data availble."],
+    // ===== Proforma-B =====
+    doc.addPage();
+    doc.fontSize(16).text("6. PROFORMA-B", { underline: true });
+    const proformaB = {
+      headers: ["Item", "Details"],
+      rows: [
+        ["1. Name of Building", audit.name || "No data availble."],
+        ["a. Location", audit.location || "No data availble."],
+        ["b. Area Of Building", audit.area || "No data availble."],
+        ["c. Types Of Structure", audit.structure_type || "No data availble."],
+        ["d. Number of Stories", audit.number_of_stories || "No data availble."],
+        ["2. Year of Construction", audit.year_of_construction || "No data availble."],
+        ["3. Uses Of Building"],
+        ["a. Designed Use", audit.designed_use || "No data availble."],
+        ["b. Present Use", audit.present_use || "No data availble."],
+        ["c. Any other change in building use", audit.changes_in_building || "No data availble."],
+        ["4. History of structure"],
+        ["a. Year of carrying out repairs:", structuralChanges.date_of_change || "No data availble."],
 
-         ["5. Type of cement used (OPC/PPC)/ SRC/ any other in original construction):",audit.cement_type || "No data availble."],
-         ["6. Type of steel reinforcement (Mild steel/Cold twisted steel/TMT/any other steel",audit.steel_type || "No data availble."],
-         ["7. Visual observations Conclusion:",damageEntries.description || "No data availble."],
-         ["8. Areas of immediate concern: ",immediateConcerns.concern_description || "No data availble."],
+        ["5. Type of cement used (OPC/PPC)/ SRC/ any other in original construction):", audit.cement_type || "No data availble."],
+        ["6. Type of steel reinforcement (Mild steel/Cold twisted steel/TMT/any other steel", audit.steel_type || "No data availble."],
+        ["7. Visual observations Conclusion:", damageEntries.description || "No data availble."],
+        ["8. Areas of immediate concern: ", immediateConcerns.concern_description || "No data availble."],
 
-       ]
-     };
-     drawProformaTable(doc, proformaB);
-     
+      ]
+    };
+    drawProformaTable(doc, proformaB);
+
 
     const formatDate = (dateString) => {
       if (!dateString) return "Data Not Available";
@@ -1477,19 +1496,19 @@ function drawProformaTable(doc, table) {
 
   // Headers
   doc.font("Helvetica-Bold")
-     .rect(startX, y, colWidths[0], 20).stroke()
-     .text(table.headers[0], startX + 5, y + 5)
-     .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
-     .text(table.headers[1], startX + colWidths[0] + 5, y + 5);
+    .rect(startX, y, colWidths[0], 20).stroke()
+    .text(table.headers[0], startX + 5, y + 5)
+    .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
+    .text(table.headers[1], startX + colWidths[0] + 5, y + 5);
   y += 20;
 
   // Rows
   doc.font("Helvetica");
   table.rows.forEach(row => {
     doc.rect(startX, y, colWidths[0], 20).stroke()
-       .text(row[0], startX + 5, y + 5)
-       .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
-       .text(row[1], startX + colWidths[0] + 5, y + 5);
+      .text(row[0], startX + 5, y + 5)
+      .rect(startX + colWidths[0], y, colWidths[1], 20).stroke()
+      .text(row[1], startX + colWidths[0] + 5, y + 5);
     y += 20;
   });
 }
