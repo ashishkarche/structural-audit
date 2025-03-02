@@ -1098,7 +1098,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
 
-    // Fetch auditor details
+    // 1) Fetch auditor details
     const [auditorResult] = await db.execute(
       `SELECT name, firm_name, qualification, specialization, 
        general_experience, specialized_experience, employment_period 
@@ -1110,7 +1110,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     }
     const auditor = auditorResult[0];
 
-    // Fetch audit details
+    // 2) Fetch audit details
     const [auditResult] = await db.execute(
       `SELECT * FROM Audits WHERE id = ? AND auditor_id = ?`,
       [auditId, req.user.id]
@@ -1120,7 +1120,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     }
     const audit = auditResult[0];
 
-    // Fetch related data (using simple queries for brevity)
+    // 3) Fetch related data
     const [structuralChanges] = await db.execute(`SELECT * FROM StructuralChanges WHERE audit_id = ?`, [auditId]);
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
     const [immediateConcerns] = await db.execute(`SELECT * FROM ImmediateConcerns WHERE audit_id = ?`, [auditId]);
@@ -1128,41 +1128,120 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     const [conclusion] = await db.execute(`SELECT * FROM AuditConclusions WHERE audit_id = ?`, [auditId]);
     const [damageEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
 
-    // Create PDF document
+    // 4) Create PDF document
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename=Audit_Report_${auditId}.pdf`);
     doc.pipe(res);
 
-    // ─── COVER PAGE ─────────────────────────────────────────────────────────────
-    // Use a large title and display building name & location (similar to your sample)
-    doc.fontSize(28).text("Structural Audit Report", { align: "center", underline: true });
+    /****************************************************************
+     * HELPER FUNCTION: Draw a single TOC line with dotted fill
+     ****************************************************************/
+    function drawTOCLine(doc, label, page, x, y, maxWidth, options = {}) {
+      const {
+        font = 'Helvetica',
+        fontSize = 12,
+        dotLeader = '.',
+        gapSize = 10
+      } = options;
+
+      doc.font(font).fontSize(fontSize);
+
+      // Measure label & page number
+      const labelWidth = doc.widthOfString(label);
+      const pageWidth = doc.widthOfString(page.toString());
+
+      // Available space for dots
+      const dotsWidth = maxWidth - labelWidth - pageWidth - gapSize;
+      if (dotsWidth < 0) {
+        // Not enough space for dots, just print label + page
+        doc.text(`${label} ${page}`, x, y);
+        return;
+      }
+
+      // Each dot has a width
+      const dotSingleWidth = doc.widthOfString(dotLeader);
+      const dotCount = Math.floor(dotsWidth / dotSingleWidth);
+      const dots = dotLeader.repeat(dotCount);
+
+      // e.g. "INTRODUCTION.........3"
+      const line = `${label}${dots}${page}`;
+      doc.text(line, x, y);
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // 5) COVER PAGE
+    // ───────────────────────────────────────────────────────────────
+    doc.fontSize(28).text("Structural Audit Report", {
+      align: "center",
+      underline: true
+    });
     doc.moveDown(2);
     doc.fontSize(22).text(audit.name || "Building Name Not Available", { align: "center" });
     doc.moveDown();
     doc.fontSize(18).text(audit.location || "Location Not Available", { align: "center" });
+
+    // Embed the first damage entry's image on the cover, if present
+    if (damageEntries.length > 0 && damageEntries[0].damage_photos) {
+      doc.moveDown(2);
+      doc.image(damageEntries[0].damage_photos, {
+        fit: [300, 300],
+        align: 'center',
+        valign: 'center'
+      });
+    }
+
+    // Next page
     doc.addPage();
 
-    // ─── TABLE OF CONTENTS ─────────────────────────────────────────────────────────
+    /****************************************************************
+     * 6) TABLE OF CONTENTS
+     * Adjust page references as needed
+     ****************************************************************/
     doc.fontSize(20).text("Table of Contents", { underline: true });
     doc.moveDown();
-    const contents = [
-      "Introduction",
-      "Scope of Work",
-      "Purpose of Investigation",
-      "History / Salient Features",
-      "Proforma-B",
-      "Visual Observations",
-      "Damage Observations",
-      "Non-Destructive Testing (NDT) Results",
-      "Conclusion & Recommendations"
+
+    const tocData = [
+      { label: "Introduction", page: "3" },
+      { label: "Scope of Work", page: "4" },
+      { label: "Purpose of Investigation", page: "5" },
+      { label: "History / Salient Features", page: "6" },
+      { label: "Proforma-B", page: "7" },
+      { label: "Detailed Observations", page: "8" },
+      { label: "Visual Observations", page: "9" },
+      { label: "Damage Observations", page: "10" },
+      { label: "Non-Destructive Testing (NDT) Results", page: "11" },
+      { label: "Conclusion & Recommendations", page: "12" }
     ];
-    contents.forEach((item, idx) => {
-      doc.fontSize(12).text(`${idx + 1}. ${item}`);
+
+    let currentY = doc.y;
+    const startX = 50;
+    const lineHeight = 18;
+    const maxLineWidth = 500;
+
+    tocData.forEach((item, idx) => {
+      drawTOCLine(
+        doc,
+        `${idx + 1}. ${item.label}`,
+        item.page,
+        startX,
+        currentY,
+        maxLineWidth,
+        { fontSize: 12, dotLeader: '.', gapSize: 10 }
+      );
+      currentY += lineHeight;
+
+      // Page break if needed
+      if (currentY > doc.page.height - 50) {
+        doc.addPage();
+        currentY = doc.y;
+      }
     });
+
+    // Next page after TOC
     doc.addPage();
 
-    // ─── INTRODUCTION ─────────────────────────────────────────────────────────────
+    // ─── (1) INTRODUCTION ─────────────────────────────────────────
     doc.fontSize(16).text("1. INTRODUCTION", { underline: true });
     doc.moveDown();
     doc.fontSize(12).text(
@@ -1174,44 +1253,45 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     );
     doc.addPage();
 
-    // ─── SCOPE & PURPOSE & HISTORY ────────────────────────────────────────────────
-    // Scope of Work
+    // ─── (2) SCOPE OF WORK ────────────────────────────────────────
     doc.fontSize(16).text("2. SCOPE OF WORK", { underline: true });
     doc.moveDown();
     if (structuralChanges.length > 0) {
-      structuralChanges.forEach((change, index) => {
-        doc.fontSize(12).text(`${index + 1}. ${change.scope_of_work || "Data Not Available"}`, { paragraphGap: 5 });
+      structuralChanges.forEach((change) => {
+        doc.fontSize(12).text(change.scope_of_work || "Data Not Available", { paragraphGap: 5 });
       });
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
     doc.addPage();
 
-    // Purpose of Investigation
+    // ─── (3) PURPOSE OF INVESTIGATION ─────────────────────────────
     doc.fontSize(16).text("3. PURPOSE OF INVESTIGATION", { underline: true });
     doc.moveDown();
     if (structuralChanges.length > 0) {
-      structuralChanges.forEach((change, index) => {
-        doc.fontSize(12).text(`${index + 1}. ${change.purpose_of_investigation || "Data Not Available"}`);
+      structuralChanges.forEach((change) => {
+        doc.fontSize(12).text(change.purpose_of_investigation || "Data Not Available");
       });
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
     doc.addPage();
 
-    // History / Salient Features
+    // ─── (4) HISTORY / SALIENT FEATURES ───────────────────────────
     doc.fontSize(16).text("4. HISTORY / SALIENT FEATURES", { underline: true });
     doc.moveDown();
     if (structuralChanges.length > 0) {
-      structuralChanges.forEach((change, index) => {
-        doc.fontSize(12).text(`${index + 1}. ${change.brief_history_details || "Data Not Available"}`);
+      structuralChanges.forEach((change) => {
+        doc.fontSize(12).text(change.brief_history_details || "Data Not Available");
       });
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
     doc.addPage();
 
-    // ─── HELPER FUNCTIONS FOR DYNAMIC TABLE DRAWING ──────────────────────────────
+    /****************************************************************
+     * HELPER FUNCTIONS FOR TABLES (with or without images)
+     ****************************************************************/
     function wrapText(doc, text, maxWidth) {
       const words = text.split(" ");
       let line = "";
@@ -1236,34 +1316,25 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         rowFont = "Helvetica",
         rowFontSize = 10,
         cellPadding = 5,
-        // You can set a default image height if you like
         defaultImageHeight = 80,
       } = options;
 
-      // Helper: measure text height
       const measureTextHeight = (text, width) => {
         return doc.heightOfString(text, { width }) + 2 * cellPadding;
       };
-
-      // Helper: measure image height (a simple fixed approach)
-      const measureImageHeight = (buffer, maxWidth) => {
-        // For a quick approach, just return a fixed height:
+      const measureImageHeight = () => {
         return defaultImageHeight + 2 * cellPadding;
-
-        // (Optional) For a more accurate approach, you'd decode the image dimensions
-        // (using 'image-size' library or similar) and scale it to fit maxWidth.
       };
 
       let y = startY;
 
-      // 1) Draw headers and compute header height
+      // 1) Draw headers
       doc.font(headerFont).fontSize(headerFontSize);
       let headerHeight = 0;
       table.headers.forEach((header, i) => {
         const textHeight = measureTextHeight(header, colWidths[i] - 2 * cellPadding);
         headerHeight = Math.max(headerHeight, textHeight);
       });
-      // Render header cells
       table.headers.forEach((header, i) => {
         const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
         doc.rect(x, y, colWidths[i], headerHeight).stroke();
@@ -1273,21 +1344,18 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       });
       y += headerHeight;
 
-      // 2) Draw each row with dynamic height
+      // 2) Draw rows
       doc.font(rowFont).fontSize(rowFontSize);
-
       table.rows.forEach((row) => {
-        // For each cell, measure either text or image
+        // For each cell, measure text or image
         const cellHeights = row.map((cell, i) => {
           if (cell && Buffer.isBuffer(cell)) {
-            // It's an image
-            return measureImageHeight(cell, colWidths[i] - 2 * cellPadding);
+            return measureImageHeight();
           } else {
-            // It's text
-            return measureTextHeight(cell?.toString() ?? "", colWidths[i] - 2 * cellPadding);
+            const textVal = cell ? cell.toString() : "";
+            return measureTextHeight(textVal, colWidths[i] - 2 * cellPadding);
           }
         });
-
         const rowHeight = Math.max(...cellHeights);
 
         // Page break if needed
@@ -1296,39 +1364,91 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           y = 50;
         }
 
-        // Now draw each cell
+        // Render each cell
         row.forEach((cell, i) => {
           const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
           doc.rect(x, y, colWidths[i], rowHeight).stroke();
 
-          // If cell is an image buffer
           if (cell && Buffer.isBuffer(cell)) {
-            // Fit the image in the cell minus padding
+            // Render as image
             const imageX = x + cellPadding;
             const imageY = y + cellPadding;
             const imageWidth = colWidths[i] - 2 * cellPadding;
             const imageHeight = rowHeight - 2 * cellPadding;
 
-            // Render the image
             doc.image(cell, imageX, imageY, {
               fit: [imageWidth, imageHeight],
               align: "center",
               valign: "center",
             });
           } else {
-            // Render text
-            doc.text(cell?.toString() ?? "N/A", x + cellPadding, y + cellPadding, {
+            // Render as text
+            doc.text(cell ? cell.toString() : "N/A", x + cellPadding, y + cellPadding, {
               width: colWidths[i] - 2 * cellPadding,
               align: "left",
             });
           }
         });
-
-        // Move to the next row
         y += rowHeight;
       });
     }
 
+    function drawDynamicTable1(doc, table, startX, startY, colWidths, options = {}) {
+      const {
+        headerFont = "Helvetica-Bold",
+        headerFontSize = 12,
+        rowFont = "Helvetica",
+        rowFontSize = 10,
+        cellPadding = 5,
+      } = options;
+    
+      let y = startY;
+    
+      // 1) If you have headers, draw them
+      if (table.headers && table.headers.length > 0) {
+        doc.font(headerFont).fontSize(headerFontSize);
+        let headerHeight = 0;
+        table.headers.forEach((header, i) => {
+          const h = doc.heightOfString(header, { width: colWidths[i] - 2 * cellPadding });
+          headerHeight = Math.max(headerHeight, h + 2 * cellPadding);
+        });
+        table.headers.forEach((header, i) => {
+          const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
+          doc.rect(x, y, colWidths[i], headerHeight).stroke();
+          doc.text(header, x + cellPadding, y + cellPadding, {
+            width: colWidths[i] - 2 * cellPadding
+          });
+        });
+        y += headerHeight;
+      }
+    
+      // 2) Draw each row
+      doc.font(rowFont).fontSize(rowFontSize);
+      table.rows.forEach(row => {
+        // Calculate row height based on each cell's text
+        const cellHeights = row.map((cell, i) => {
+          return doc.heightOfString(cell.toString(), { width: colWidths[i] - 2 * cellPadding }) + 2 * cellPadding;
+        });
+        const rowHeight = Math.max(...cellHeights);
+    
+        // Page break if needed
+        if (y + rowHeight > doc.page.height - 50) {
+          doc.addPage();
+          y = 50;
+        }
+    
+        // Draw each cell
+        row.forEach((cell, i) => {
+          const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
+          doc.rect(x, y, colWidths[i], rowHeight).stroke();
+          doc.text(cell.toString(), x + cellPadding, y + cellPadding, {
+            width: colWidths[i] - 2 * cellPadding
+          });
+        });
+        y += rowHeight;
+      });
+    }
+    
     function drawDynamicTable(doc, table, startX, startY, colWidths, options = {}) {
       const {
         headerFont = "Helvetica-Bold",
@@ -1340,7 +1460,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
 
       let y = startY;
 
-      // Draw headers and compute header height
+      // Headers
       doc.font(headerFont).fontSize(headerFontSize);
       let headerHeight = 0;
       table.headers.forEach((header, i) => {
@@ -1350,11 +1470,13 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       table.headers.forEach((header, i) => {
         const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
         doc.rect(x, y, colWidths[i], headerHeight).stroke();
-        doc.text(header, x + cellPadding, y + cellPadding, { width: colWidths[i] - 2 * cellPadding });
+        doc.text(header, x + cellPadding, y + cellPadding, {
+          width: colWidths[i] - 2 * cellPadding
+        });
       });
       y += headerHeight;
 
-      // Draw each row with dynamic height
+      // Rows
       doc.font(rowFont).fontSize(rowFontSize);
       table.rows.forEach(row => {
         const cellHeights = row.map((cell, i) => {
@@ -1362,7 +1484,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         });
         const rowHeight = Math.max(...cellHeights);
 
-        // New page if overflow
+        // Page break if needed
         if (y + rowHeight > doc.page.height - 50) {
           doc.addPage();
           y = 50;
@@ -1371,13 +1493,15 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         row.forEach((cell, i) => {
           const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
           doc.rect(x, y, colWidths[i], rowHeight).stroke();
-          doc.text(cell.toString(), x + cellPadding, y + cellPadding, { width: colWidths[i] - 2 * cellPadding });
+          doc.text(cell.toString(), x + cellPadding, y + cellPadding, {
+            width: colWidths[i] - 2 * cellPadding
+          });
         });
         y += rowHeight;
       });
     }
 
-    // ─── PROFORMA-B ───────────────────────────────────────────────────────────────
+    // ─── (5) PROFORMA-B ───────────────────────────────────────────
     doc.addPage();
     doc.fontSize(16).text("5. PROFORMA-B", { underline: true });
     const proformaB = {
@@ -1419,12 +1543,78 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       ]
     };
     const proformaColWidths = [200, 300];
-    drawDynamicTable(doc, proformaB, 50, 150, proformaColWidths, { headerFontSize: 12, rowFontSize: 10 });
+    drawDynamicTable(doc, proformaB, 50, 150, proformaColWidths, {
+      headerFontSize: 12,
+      rowFontSize: 10
+    });
 
-    // ─── VISUAL OBSERVATIONS ─────────────────────────────────────────────────────
+    /****************************************************************
+     * (6) DETAILED OBSERVATIONS
+     * With static text + table from damageEntries
+     ****************************************************************/
+    doc.addPage();
+    doc.fontSize(16).text("6. DETAILED OBSERVATIONS", { underline: true });
+    doc.moveDown();
+
+    // -- Static text from your screenshot --
+    doc.fontSize(12).text(
+      "A structural audit is an important technical requirement for any structure and has a series of parameters to be adequately investigated and assuredly complied with."
+    );
+    doc.moveDown();
+    doc.text(
+      "During this series, the structure was inspected thoroughly on several occasions to record, verify and study the distresses, level of malfunctioning, and corrosion leaks in the R.C.C. members."
+    );
+    doc.moveDown();
+    doc.text(
+      "In the period of approximately last 30 years of its existence, various defects have developed in the said structures and the same are incorporated in this compilation."
+    );
+    doc.moveDown();
+    doc.text(
+      "A detailed summary of the Structural assessment report is submitted herewith in this compilation."
+    );
+    doc.moveDown(2);
+
+    // Example subheading for external observations
+    doc.fontSize(14).text("External Observation", { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).text("No major distress is noted in the external area.");
+    doc.moveDown();
+    doc.text("Location: South Side elevation");
+    doc.text("Distress: None observed");
+    doc.moveDown(2);
+
+    // Now create a table for damageEntries (like your screenshot)
+    // Columns: Sr. No, Description, Location, Cause, Classification, Photo
+    if (damageEntries.length > 0) {
+      const detailedTable = {
+        headers: ["Sr. No", "Description", "Location", "Cause", "Classification", "Photo"],
+        rows: damageEntries.map((damage, index) => [
+          (index + 1).toString(),
+          damage.description || "N/A",
+          damage.location || "N/A",
+          damage.cause || "N/A",
+          damage.classification || "N/A",
+          damage.damage_photos || null
+        ]),
+      };
+
+      // Adjust widths as needed:
+      const detailedColWidths = [50, 120, 100, 100, 100, 100];
+
+      // Use our drawDynamicTableWithImages to render the table
+      drawDynamicTableWithImages(doc, detailedTable, 50, doc.y, detailedColWidths, {
+        headerFontSize: 12,
+        rowFontSize: 10,
+        defaultImageHeight: 80, // you can adjust
+      });
+    } else {
+      doc.fontSize(12).text("No additional damage entries available.");
+    }
+
+    // ─── (7) VISUAL OBSERVATIONS ─────────────────────────────────
     if (observations.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("6. VISUAL OBSERVATIONS", { underline: true });
+      doc.fontSize(16).text("7. VISUAL OBSERVATIONS", { underline: true });
       const obsTable = {
         headers: ["Observation", "Status"],
         rows: [
@@ -1448,37 +1638,91 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       drawDynamicTable(doc, obsTable, 50, 150, obsColWidths, { headerFontSize: 10, rowFontSize: 10 });
     }
 
-    // ─── DAMAGE OBSERVATIONS ─────────────────────────────────────────────────────
-    // ─── DAMAGE OBSERVATIONS ─────────────────────────────────────────────────────
-    if (damageEntries.length > 0) {
-      doc.addPage();
-      doc.fontSize(16).text("7. DAMAGE OBSERVATIONS", { underline: true });
+    // ─── (8) DAMAGE OBSERVATIONS ─────────────────────────────────
+    // (If you still want a separate damage section from the above)
+    // Add a new page (if needed) before this section
+    doc.addPage();
 
-      // Create a table definition with 5 columns: 4 for text + 1 for the photo
-      const damageTable = {
-        headers: ["Description", "Location", "Cause", "Classification", "Photo"],
-        rows: damageEntries.map((damage) => [
-          damage.description || "N/A",
-          damage.location || "N/A",
-          damage.cause || "N/A",
-          damage.classification || "N/A",
-          damage.damage_photos || null // The LONGBLOB from DB
-        ]),
-      };
+    // 1) Section Heading
+    doc.fontSize(16).text("6. DETAILED OBSERVATIONS", { underline: true });
+    doc.moveDown();
 
-      // Adjust your column widths (5 columns now)
-      const damageColWidths = [100, 100, 100, 100, 100]; // total ~500px for example
+    // 2) Bullet point / static text
+    doc.fontSize(12).list([
+      "No major distress is noted in the external area."
+    ], { bulletRadius: 2 }); // bulletRadius adjusts the size of the bullet
+    doc.moveDown();
 
-      // Draw the table (we'll define an enhanced drawDynamicTable below)
-      drawDynamicTableWithImages(doc, damageTable, 50, 150, damageColWidths, {
-        headerFontSize: 10,
-        rowFontSize: 9,
+    // 3) (Optional) Display two images side by side, if you have them
+    //    For simplicity, we use the first two damage entries if available
+    if (damageEntries.length >= 2) {
+      // Save current X/Y
+      const startX = doc.x;
+      const startY = doc.y;
+
+      // First image on the left
+      doc.image(damageEntries[0].damage_photos, startX, startY, {
+        width: 200, // or fit: [200, 200]
+        align: 'left'
       });
+
+      // Second image to the right
+      const secondX = startX + 220; // some gap to the right
+      doc.image(damageEntries[1].damage_photos, secondX, startY, {
+        width: 200,
+        align: 'left'
+      });
+
+      // Move down below both images
+      doc.moveDown(10);
+    } else if (damageEntries.length === 1) {
+      // If only one image, just show that one
+      doc.image(damageEntries[0].damage_photos, {
+        width: 200,
+        align: 'left'
+      });
+      doc.moveDown(2);
     }
-    // ─── NDT TEST RESULTS ─────────────────────────────────────────────────────────
+
+    // 4) Create a small table with 1 row & 2 columns (Location & Cause)
+    //    For this example, we just use the *first* damage entry's data.
+    //    Adjust logic if you want to loop through all or filter by 'external' damage, etc.
+    let locationText = "N/A";
+    let causeText = "N/A";
+
+    if (damageEntries.length > 0) {
+      const firstDamage = damageEntries[0];
+      locationText = firstDamage.location || "N/A";
+      causeText = firstDamage.cause || "N/A";
+    }
+
+    // Build the table data
+    const externalObsTable = {
+      // No headers if you want the exact style from your screenshot
+      headers: [],
+      rows: [
+        [
+          `Location: - ${locationText}`,
+          `Cause: - ${causeText}`
+        ]
+      ]
+    };
+
+    // Column widths: half page each (approx)
+    const externalObsColWidths = [250, 250];
+
+    // Now draw the table
+    drawDynamicTable1(doc, externalObsTable, 50, doc.y, externalObsColWidths, {
+      headerFontSize: 12,
+      rowFontSize: 12
+    });
+
+    doc.moveDown(2);
+
+    // ─── (9) NDT RESULTS ─────────────────────────────────────────
     if (ndtTests.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("8. NON-DESTRUCTIVE TESTING (NDT) RESULTS", { underline: true });
+      doc.fontSize(16).text("9. NON-DESTRUCTIVE TESTING (NDT) RESULTS", { underline: true });
       const ndtTable = { headers: ["Test Type", "Value", "Quality", "Recommendation"], rows: [] };
       ndtTests.forEach(ndt => {
         Object.keys(ndt).forEach(key => {
@@ -1503,14 +1747,22 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         });
       });
       const pageWidth = doc.page.width - 100;
-      const ndtColWidths = [pageWidth * 0.25, pageWidth * 0.2, pageWidth * 0.2, pageWidth * 0.35];
-      drawDynamicTable(doc, ndtTable, 50, 150, ndtColWidths, { headerFontSize: 12, rowFontSize: 11 });
+      const ndtColWidths = [
+        pageWidth * 0.25,
+        pageWidth * 0.2,
+        pageWidth * 0.2,
+        pageWidth * 0.35
+      ];
+      drawDynamicTable(doc, ndtTable, 50, 150, ndtColWidths, {
+        headerFontSize: 12,
+        rowFontSize: 11
+      });
     }
 
-    // ─── CONCLUSION & RECOMMENDATIONS ─────────────────────────────────────────────
+    // ─── (10) CONCLUSION & RECOMMENDATIONS ───────────────────────
     if (conclusion.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("9. CONCLUSION & RECOMMENDATIONS", { underline: true });
+      doc.fontSize(16).text("10. CONCLUSION & RECOMMENDATIONS", { underline: true });
       doc.moveDown();
       doc.fontSize(12)
         .text("Conclusion:", { continued: true })
@@ -1531,6 +1783,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         .text(`\nChief Engineers: ${conclusion[0].chief_engineers || "___________________"}`);
     }
 
+    // Finish the PDF
     doc.end();
 
   } catch (error) {
