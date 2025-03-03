@@ -1401,9 +1401,9 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         rowFontSize = 10,
         cellPadding = 5,
       } = options;
-    
+
       let y = startY;
-    
+
       // 1) If you have headers, draw them
       if (table.headers && table.headers.length > 0) {
         doc.font(headerFont).fontSize(headerFontSize);
@@ -1421,7 +1421,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         });
         y += headerHeight;
       }
-    
+
       // 2) Draw each row
       doc.font(rowFont).fontSize(rowFontSize);
       table.rows.forEach(row => {
@@ -1430,13 +1430,13 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           return doc.heightOfString(cell.toString(), { width: colWidths[i] - 2 * cellPadding }) + 2 * cellPadding;
         });
         const rowHeight = Math.max(...cellHeights);
-    
+
         // Page break if needed
         if (y + rowHeight > doc.page.height - 50) {
           doc.addPage();
           y = 50;
         }
-    
+
         // Draw each cell
         row.forEach((cell, i) => {
           const x = startX + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0);
@@ -1448,7 +1448,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         y += rowHeight;
       });
     }
-    
+
     function drawDynamicTable(doc, table, startX, startY, colWidths, options = {}) {
       const {
         headerFont = "Helvetica-Bold",
@@ -1552,69 +1552,11 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
      * (6) DETAILED OBSERVATIONS
      * With static text + table from damageEntries
      ****************************************************************/
-    doc.addPage();
-    doc.fontSize(16).text("6. DETAILED OBSERVATIONS", { underline: true });
-    doc.moveDown();
-
-    // -- Static text from your screenshot --
-    doc.fontSize(12).text(
-      "A structural audit is an important technical requirement for any structure and has a series of parameters to be adequately investigated and assuredly complied with."
-    );
-    doc.moveDown();
-    doc.text(
-      "During this series, the structure was inspected thoroughly on several occasions to record, verify and study the distresses, level of malfunctioning, and corrosion leaks in the R.C.C. members."
-    );
-    doc.moveDown();
-    doc.text(
-      "In the period of approximately last 30 years of its existence, various defects have developed in the said structures and the same are incorporated in this compilation."
-    );
-    doc.moveDown();
-    doc.text(
-      "A detailed summary of the Structural assessment report is submitted herewith in this compilation."
-    );
-    doc.moveDown(2);
-
-    // Example subheading for external observations
-    doc.fontSize(14).text("External Observation", { underline: true });
-    doc.moveDown();
-    doc.fontSize(12).text("No major distress is noted in the external area.");
-    doc.moveDown();
-    doc.text("Location: South Side elevation");
-    doc.text("Distress: None observed");
-    doc.moveDown(2);
-
-    // Now create a table for damageEntries (like your screenshot)
-    // Columns: Sr. No, Description, Location, Cause, Classification, Photo
-    if (damageEntries.length > 0) {
-      const detailedTable = {
-        headers: ["Sr. No", "Description", "Location", "Cause", "Classification", "Photo"],
-        rows: damageEntries.map((damage, index) => [
-          (index + 1).toString(),
-          damage.description || "N/A",
-          damage.location || "N/A",
-          damage.cause || "N/A",
-          damage.classification || "N/A",
-          damage.damage_photos || null
-        ]),
-      };
-
-      // Adjust widths as needed:
-      const detailedColWidths = [50, 120, 100, 100, 100, 100];
-
-      // Use our drawDynamicTableWithImages to render the table
-      drawDynamicTableWithImages(doc, detailedTable, 50, doc.y, detailedColWidths, {
-        headerFontSize: 12,
-        rowFontSize: 10,
-        defaultImageHeight: 80, // you can adjust
-      });
-    } else {
-      doc.fontSize(12).text("No additional damage entries available.");
-    }
 
     // ─── (7) VISUAL OBSERVATIONS ─────────────────────────────────
     if (observations.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("7. VISUAL OBSERVATIONS", { underline: true });
+      doc.fontSize(16).text("6. VISUAL OBSERVATIONS", { underline: true });
       const obsTable = {
         headers: ["Observation", "Status"],
         rows: [
@@ -1644,7 +1586,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.addPage();
 
     // 1) Section Heading
-    doc.fontSize(16).text("6. DETAILED OBSERVATIONS", { underline: true });
+    doc.fontSize(16).text("7. DETAILED OBSERVATIONS", { underline: true });
     doc.moveDown();
 
     // 2) Bullet point / static text
@@ -1722,7 +1664,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // ─── (9) NDT RESULTS ─────────────────────────────────────────
     if (ndtTests.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("9. NON-DESTRUCTIVE TESTING (NDT) RESULTS", { underline: true });
+      doc.fontSize(16).text("8. NON-DESTRUCTIVE TESTING (NDT) RESULTS", { underline: true });
       const ndtTable = { headers: ["Test Type", "Value", "Quality", "Recommendation"], rows: [] };
       ndtTests.forEach(ndt => {
         Object.keys(ndt).forEach(key => {
@@ -1762,7 +1704,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // ─── (10) CONCLUSION & RECOMMENDATIONS ───────────────────────
     if (conclusion.length > 0) {
       doc.addPage();
-      doc.fontSize(16).text("10. CONCLUSION & RECOMMENDATIONS", { underline: true });
+      doc.fontSize(16).text("9. CONCLUSION & RECOMMENDATIONS", { underline: true });
       doc.moveDown();
       doc.fontSize(12)
         .text("Conclusion:", { continued: true })
