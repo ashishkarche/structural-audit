@@ -20,7 +20,6 @@ const CarbonationTest = ({ formData, setFormData, handleImageChange, imagePrevie
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Compute Recommendation
   const computeRecommendation = () => {
     const carbonationDepth = parseFloat(formData.carbonationDepth) || 0;
     return carbonationDepth >= 20
@@ -28,30 +27,20 @@ const CarbonationTest = ({ formData, setFormData, handleImageChange, imagePrevie
       : "Satisfactory condition.";
   };
 
-  // ✅ Memoized Computation
   const recommendation = computeRecommendation();
 
-  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        carbonation_test: JSON.stringify({
+        carbonation_test: {
           carbonation_depth: formData.carbonationDepth || "N/A",
           pH_level: formData.carbonationPH || "N/A",
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [formData.carbonationDepth, formData.carbonationPH, recommendation, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.carbonation_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -69,7 +58,6 @@ const CarbonationTest = ({ formData, setFormData, handleImageChange, imagePrevie
           <label>pH Level:</label>
           <input type="number" name="carbonationPH" step="0.1" value={formData.carbonationPH || ""} onChange={handleChange} />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="carbonationImage" accept="image/*" onChange={handleImageChange} />
 
@@ -80,9 +68,8 @@ const CarbonationTest = ({ formData, setFormData, handleImageChange, imagePrevie
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

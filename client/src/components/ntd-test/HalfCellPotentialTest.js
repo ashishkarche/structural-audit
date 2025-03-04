@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(formData.half_cell_potential_test !== null);
+  const [showFields, setShowFields] = useState(!!formData.half_cell_potential_test);
 
   const handleRadioChange = (e) => {
     const value = e.target.value === "yes";
@@ -9,7 +9,7 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
 
     setFormData((prev) => ({
       ...prev,
-      half_cell_potential_test: value ? {} : null, // ✅ Reset test data when "No" is selected
+      half_cell_potential_test: value ? {} : null,
       halfCellPotential: value ? prev.halfCellPotential || "" : "",
     }));
   };
@@ -19,14 +19,12 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Compute Corrosion Probability
   const determineCorrosionProbability = (potential) => {
     if (!potential || potential > -200) return "Low Risk (10%)";
     if (potential >= -350) return "Moderate Risk (50%)";
     return "High Risk (90%)";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (potential) => {
     if (!potential || potential > -200)
       return "✅ Low Risk: Apply corrosion inhibitors, anti-corrosion coatings, and waterproofing.";
@@ -35,32 +33,22 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
     return "❌ High Risk: Immediate corrosion control required. Perform electrochemical testing and apply corrosion-resistant treatments.";
   };
 
-  // ✅ Memoized Computations
   const halfCellPotential = parseFloat(formData.halfCellPotential);
   const corrosionProbability = determineCorrosionProbability(halfCellPotential);
   const recommendation = generateRecommendation(halfCellPotential);
 
-  // ✅ Update `formData` only when necessary
   useEffect(() => {
     if (showFields && halfCellPotential) {
       setFormData((prev) => ({
         ...prev,
-        half_cell_potential_test: JSON.stringify({
+        half_cell_potential_test: {
           potential_value: formData.halfCellPotential || "N/A",
           corrosion_probability: corrosionProbability,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [halfCellPotential, corrosionProbability, recommendation, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.half_cell_potential_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -76,9 +64,8 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
           <input type="number" name="halfCellPotential" value={formData.halfCellPotential || ""} onChange={handleChange} />
 
           <label>Corrosion Probability:</label>
-          <input type="text" value={testData.corrosion_probability || ""} readOnly />
+          <input type="text" value={corrosionProbability} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="halfCellPotentialImage" accept="image/*" onChange={handleImageChange} />
 
@@ -89,9 +76,8 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

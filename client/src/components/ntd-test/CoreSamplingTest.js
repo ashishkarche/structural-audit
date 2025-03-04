@@ -22,14 +22,12 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Compute L/D Ratio
   const computeLD = () => {
     const length = parseFloat(formData.coreLength) || 0;
     const diameter = parseFloat(formData.coreDiameter) || 1;
     return (length / diameter).toFixed(2);
   };
 
-  // ✅ Get Correction Factor based on L/D Ratio
   const getCorrectionFactor = (ldRatio) => {
     if (ldRatio >= 2) return 1;
     if (ldRatio >= 1.75) return 0.98;
@@ -38,13 +36,11 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
     return 0.90;
   };
 
-  // ✅ Compute Corrected Strength
   const computeCorrectedStrength = () => {
     const strength = parseFloat(formData.coreStrength) || 0;
     return (strength * getCorrectionFactor(computeLD())).toFixed(2);
   };
 
-  // ✅ Compute Density
   const computeDensity = () => {
     const weight = parseFloat(formData.coreWeight) || 0;
     const diameter = parseFloat(formData.coreDiameter) || 1;
@@ -53,7 +49,6 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
     return volume > 0 ? (weight / volume).toFixed(2) : "";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (correctedStrength) => {
     if (!correctedStrength) return "⚠️ No data available.";
     if (correctedStrength >= 85) return "✅ The concrete meets the required strength criteria. No action required.";
@@ -62,18 +57,16 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
     return "❌ Highly defective concrete. Immediate intervention, retrofitting, or replacement needed.";
   };
 
-  // ✅ Memoized Computations
   const lD_Ratio = computeLD();
   const correctedStrength = computeCorrectedStrength();
   const density = computeDensity();
   const recommendation = generateRecommendation(parseFloat(correctedStrength));
 
-  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        core_sampling_test: JSON.stringify({
+        core_sampling_test: {
           core_diameter: formData.coreDiameter || "N/A",
           core_length: formData.coreLength || "N/A",
           lD_Ratio: lD_Ratio,
@@ -81,18 +74,10 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
           corrected_strength: correctedStrength,
           density: density,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [lD_Ratio, correctedStrength, density, formData.coreDiameter, formData.coreLength, formData.coreStrength, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.core_sampling_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -111,21 +96,20 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
           <input type="number" name="coreLength" value={formData.coreLength || ""} onChange={handleChange} />
 
           <label>L/D Ratio:</label>
-          <input type="number" value={testData.lD_Ratio || ""} readOnly />
+          <input type="number" value={lD_Ratio} readOnly />
 
           <label>Measured Compressive Strength (MPa):</label>
           <input type="number" name="coreStrength" value={formData.coreStrength || ""} onChange={handleChange} />
 
           <label>Corrected Strength (MPa):</label>
-          <input type="number" value={testData.corrected_strength || ""} readOnly />
+          <input type="number" value={correctedStrength} readOnly />
 
           <label>Core Weight (kg):</label>
           <input type="number" name="coreWeight" value={formData.coreWeight || ""} onChange={handleChange} />
 
           <label>Density (kg/m³):</label>
-          <input type="number" value={testData.density || ""} readOnly />
+          <input type="number" value={density} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="coreSamplingImage" accept="image/*" onChange={handleImageChange} />
 
@@ -136,9 +120,8 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

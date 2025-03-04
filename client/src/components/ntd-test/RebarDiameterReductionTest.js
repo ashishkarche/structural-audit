@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(formData.rebar_diameter_test !== null);
+  const [showFields, setShowFields] = useState(!!formData.rebar_diameter_test);
 
   const handleRadioChange = (e) => {
     const value = e.target.value === "yes";
@@ -9,7 +9,7 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
 
     setFormData((prev) => ({
       ...prev,
-      rebar_diameter_test: value ? {} : null, // ✅ Reset test data when "No" is selected
+      rebar_diameter_test: value ? {} : null,
       originalRebarDiameter: value ? prev.originalRebarDiameter || "" : "",
       measuredRebarDiameter: value ? prev.measuredRebarDiameter || "" : "",
     }));
@@ -20,14 +20,12 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Compute Reduction Percentage
   const calculateReductionPercentage = () => {
     const originalDiameter = parseFloat(formData.originalRebarDiameter) || 1;
     const measuredDiameter = parseFloat(formData.measuredRebarDiameter) || 0;
     return (((originalDiameter - measuredDiameter) / originalDiameter) * 100).toFixed(2);
   };
 
-  // ✅ Determine Structural Impact
   const determineStructuralImpact = (reduction) => {
     if (!reduction || reduction <= 0) return "No Reduction Detected";
     if (reduction > 20) return "High Impact - Immediate repair required.";
@@ -35,39 +33,28 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
     return "Low Impact - No immediate action required.";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (reduction) => {
     if (!reduction || reduction <= 0) return "✅ No Reduction Detected: No immediate action needed.";
     if (reduction > 20) return "❌ High Impact: Immediate repair required. Structural strengthening needed.";
     return "⚠️ Moderate Impact: Apply protective coatings and corrosion inhibitors.";
   };
 
-  // ✅ Memoized Computations
   const reductionPercentage = calculateReductionPercentage();
   const structuralImpact = determineStructuralImpact(parseFloat(reductionPercentage));
   const recommendation = generateRecommendation(parseFloat(reductionPercentage));
 
-  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields && reductionPercentage) {
       setFormData((prev) => ({
         ...prev,
-        rebar_diameter_test: JSON.stringify({
+        rebar_diameter_test: {
           reduction_percentage: reductionPercentage,
           impact: structuralImpact,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [reductionPercentage, structuralImpact, recommendation, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.rebar_diameter_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -86,12 +73,11 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
           <input type="number" name="measuredRebarDiameter" value={formData.measuredRebarDiameter || ""} onChange={handleChange} />
 
           <label>Diameter Reduction (%):</label>
-          <input type="number" value={testData.reduction_percentage || ""} readOnly />
+          <input type="number" value={reductionPercentage} readOnly />
 
           <label>Structural Impact:</label>
-          <input type="text" value={testData.impact || ""} readOnly />
+          <input type="text" value={structuralImpact} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="rebarDiameterImage" accept="image/*" onChange={handleImageChange} />
 
@@ -102,9 +88,8 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

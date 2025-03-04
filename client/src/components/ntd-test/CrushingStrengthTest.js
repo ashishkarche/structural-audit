@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(formData.crushing_strength_test !== null);
+  const [showFields, setShowFields] = useState(!!formData.crushing_strength_test);
 
   const handleRadioChange = (e) => {
     const value = e.target.value === "yes";
@@ -19,7 +19,6 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Determine Strength Performance
   const determineStrengthPerformance = (strength) => {
     if (!strength) return "";
     if (strength >= 85) return "Good";
@@ -28,7 +27,6 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
     return "Highly Defective";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (strength) => {
     if (!strength) return "";
     if (strength >= 85) return "✅ No action required. The concrete meets the required strength criteria.";
@@ -37,32 +35,22 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
     return "❌ Concrete is highly defective. Immediate intervention, retrofitting, or demolition & reconstruction required.";
   };
 
-  // ✅ Memoized Computations
   const crushingStrength = parseFloat(formData.crushingStrength);
   const strengthPerformance = determineStrengthPerformance(crushingStrength);
   const recommendation = generateRecommendation(crushingStrength);
 
-  // ✅ Update `formData` only when necessary
   useEffect(() => {
     if (showFields && crushingStrength) {
       setFormData((prev) => ({
         ...prev,
-        crushing_strength_test: JSON.stringify({
+        crushing_strength_test: {
           strength_value: formData.crushingStrength || "N/A",
           classification: strengthPerformance,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [crushingStrength, strengthPerformance, recommendation, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.crushing_strength_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -78,9 +66,8 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
           <input type="number" name="crushingStrength" step="0.1" value={formData.crushingStrength || ""} onChange={handleChange} />
 
           <label>Strength Classification:</label>
-          <input type="text" value={testData.classification || ""} readOnly />
+          <input type="text" value={strengthPerformance} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="crushingStrengthImage" accept="image/*" onChange={handleImageChange} />
 
@@ -91,9 +78,8 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

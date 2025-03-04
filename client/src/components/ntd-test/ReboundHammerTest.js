@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(formData.rebound_hammer_test !== null);
+  const [showFields, setShowFields] = useState(!!formData.rebound_hammer_test);
 
   const handleRadioChange = (e) => {
     const value = e.target.value === "yes";
@@ -9,7 +9,7 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
 
     setFormData((prev) => ({
       ...prev,
-      rebound_hammer_test: value ? {} : null, // ✅ Reset test data if "No"
+      rebound_hammer_test: value ? {} : null,
       rebound1: value ? prev.rebound1 || "" : "",
       rebound2: value ? prev.rebound2 || "" : "",
       rebound3: value ? prev.rebound3 || "" : "",
@@ -21,11 +21,6 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChangeLocal = (e) => {
-    handleImageChange(e); // ✅ Pass to parent handler
-  };
-
-  // ✅ Compute Rebound Index (Average)
   const calculateReboundIndex = () => {
     const values = [formData.rebound1, formData.rebound2, formData.rebound3]
       .map((val) => parseFloat(val) || 0)
@@ -34,7 +29,6 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
     return values.length ? (values.reduce((sum, val) => sum + val, 0) / values.length).toFixed(2) : "";
   };
 
-  // ✅ Determine Concrete Quality
   const determineConcreteQuality = (index) => {
     if (!index) return "";
     if (index > 40) return "Very Good";
@@ -43,7 +37,6 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "Poor";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (index) => {
     if (!index) return "";
     if (index > 40) return "✅ Low Risk: No intervention required. Regular monitoring recommended.";
@@ -52,21 +45,19 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "🚨 Severe Risk: Immediate assessment and retrofitting necessary.";
   };
 
-  // ✅ Memoized Computations
   const reboundIndex = calculateReboundIndex();
   const concreteQuality = determineConcreteQuality(reboundIndex);
   const recommendation = generateRecommendation(reboundIndex);
 
-  // ✅ Store only when fields are displayed to prevent unnecessary re-renders
   useEffect(() => {
     if (showFields && reboundIndex) {
       setFormData((prev) => ({
         ...prev,
-        rebound_hammer_test: JSON.stringify({
+        rebound_hammer_test: {
           value: reboundIndex,
           quality: concreteQuality,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [reboundIndex, concreteQuality, recommendation, showFields, setFormData]);
@@ -96,9 +87,8 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
           <label>Concrete Quality:</label>
           <input type="text" value={concreteQuality} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
-          <input type="file" name="reboundHammerImage" accept="image/*" onChange={handleImageChangeLocal} />
+          <input type="file" name="reboundHammerImage" accept="image/*" onChange={handleImageChange} />
 
           {imagePreviews?.reboundHammerImage && (
             <div className="image-preview">
@@ -107,7 +97,6 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imagePrev
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
           <input type="text" value={recommendation} readOnly />
         </>

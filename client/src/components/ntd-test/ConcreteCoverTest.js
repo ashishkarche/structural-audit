@@ -20,14 +20,12 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Compute Cover Deficiency
   const computeCoverDeficiency = () => {
     const requiredCover = parseFloat(formData.concreteCoverRequired) || 0;
     const measuredCover = parseFloat(formData.concreteCoverMeasured) || 0;
     return (requiredCover - measuredCover).toFixed(2);
   };
 
-  // ✅ Determine Structural Risk
   const determineStructuralRisk = (deficiency) => {
     if (!deficiency || deficiency <= 0) return "Adequate Cover";
     if (deficiency > 10) return "Severe Cover Deficiency";
@@ -35,7 +33,6 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "Minor Cover Deficiency";
   };
 
-  // ✅ Generate Recommendation
   const generateRecommendation = (deficiency) => {
     if (!deficiency || deficiency <= 0) {
       return "✅ Adequate Cover: Continue regular structural monitoring and maintenance.";
@@ -49,34 +46,24 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
     return "✔️ Minor Cover Deficiency: No immediate action needed, but monitor regularly. Ensure proper curing and maintenance practices.";
   };
 
-  // ✅ Memoized Computations
   const coverDeficiency = computeCoverDeficiency();
   const structuralRisk = determineStructuralRisk(parseFloat(coverDeficiency));
   const recommendation = generateRecommendation(parseFloat(coverDeficiency));
 
-  // ✅ Update formData only when necessary
   useEffect(() => {
     if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        concrete_cover_test: JSON.stringify({
+        concrete_cover_test: {
           required_cover: formData.concreteCoverRequired || "N/A",
           measured_cover: formData.concreteCoverMeasured || "N/A",
           cover_deficiency: coverDeficiency,
           structural_risk: structuralRisk,
           recommendation: recommendation,
-        }),
+        },
       }));
     }
   }, [coverDeficiency, structuralRisk, formData.concreteCoverRequired, formData.concreteCoverMeasured, showFields, setFormData]);
-
-  // ✅ Safely parse stored JSON data
-  let testData = {};
-  try {
-    testData = JSON.parse(formData.concrete_cover_test || "{}");
-  } catch (error) {
-    testData = {};
-  }
 
   return (
     <div className="test-section">
@@ -95,12 +82,11 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
           <input type="number" name="concreteCoverMeasured" value={formData.concreteCoverMeasured || ""} onChange={handleChange} />
 
           <label>Cover Deficiency (mm):</label>
-          <input type="number" value={testData.cover_deficiency || ""} readOnly />
+          <input type="number" value={coverDeficiency} readOnly />
 
           <label>Structural Risk:</label>
-          <input type="text" value={testData.structural_risk || ""} readOnly />
+          <input type="text" value={structuralRisk} readOnly />
 
-          {/* ✅ Image Upload Section */}
           <label>Upload Image:</label>
           <input type="file" name="concreteCoverImage" accept="image/*" onChange={handleImageChange} />
 
@@ -111,9 +97,8 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imagePrev
             </div>
           )}
 
-          {/* ✅ Recommendation Box */}
           <label>Recommendation:</label>
-          <input type="text" value={testData.recommendation || ""} readOnly />
+          <input type="text" value={recommendation} readOnly />
         </>
       )}
     </div>

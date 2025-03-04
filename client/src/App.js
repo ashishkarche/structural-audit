@@ -40,30 +40,30 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    // Disable Right-Click
-    document.addEventListener("contextmenu", (event) => event.preventDefault());
+  // useEffect(() => {
+  //   // Disable Right-Click
+  //   document.addEventListener("contextmenu", (event) => event.preventDefault());
 
-    // Disable DevTools Shortcuts
-    const disableDevTools = (event) => {
-      if (
-        event.ctrlKey &&
-        (event.key === "u" || event.key === "U" || event.key === "i" || event.key === "I" || event.key === "j" || event.key === "J" || event.key === "c" || event.key === "C")
-      ) {
-        event.preventDefault();
-      }
-      if (event.key === "F12") {
-        event.preventDefault();
-      }
-    };
+  //   // Disable DevTools Shortcuts
+  //   const disableDevTools = (event) => {
+  //     if (
+  //       event.ctrlKey &&
+  //       (event.key === "u" || event.key === "U" || event.key === "i" || event.key === "I" || event.key === "j" || event.key === "J" || event.key === "c" || event.key === "C")
+  //     ) {
+  //       event.preventDefault();
+  //     }
+  //     if (event.key === "F12") {
+  //       event.preventDefault();
+  //     }
+  //   };
     
-    document.addEventListener("keydown", disableDevTools);
+  //   document.addEventListener("keydown", disableDevTools);
 
-    return () => {
-      document.removeEventListener("contextmenu", (event) => event.preventDefault());
-      document.removeEventListener("keydown", disableDevTools);
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("contextmenu", (event) => event.preventDefault());
+  //     document.removeEventListener("keydown", disableDevTools);
+  //   };
+  // }, []);
 
   // Show maintenance page if maintenance mode is enabled
   if (isMaintenanceMode) {
