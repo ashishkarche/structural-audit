@@ -29,10 +29,10 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
 
   const generateRecommendation = (strength) => {
     if (!strength) return "";
-    if (strength >= 85) return "✅ No action required. The concrete meets the required strength criteria.";
-    if (strength >= 75) return "✔️ Strength is slightly lower than required. Surface repairs, monitoring, or mild strengthening if necessary.";
-    if (strength >= 50) return "⚠️ Concrete is weak. Detailed structural assessment, strengthening (jacketing, grouting, fiber wrapping) recommended.";
-    return "❌ Concrete is highly defective. Immediate intervention, retrofitting, or demolition & reconstruction required.";
+    if (strength >= 85) return "No action required. The concrete meets the required strength criteria.";
+    if (strength >= 75) return "Strength is slightly lower than required. Surface repairs, monitoring, or mild strengthening if necessary.";
+    if (strength >= 50) return "Concrete is weak. Detailed structural assessment, strengthening (jacketing, grouting, fiber wrapping) recommended.";
+    return "Concrete is highly defective. Immediate intervention, retrofitting, or demolition & reconstruction required.";
   };
 
   const crushingStrength = parseFloat(formData.crushingStrength);

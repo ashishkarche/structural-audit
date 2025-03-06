@@ -25,8 +25,8 @@ const SulfateTest = ({ formData, setFormData, handleImageChange, imagePreviews }
 
   const generateRecommendation = (sulfate) => {
     return sulfate >= 0.1
-      ? "❌ High Risk: Use sulfate-resistant cement (SRC) as per IS 12330:1988. Reduce water-cement ratio, ensure proper curing, and apply protective coatings."
-      : "✅ Low Risk: No immediate action required. Continue routine maintenance and monitoring.";
+      ? "High Risk: Use sulfate-resistant cement (SRC) as per IS 12330:1988. Reduce water-cement ratio, ensure proper curing, and apply protective coatings."
+      : "Low Risk: No immediate action required. Continue routine maintenance and monitoring.";
   };
 
   const sulfateContent = parseFloat(formData.sulfateContent) || 0;

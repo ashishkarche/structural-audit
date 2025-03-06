@@ -29,10 +29,10 @@ const UltrasonicTest = ({ formData, setFormData, handleImageChange, imagePreview
 
   const generateRecommendation = (velocity) => {
     if (!velocity) return "";
-    if (velocity > 4.5) return "✅ Low Risk: Concrete is of high quality. No immediate remedial actions required.";
-    if (velocity >= 3.5) return "✔️ Moderate Risk: Concrete is good. Minor surface treatments may be needed.";
-    if (velocity >= 3.0) return "⚠️ High Risk: Medium quality. Further testing and possible remedial actions required.";
-    return "❌ Severe Risk: Poor quality. Immediate attention needed, including possible structural repairs.";
+    if (velocity > 4.5) return "Low Risk: Concrete is of high quality. No immediate remedial actions required.";
+    if (velocity >= 3.5) return "Moderate Risk: Concrete is good. Minor surface treatments may be needed.";
+    if (velocity >= 3.0) return "High Risk: Medium quality. Further testing and possible remedial actions required.";
+    return "Severe Risk: Poor quality. Immediate attention needed, including possible structural repairs.";
   };
 
   const pulseVelocity = parseFloat(formData.ultrasonicVelocity) || 0;

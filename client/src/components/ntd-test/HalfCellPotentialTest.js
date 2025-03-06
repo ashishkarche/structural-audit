@@ -27,10 +27,10 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
 
   const generateRecommendation = (potential) => {
     if (!potential || potential > -200)
-      return "✅ Low Risk: Apply corrosion inhibitors, anti-corrosion coatings, and waterproofing.";
+      return "Low Risk: Apply corrosion inhibitors, anti-corrosion coatings, and waterproofing.";
     if (potential >= -350)
-      return "⚠️ Moderate Risk: Conduct frequent inspections. Use protective coatings and corrosion-resistant rebars.";
-    return "❌ High Risk: Immediate corrosion control required. Perform electrochemical testing and apply corrosion-resistant treatments.";
+      return "Moderate Risk: Conduct frequent inspections. Use protective coatings and corrosion-resistant rebars.";
+    return "High Risk: Immediate corrosion control required. Perform electrochemical testing and apply corrosion-resistant treatments.";
   };
 
   const halfCellPotential = parseFloat(formData.halfCellPotential);

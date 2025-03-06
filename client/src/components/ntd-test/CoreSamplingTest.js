@@ -51,10 +51,10 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
 
   const generateRecommendation = (correctedStrength) => {
     if (!correctedStrength) return "⚠️ No data available.";
-    if (correctedStrength >= 85) return "✅ The concrete meets the required strength criteria. No action required.";
-    if (correctedStrength >= 75) return "✔️ Strength is slightly lower. Monitoring & minor surface repairs recommended.";
-    if (correctedStrength >= 50) return "⚠️ Strength is weak. Structural strengthening using jacketing, grouting advised.";
-    return "❌ Highly defective concrete. Immediate intervention, retrofitting, or replacement needed.";
+    if (correctedStrength >= 85) return "The concrete meets the required strength criteria. No action required.";
+    if (correctedStrength >= 75) return "Strength is slightly lower. Monitoring & minor surface repairs recommended.";
+    if (correctedStrength >= 50) return "Strength is weak. Structural strengthening using jacketing, grouting advised.";
+    return "Highly defective concrete. Immediate intervention, retrofitting, or replacement needed.";
   };
 
   const lD_Ratio = computeLD();
