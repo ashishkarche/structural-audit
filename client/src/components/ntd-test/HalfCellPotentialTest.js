@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
+const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, imageData, isSubmitted }) => {
   const [showFields, setShowFields] = useState(!!formData.half_cell_potential_test);
 
   const handleRadioChange = (e) => {
@@ -9,7 +9,7 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
 
     setFormData((prev) => ({
       ...prev,
-      half_cell_potential_test: value ? {} : null,
+      half_cell_potential_test: value ? "yes" : "no",
       halfCellPotential: value ? prev.halfCellPotential || "" : "",
     }));
   };
@@ -26,26 +26,21 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
   };
 
   const generateRecommendation = (potential) => {
-    if (!potential || potential > -200)
-      return "Low Risk: Apply corrosion inhibitors, anti-corrosion coatings, and waterproofing.";
-    if (potential >= -350)
-      return "Moderate Risk: Conduct frequent inspections. Use protective coatings and corrosion-resistant rebars.";
-    return "High Risk: Immediate corrosion control required. Perform electrochemical testing and apply corrosion-resistant treatments.";
+    if (!potential || potential > -200) return "Low Risk: Apply corrosion inhibitors and protective coatings.";
+    if (potential >= -350) return "Moderate Risk: Frequent inspections required, apply anti-corrosion coatings.";
+    return "High Risk: Immediate corrosion control needed, electrochemical testing required.";
   };
 
-  const halfCellPotential = parseFloat(formData.halfCellPotential);
+  const halfCellPotential = parseFloat(formData.halfCellPotential) || 0;
   const corrosionProbability = determineCorrosionProbability(halfCellPotential);
   const recommendation = generateRecommendation(halfCellPotential);
 
   useEffect(() => {
-    if (showFields && halfCellPotential) {
+    if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        half_cell_potential_test: {
-          potential_value: formData.halfCellPotential || "N/A",
-          corrosion_probability: corrosionProbability,
-          recommendation: recommendation,
-        },
+        corrosion_probability: corrosionProbability,
+        half_cell_recommendation: recommendation,
       }));
     }
   }, [halfCellPotential, corrosionProbability, recommendation, showFields, setFormData]);
@@ -61,23 +56,22 @@ const HalfCellPotentialTest = ({ formData, setFormData, handleImageChange, image
       {showFields && (
         <>
           <label>Potential (mV):</label>
-          <input type="number" name="halfCellPotential" value={formData.halfCellPotential || ""} onChange={handleChange} />
+          <input type="number" name="halfCellPotential" value={formData.halfCellPotential || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>Corrosion Probability:</label>
-          <input type="text" value={corrosionProbability} readOnly />
+          <input type="text" value={formData.corrosion_probability || ""} readOnly />
 
           <label>Upload Image:</label>
-          <input type="file" name="halfCellPotentialImage" accept="image/*" onChange={handleImageChange} />
+          <input type="file" name="halfCellPotentialImage" accept="image/*" onChange={handleImageChange} disabled={isSubmitted} />
 
-          {imagePreviews?.halfCellPotentialImage && (
+          {imageData?.halfCellPotentialImage && (
             <div className="image-preview">
-              <p>Uploaded Image:</p>
-              <img src={imagePreviews.halfCellPotentialImage} alt="Uploaded Test" width="200px" />
+              <img src={imageData.halfCellPotentialImage.preview} alt="Uploaded Test" width="200px" />
             </div>
           )}
 
           <label>Recommendation:</label>
-          <input type="text" value={recommendation} readOnly />
+          <input type="text" value={formData.half_cell_recommendation || ""} readOnly />
         </>
       )}
     </div>

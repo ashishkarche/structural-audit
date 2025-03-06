@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
-  const [showFields, setShowFields] = useState(formData.core_sampling_test !== null);
+const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imageData, isSubmitted }) => {
+  const [showFields, setShowFields] = useState(!!formData.core_sampling_test);
 
   const handleRadioChange = (e) => {
     const value = e.target.value === "yes";
@@ -9,7 +9,7 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
 
     setFormData((prev) => ({
       ...prev,
-      core_sampling_test: value ? {} : null,
+      core_sampling_test: value ? "yes" : "no",
       coreDiameter: value ? prev.coreDiameter || "" : "",
       coreLength: value ? prev.coreLength || "" : "",
       coreStrength: value ? prev.coreStrength || "" : "",
@@ -66,18 +66,13 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
     if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        core_sampling_test: {
-          core_diameter: formData.coreDiameter || "N/A",
-          core_length: formData.coreLength || "N/A",
-          lD_Ratio: lD_Ratio,
-          measured_strength: formData.coreStrength || "N/A",
-          corrected_strength: correctedStrength,
-          density: density,
-          recommendation: recommendation,
-        },
+        core_sampling_ld_ratio: lD_Ratio,
+        core_sampling_corrected_strength: correctedStrength,
+        core_sampling_density: density,
+        core_sampling_recommendation: recommendation,
       }));
     }
-  }, [lD_Ratio, correctedStrength, density, formData.coreDiameter, formData.coreLength, formData.coreStrength, showFields, setFormData]);
+  }, [lD_Ratio, correctedStrength, density, showFields, setFormData]);
 
   return (
     <div className="test-section">
@@ -90,38 +85,37 @@ const CoreSamplingTest = ({ formData, setFormData, handleImageChange, imagePrevi
       {showFields && (
         <>
           <label>Core Diameter (mm):</label>
-          <input type="number" name="coreDiameter" value={formData.coreDiameter || ""} onChange={handleChange} />
+          <input type="number" name="coreDiameter" value={formData.coreDiameter || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>Core Length (mm):</label>
-          <input type="number" name="coreLength" value={formData.coreLength || ""} onChange={handleChange} />
+          <input type="number" name="coreLength" value={formData.coreLength || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>L/D Ratio:</label>
-          <input type="number" value={lD_Ratio} readOnly />
+          <input type="number" value={formData.core_sampling_ld_ratio || ""} readOnly />
 
           <label>Measured Compressive Strength (MPa):</label>
-          <input type="number" name="coreStrength" value={formData.coreStrength || ""} onChange={handleChange} />
+          <input type="number" name="coreStrength" value={formData.coreStrength || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>Corrected Strength (MPa):</label>
-          <input type="number" value={correctedStrength} readOnly />
+          <input type="number" value={formData.core_sampling_corrected_strength || ""} readOnly />
 
           <label>Core Weight (kg):</label>
-          <input type="number" name="coreWeight" value={formData.coreWeight || ""} onChange={handleChange} />
+          <input type="number" name="coreWeight" value={formData.coreWeight || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>Density (kg/m³):</label>
-          <input type="number" value={density} readOnly />
+          <input type="number" value={formData.core_sampling_density || ""} readOnly />
 
           <label>Upload Image:</label>
-          <input type="file" name="coreSamplingImage" accept="image/*" onChange={handleImageChange} />
+          <input type="file" name="coreSamplingImage" accept="image/*" onChange={handleImageChange} disabled={isSubmitted} />
 
-          {imagePreviews?.coreSamplingImage && (
+          {imageData?.coreSamplingImage && (
             <div className="image-preview">
-              <p>Uploaded Image:</p>
-              <img src={imagePreviews.coreSamplingImage} alt="Uploaded Test" width="200px" />
+              <img src={imageData.coreSamplingImage.preview} alt="Uploaded Test" width="200px" />
             </div>
           )}
 
           <label>Recommendation:</label>
-          <input type="text" value={recommendation} readOnly />
+          <input type="text" value={formData.core_sampling_recommendation || ""} readOnly />
         </>
       )}
     </div>

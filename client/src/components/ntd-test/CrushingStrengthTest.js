@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imagePreviews }) => {
+const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageData, isSubmitted }) => {
   const [showFields, setShowFields] = useState(!!formData.crushing_strength_test);
 
   const handleRadioChange = (e) => {
@@ -9,7 +9,7 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
 
     setFormData((prev) => ({
       ...prev,
-      crushing_strength_test: value ? {} : null,
+      crushing_strength_test: value ? "yes" : "no",
       crushingStrength: value ? prev.crushingStrength || "" : "",
     }));
   };
@@ -29,25 +29,22 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
 
   const generateRecommendation = (strength) => {
     if (!strength) return "";
-    if (strength >= 85) return "No action required. The concrete meets the required strength criteria.";
-    if (strength >= 75) return "Strength is slightly lower than required. Surface repairs, monitoring, or mild strengthening if necessary.";
-    if (strength >= 50) return "Concrete is weak. Detailed structural assessment, strengthening (jacketing, grouting, fiber wrapping) recommended.";
-    return "Concrete is highly defective. Immediate intervention, retrofitting, or demolition & reconstruction required.";
+    if (strength >= 85) return "No action required. Meets required strength.";
+    if (strength >= 75) return "Slightly lower than required. Surface repairs recommended.";
+    if (strength >= 50) return "Concrete is weak. Structural strengthening needed.";
+    return "Highly defective. Immediate intervention or reconstruction required.";
   };
 
-  const crushingStrength = parseFloat(formData.crushingStrength);
+  const crushingStrength = parseFloat(formData.crushingStrength) || 0;
   const strengthPerformance = determineStrengthPerformance(crushingStrength);
   const recommendation = generateRecommendation(crushingStrength);
 
   useEffect(() => {
-    if (showFields && crushingStrength) {
+    if (showFields) {
       setFormData((prev) => ({
         ...prev,
-        crushing_strength_test: {
-          strength_value: formData.crushingStrength || "N/A",
-          classification: strengthPerformance,
-          recommendation: recommendation,
-        },
+        crushing_strength_classification: strengthPerformance,
+        crushing_strength_recommendation: recommendation,
       }));
     }
   }, [crushingStrength, strengthPerformance, recommendation, showFields, setFormData]);
@@ -63,23 +60,22 @@ const CrushingStrengthTest = ({ formData, setFormData, handleImageChange, imageP
       {showFields && (
         <>
           <label>Compressive Strength (% of Characteristic Strength):</label>
-          <input type="number" name="crushingStrength" step="0.1" value={formData.crushingStrength || ""} onChange={handleChange} />
+          <input type="number" name="crushingStrength" step="0.1" value={formData.crushingStrength || ""} onChange={handleChange} disabled={isSubmitted} />
 
           <label>Strength Classification:</label>
-          <input type="text" value={strengthPerformance} readOnly />
+          <input type="text" value={formData.crushing_strength_classification || ""} readOnly />
 
           <label>Upload Image:</label>
-          <input type="file" name="crushingStrengthImage" accept="image/*" onChange={handleImageChange} />
+          <input type="file" name="crushingStrengthImage" accept="image/*" onChange={handleImageChange} disabled={isSubmitted} />
 
-          {imagePreviews?.crushingStrengthImage && (
+          {imageData?.crushingStrengthImage && (
             <div className="image-preview">
-              <p>Uploaded Image:</p>
-              <img src={imagePreviews.crushingStrengthImage} alt="Uploaded Test" width="200px" />
+              <img src={imageData.crushingStrengthImage.preview} alt="Uploaded Test" width="200px" />
             </div>
           )}
 
           <label>Recommendation:</label>
-          <input type="text" value={recommendation} readOnly />
+          <input type="text" value={formData.crushing_strength_recommendation || ""} readOnly />
         </>
       )}
     </div>

@@ -917,26 +917,66 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 ]), async (req, res) => {
   try {
     const { auditId } = req.params;
-    const testFields = [
-      "rebound_hammer_test", "ultrasonic_test", "core_sampling_test", "carbonation_test", "chloride_test",
-      "sulfate_test", "half_cell_potential_test", "concrete_cover_test", "rebar_diameter_test", "crushing_strength_test",
-      "concrete_cover_required", "concrete_cover_measured", "rebar_diameter_reduction", "crushing_strength"
-    ];
 
-    // ✅ Parse and stringify JSON test data safely
-    const testData = {};
-    testFields.forEach(field => {
-      if (req.body[field]) {
-        try {
-          const parsedData = JSON.parse(req.body[field]); 
-          testData[field] = JSON.stringify(parsedData); // Store as a string
-        } catch (error) {
-          testData[field] = req.body[field]; // Keep as is if parsing fails
-        }
-      } else {
-        testData[field] = null;
+    // ✅ Parse test data from request body
+    const parseTestData = (field) => {
+      try {
+        return req.body[field] ? JSON.parse(req.body[field]) : null;
+      } catch (error) {
+        return null; // Return null if parsing fails
       }
-    });
+    };
+
+    // ✅ Extract test values
+    const testData = {
+      rebound_index: parseTestData("rebound_hammer_test")?.value || null,
+      rebound_quality: parseTestData("rebound_hammer_test")?.quality || null,
+      rebound_recommendation: parseTestData("rebound_hammer_test")?.recommendation || null,
+
+      ultrasonic_pulse_velocity: parseTestData("ultrasonic_test")?.pulse_velocity || null,
+      ultrasonic_concrete_quality: parseTestData("ultrasonic_test")?.concrete_quality || null,
+      ultrasonic_recommendation: parseTestData("ultrasonic_test")?.recommendation || null,
+
+      core_diameter: parseTestData("core_sampling_test")?.core_diameter || null,
+      core_length: parseTestData("core_sampling_test")?.core_length || null,
+      core_sampling_ld_ratio: parseTestData("core_sampling_test")?.lD_Ratio || null,
+      core_sampling_measured_strength: parseTestData("core_sampling_test")?.measured_strength || null,
+      core_sampling_corrected_strength: parseTestData("core_sampling_test")?.corrected_strength || null,
+      core_sampling_density: parseTestData("core_sampling_test")?.density || null,
+      core_sampling_recommendation: parseTestData("core_sampling_test")?.recommendation || null,
+
+      carbonation_depth: parseTestData("carbonation_test")?.carbonation_depth || null,
+      carbonation_ph_level: parseTestData("carbonation_test")?.pH_level || null,
+      carbonation_recommendation: parseTestData("carbonation_test")?.recommendation || null,
+
+      chloride_content: parseTestData("chloride_test")?.chloride_content || null,
+      chloride_corrosion_risk: parseTestData("chloride_test")?.corrosion_risk || null,
+      chloride_recommendation: parseTestData("chloride_test")?.recommendation || null,
+
+      sulfate_content: parseTestData("sulfate_test")?.sulfate_content || null,
+      sulfate_deterioration_risk: parseTestData("sulfate_test")?.deterioration_risk || null,
+      sulfate_recommendation: parseTestData("sulfate_test")?.recommendation || null,
+
+      half_cell_potential_value: parseTestData("half_cell_potential_test")?.potential_value || null,
+      corrosion_probability: parseTestData("half_cell_potential_test")?.corrosion_probability || null,
+      half_cell_recommendation: parseTestData("half_cell_potential_test")?.recommendation || null,
+
+      concrete_cover_required: parseTestData("concrete_cover_test")?.required_cover || null,
+      concrete_cover_measured: parseTestData("concrete_cover_test")?.measured_cover || null,
+      concrete_cover_deficiency: parseTestData("concrete_cover_test")?.cover_deficiency || null,
+      concrete_cover_structural_risk: parseTestData("concrete_cover_test")?.structural_risk || null,
+      concrete_cover_recommendation: parseTestData("concrete_cover_test")?.recommendation || null,
+
+      original_rebar_diameter: parseTestData("rebar_diameter_test")?.original_rebar_diameter || null,
+      measured_rebar_diameter: parseTestData("rebar_diameter_test")?.measured_rebar_diameter || null,
+      rebar_reduction: parseTestData("rebar_diameter_test")?.reduction_percentage || null,
+      rebar_impact: parseTestData("rebar_diameter_test")?.impact || null,
+      rebar_recommendation: parseTestData("rebar_diameter_test")?.recommendation || null,
+
+      crushing_strength: parseTestData("crushing_strength_test")?.strength_value || null,
+      crushing_strength_classification: parseTestData("crushing_strength_test")?.classification || null,
+      crushing_strength_recommendation: parseTestData("crushing_strength_test")?.recommendation || null,
+    };
 
     // ✅ Retrieve uploaded images as binary buffers
     const imageFields = {

@@ -20,23 +20,22 @@ function NDTPage() {
   const navigate = useNavigate();
 
   // ✅ Check if already submitted
-  const [isSubmitted, setIsSubmitted] = useState(
-    localStorage.getItem(`ndtSubmitted_${auditId}`) === "submitted"
-  );
+  const [isSubmitted, setIsSubmitted] = useState(localStorage.getItem(`ndtSubmitted_${auditId}`) === "submitted");
 
   // ✅ Manage test data dynamically
   const initialFormData = {
-    reboundHammerTest: null,
-    ultrasonicTest: null,
-    coreSamplingTest: null,
-    carbonationTest: null,
-    chlorideTest: null,
-    sulfateTest: null,
-    halfCellPotentialTest: null,
-    concreteCoverTest: null,
-    rebarDiameterTest: null,
-    crushingStrengthTest: null,
+    reboundHammerTest: "",
+    ultrasonicTest: "",
+    coreSamplingTest: "",
+    carbonationTest: "",
+    chlorideTest: "",
+    sulfateTest: "",
+    halfCellPotentialTest: "",
+    concreteCoverTest: "",
+    rebarDiameterTest: "",
+    crushingStrengthTest: "",
   };
+
   const [formData, setFormData] = useState(initialFormData);
   const [imageData, setImageData] = useState({});
   const [error, setError] = useState("");
@@ -56,16 +55,15 @@ function NDTPage() {
   // ✅ Prepare form data for submission
   const prepareFormData = () => {
     const formDataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key]) {
-        formDataToSend.append(key, JSON.stringify(formData[key]));
-      }
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value) formDataToSend.append(key, value);
     });
-    Object.keys(imageData).forEach((key) => {
-      if (imageData[key].file) {
-        formDataToSend.append(key, imageData[key].file);
-      }
+
+    Object.entries(imageData).forEach(([key, data]) => {
+      if (data.file) formDataToSend.append(key, data.file);
     });
+
     return formDataToSend;
   };
 
@@ -73,6 +71,7 @@ function NDTPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     const token = localStorage.getItem("token");
     const config = {
       headers: {
@@ -80,17 +79,14 @@ function NDTPage() {
         "Content-Type": "multipart/form-data",
       },
     };
+
     try {
-      await axios.post(
-        `https://structural-audit.vercel.app/api/ndt/${auditId}`,
-        prepareFormData(),
-        config
-      );
+      await axios.post(`https://structural-audit.vercel.app/api/ndt/${auditId}`, prepareFormData(), config);
       localStorage.setItem(`ndtSubmitted_${auditId}`, "submitted");
       setIsSubmitted(true);
       navigate(`/audit/${auditId}/conclusion`);
     } catch (err) {
-      setError("Failed to submit NDT results. Please try again.");
+      setError("❌ Failed to submit NDT results. Please try again.");
     }
   };
 
@@ -114,7 +110,7 @@ function NDTPage() {
       {error && <p className="ndt-error-message">{error}</p>}
 
       {isSubmitted ? (
-        <p>Your NDT records have been submitted. You can view the details below.</p>
+        <p className="ndt-success-message">✅ Your NDT records have been submitted. You can view the details below.</p>
       ) : (
         <form onSubmit={handleSubmit} className="ndt-form">
           {testComponents.map(({ component: TestComponent, key }) => (
