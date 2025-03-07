@@ -33,7 +33,7 @@ const UploadDrawings = lazy(() => import("./components/pages/UploadDrawings"));
 
 function App() {
   const [showLoader, setShowLoader] = useState(true);
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true); // Toggle maintenance mode here
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false); // Toggle maintenance mode here
 
   useEffect(() => {
     const timer = setTimeout(() => setShowLoader(false), 3000);

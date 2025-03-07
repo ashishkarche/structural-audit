@@ -902,10 +902,10 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch observations" });
   }
 });
-// Define API for NDT Tests submission
+
 app.post("/api/ndt/:auditId", authenticate, upload.fields([
   { name: "reboundHammerImage", maxCount: 1 },
-  { name: "ultrasonicImage", maxCount: 1 },
+  { name: "ultrasonicImage", maxCount: 1 }, // ✅ Ultrasonic Test Image
   { name: "coreSamplingImage", maxCount: 1 },
   { name: "carbonationImage", maxCount: 1 },
   { name: "chlorideImage", maxCount: 1 },
@@ -920,106 +920,73 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
     console.log("Received Request Body:", req.body);
     console.log("Received Files:", req.files);
 
-    // Function to safely parse JSON test data
-    const parseTestData = (field) => {
-      try {
-        return req.body[field] ? JSON.parse(req.body[field]) : null;
-      } catch (error) {
-        console.error(`Error parsing field ${field}:`, error);
-        return null;
-      }
+    // ✅ Extract and Validate Ultrasonic Test Data
+    const testData = {
+      rebound_index: req.body.rebound_index || null,
+      rebound_quality: req.body.rebound_quality || null,
+      rebound_recommendation: req.body.rebound_recommendation || null,
+
+      // ✅ Updated Ultrasonic Test Fields (Matches Frontend)
+      ultrasonic_pulse_velocity: req.body.ultrasonic_pulse_velocity || null,
+      ultrasonic_concrete_quality: req.body.ultrasonic_concrete_quality || null,
+      ultrasonic_recommendation: req.body.ultrasonic_recommendation || null,
+
+      core_diameter: req.body.core_diameter || null,
+      core_length: req.body.core_length || null,
+      lD_Ratio: req.body.lD_Ratio || null,
+      measured_strength: req.body.measured_strength || null,
+      corrected_strength: req.body.corrected_strength || null,
+      density: req.body.density || null,
+      core_sampling_recommendation: req.body.core_sampling_recommendation || null,
+
+      carbonation_depth: req.body.carbonation_depth || null,
+      carbonation_ph_level: req.body.carbonation_ph_level || null,
+      carbonation_recommendation: req.body.carbonation_recommendation || null,
+
+      chloride_content: req.body.chloride_content || null,
+      chloride_corrosion_risk: req.body.chloride_corrosion_risk || null,
+      chloride_recommendation: req.body.chloride_recommendation || null,
+
+      sulfate_content: req.body.sulfate_content || null,
+      sulfate_deterioration_risk: req.body.sulfate_deterioration_risk || null,
+      sulfate_recommendation: req.body.sulfate_recommendation || null,
+
+      concrete_cover_required: req.body.concrete_cover_required || null,
+      concrete_cover_measured: req.body.concrete_cover_measured || null,
+      concrete_cover_deficiency: req.body.concrete_cover_deficiency || null,
+      concrete_cover_structural_risk: req.body.concrete_cover_structural_risk || null,
+      concrete_cover_recommendation: req.body.concrete_cover_recommendation || null,
+
+      original_rebar_diameter: req.body.originalRebarDiameter || null,
+      measured_rebar_diameter: req.body.measuredRebarDiameter || null,
+      rebar_reduction: req.body.rebar_reduction || null,
+      rebar_impact: req.body.rebar_impact || null,
+      rebar_recommendation: req.body.rebar_recommendation || null,
+
+      crushing_strength: req.body.crushing_strength || null,
+      crushing_strength_classification: req.body.crushing_strength_classification || null,
+      crushing_strength_recommendation: req.body.crushing_strength_recommendation || null,
+
+      half_cell_potential_value: req.body.halfCellPotential || null,
+      corrosion_probability: req.body.corrosion_probability || null,
+      half_cell_potential_recommendation: req.body.half_cell_recommendation || null
     };
 
-    // Mapping test data fields
-    const testFields = {
-      "rebound_hammer_test": {
-        "rebound_index": "value",
-        "rebound_quality": "quality",
-        "rebound_recommendation": "recommendation"
-      },
-      "ultrasonic_test": {
-        "ultrasonic_pulse_velocity": "pulse_velocity"
-      },
-      "core_sampling_test": {
-        "core_diameter": "core_diameter",
-        "core_length": "core_length",
-        "lD_Ratio": "lD_Ratio",
-        "measured_strength": "measured_strength",
-        "corrected_strength": "corrected_strength",
-        "density": "density",
-        "core_sampling_recommendation": "recommendation"
-      },
-      "carbonation_test": {
-        "carbonation_depth": "carbonation_depth",
-        "pH_level": "pH_level",
-        "carbonation_recommendation": "recommendation"
-      },
-      "chloride_test": {
-        "chloride_content": "chloride_content",
-        "corrosion_risk": "corrosion_risk",
-        "chloride_recommendation": "recommendation"
-      },
-      "sulfate_test": {
-        "sulfate_content": "sulfate_content",
-        "deterioration_risk": "deterioration_risk",
-        "sulfate_recommendation": "recommendation"
-      },
-      "half_cell_potential_test": {
-        "potential_value": "potential_value",
-        "corrosion_probability": "corrosion_probability",
-        "half_cell_potential_recommendation": "recommendation"
-      },
-      "concrete_cover_test": {
-        "required_cover": "required_cover",
-        "measured_cover": "measured_cover",
-        "cover_deficiency": "cover_deficiency",
-        "structural_risk": "structural_risk",
-        "concrete_cover_recommendation": "recommendation"
-      },
-      "rebar_diameter_test": {
-        "original_rebar_diameter": "original_rebar_diameter",
-        "measured_rebar_diameter": "measured_rebar_diameter",
-        "reduction_percentage": "reduction_percentage",
-        "impact": "impact",
-        "rebar_diameter_recommendation": "recommendation"
-      },
-      "crushing_strength_test": {
-        "strength_value": "strength_value",
-        "classification": "classification",
-        "crushing_strength_recommendation": "recommendation"
-      }
+    // ✅ Updated Image Mapping
+    const imageData = {
+      rebound_hammer_image: req.files?.reboundHammerImage?.[0]?.buffer || null,
+      ultrasonic_image: req.files?.ultrasonicImage?.[0]?.buffer || null, // ✅ Ultrasonic Test Image
+      core_sampling_image: req.files?.coreSamplingImage?.[0]?.buffer || null,
+      carbonation_image: req.files?.carbonationImage?.[0]?.buffer || null,
+      chloride_image: req.files?.chlorideImage?.[0]?.buffer || null,
+      sulfate_image: req.files?.sulfateImage?.[0]?.buffer || null,
+      half_cell_potential_image: req.files?.halfCellPotentialImage?.[0]?.buffer || null,
+      concrete_cover_image: req.files?.concreteCoverImage?.[0]?.buffer || null,
+      rebar_diameter_image: req.files?.rebarDiameterImage?.[0]?.buffer || null,
+      crushing_strength_image: req.files?.crushingStrengthImage?.[0]?.buffer || null
     };
 
-    let testData = {};
-    for (const [test, mappings] of Object.entries(testFields)) {
-      const parsedData = parseTestData(test) || {};
-      for (const [dbColumn, jsonKey] of Object.entries(mappings)) {
-        testData[dbColumn] = parsedData[jsonKey] || null;
-      }
-    }
-
-    // Mapping uploaded images to database columns
-    const imageFields = {
-      "reboundHammerImage": "rebound_hammer_image",
-      "ultrasonicImage": "ultrasonic_image",
-      "coreSamplingImage": "core_sampling_image",
-      "carbonationImage": "carbonation_image",
-      "chlorideImage": "chloride_image",
-      "sulfateImage": "sulfate_image",
-      "halfCellPotentialImage": "half_cell_potential_image",
-      "concreteCoverImage": "concrete_cover_image",
-      "rebarDiameterImage": "rebar_diameter_image",
-      "crushingStrengthImage": "crushing_strength_image"
-    };
-
-    let imageData = {};
-    for (const [reqField, dbColumn] of Object.entries(imageFields)) {
-      if (req.files?.[reqField]?.[0]?.buffer) {
-        imageData[dbColumn] = req.files[reqField][0].buffer;
-      }
-    }
-
-    // Construct SQL query dynamically
+    // ✅ Construct SQL Query Dynamically
     let columns = ["audit_id", ...Object.keys(testData), ...Object.keys(imageData)];
     let values = [auditId, ...Object.values(testData), ...Object.values(imageData)];
     let placeholders = columns.map(() => "?").join(", ");
@@ -1031,7 +998,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 
     await db.execute(sql, values);
 
-    // Log audit history
+    // ✅ Log Audit History
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "✅ NDT results submitted successfully" });
@@ -1040,6 +1007,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
     res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });
+
 
 
 app.post("/api/conclusion/:auditId", authenticate, async (req, res) => {

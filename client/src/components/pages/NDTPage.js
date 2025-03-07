@@ -55,17 +55,21 @@ function NDTPage() {
   // ✅ Prepare form data for submission
   const prepareFormData = () => {
     const formDataToSend = new FormData();
-
+  
     Object.entries(formData).forEach(([key, value]) => {
-      if (value) formDataToSend.append(key, value);
+      if (value) {
+        // Convert objects to JSON strings
+        formDataToSend.append(key, typeof value === "object" ? JSON.stringify(value) : value);
+      }
     });
-
+  
     Object.entries(imageData).forEach(([key, data]) => {
       if (data.file) formDataToSend.append(key, data.file);
     });
-
+  
     return formDataToSend;
   };
+  
 
   // ✅ Submit Form Data
   const handleSubmit = async (e) => {
