@@ -155,44 +155,44 @@ function ViewSubmittedAudit() {
         )}
       </div>
 
-      {/* 🔹 NDT Test Results (Fix JSON Parsing) */}
       <h3>NDT Test Results</h3>
       <div className="table-container">
         {ndtTests.length > 0 ? (
           <table className="audit-table">
             <thead>
-              <tr><th>Test Type</th><th>Value</th><th>Quality</th><th>Recommendation</th></tr>
+              <tr><th>Test Type</th><th>Value</th><th>Quality</th><th>Recommendation</th><th>Image</th></tr>
             </thead>
             <tbody>
               {ndtTests.map((test) => (
                 Object.keys(test).map((key) => (
-                  key !== "id" && test[key] ? (
-                    <tr key={`${test.id}-${key}`}>
-                      <td><strong>{key.replace(/_/g, " ")}</strong></td>
-                      {(() => {
-                        try {
-                          const data = JSON.parse(test[key]);
-                          return (
-                            <>
-                              <td>{data.value || "N/A"}</td>
-                              <td>{data.quality || "N/A"}</td>
-                              <td>{data.recommendation || "N/A"}</td>
-                            </>
-                          );
-                        } catch {
-                          return <td colSpan="3">Invalid Data</td>;
-                        }
-                      })()}
-                    </tr>
-                  ) : null
+                  key.includes("_image") ? (
+                    test[key] ? (
+                      <tr key={key}>
+                        <td colSpan="4"><strong>{key.replace(/_/g, " ")}</strong></td>
+                        <td>
+                          <button onClick={() => handleViewImage(test[key])}>
+                            <FaEye /> View Image
+                          </button>
+                        </td>
+                      </tr>
+                    ) : null
+                  ) : (
+                    test[key] && test[key] !== "N/A" ? (
+                      <tr key={`${test.id}-${key}`}>
+                        <td><strong>{key.replace(/_/g, " ")}</strong></td>
+                        <td>{test[key]}</td>
+                        <td>{test[key]}</td>
+                        <td>{test[key]}</td>
+                      </tr>
+                    ) : null
+                  )
                 ))
               ))}
             </tbody>
           </table>
-        ) : (
-          <p>No NDT test results recorded.</p>
-        )}
+        ) : <p>No NDT test results recorded.</p>}
       </div>
+
 
       {/* 🔹 PDF Viewer Modal */}
       {selectedPDF && (

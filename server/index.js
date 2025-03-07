@@ -487,10 +487,74 @@ app.get("/api/audits/:auditId/full", async (req, res) => {
       damage_photos: entry.damage_photos ? entry.damage_photos.toString("base64") : null,
     }));
 
+    // Fetch NDT test results
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
 
+    // 🔹 Ensure all fields exist but only show filled values
+    const formattedNdtTests = ndtTests.map((test) => {
+      return {
+        rebound_index: test.rebound_index || "N/A",
+        rebound_quality: test.rebound_quality || "N/A",
+        rebound_recommendation: test.rebound_recommendation || "N/A",
+        rebound_hammer_image: test.rebound_hammer_image ? test.rebound_hammer_image.toString("base64") : null,
+
+        ultrasonic_pulse_velocity: test.ultrasonic_pulse_velocity || "N/A",
+        ultrasonic_concrete_quality: test.ultrasonic_concrete_quality || "N/A",
+        ultrasonic_recommendation: test.ultrasonic_recommendation || "N/A",
+        ultrasonic_image: test.ultrasonic_image ? test.ultrasonic_image.toString("base64") : null,
+
+        core_diameter: test.core_diameter || "N/A",
+        core_length: test.core_length || "N/A",
+        lD_Ratio: test.lD_Ratio || "N/A",
+        measured_strength: test.measured_strength || "N/A",
+        corrected_strength: test.corrected_strength || "N/A",
+        density: test.density || "N/A",
+        core_sampling_recommendation: test.core_sampling_recommendation || "N/A",
+        core_sampling_image: test.core_sampling_image ? test.core_sampling_image.toString("base64") : null,
+
+        carbonation_depth: test.carbonation_depth || "N/A",
+        carbonation_ph_level: test.carbonation_ph_level || "N/A",
+        carbonation_recommendation: test.carbonation_recommendation || "N/A",
+        carbonation_image: test.carbonation_image ? test.carbonation_image.toString("base64") : null,
+
+        chloride_content: test.chloride_content || "N/A",
+        chloride_corrosion_risk: test.chloride_corrosion_risk || "N/A",
+        chloride_recommendation: test.chloride_recommendation || "N/A",
+        chloride_image: test.chloride_image ? test.chloride_image.toString("base64") : null,
+
+        sulfate_content: test.sulfate_content || "N/A",
+        sulfate_deterioration_risk: test.sulfate_deterioration_risk || "N/A",
+        sulfate_recommendation: test.sulfate_recommendation || "N/A",
+        sulfate_image: test.sulfate_image ? test.sulfate_image.toString("base64") : null,
+
+        half_cell_potential_value: test.half_cell_potential_value || "N/A",
+        corrosion_probability: test.corrosion_probability || "N/A",
+        half_cell_potential_recommendation: test.half_cell_potential_recommendation || "N/A",
+        half_cell_potential_image: test.half_cell_potential_image ? test.half_cell_potential_image.toString("base64") : null,
+
+        concrete_cover_required: test.concrete_cover_required || "N/A",
+        concrete_cover_measured: test.concrete_cover_measured || "N/A",
+        concrete_cover_deficiency: test.concrete_cover_deficiency || "N/A",
+        concrete_cover_structural_risk: test.concrete_cover_structural_risk || "N/A",
+        concrete_cover_recommendation: test.concrete_cover_recommendation || "N/A",
+        concrete_cover_image: test.concrete_cover_image ? test.concrete_cover_image.toString("base64") : null,
+
+        original_rebar_diameter: test.original_rebar_diameter || "N/A",
+        measured_rebar_diameter: test.measured_rebar_diameter || "N/A",
+        rebar_reduction: test.rebar_reduction || "N/A",
+        rebar_impact: test.rebar_impact || "N/A",
+        rebar_recommendation: test.rebar_recommendation || "N/A",
+        rebar_diameter_image: test.rebar_diameter_image ? test.rebar_diameter_image.toString("base64") : null,
+
+        crushing_strength: test.crushing_strength || "N/A",
+        crushing_strength_classification: test.crushing_strength_classification || "N/A",
+        crushing_strength_recommendation: test.crushing_strength_recommendation || "N/A",
+        crushing_strength_image: test.crushing_strength_image ? test.crushing_strength_image.toString("base64") : null,
+      };
+    });
+
     // 🔹 Return full audit details
-    res.json({ audit, observations, ndtTests, dataEntries });
+    res.json({ audit, observations, ndtTests: formattedNdtTests, dataEntries });
   } catch (error) {
     console.error("Error fetching audit details:", error);
     res.status(500).json({ message: "Failed to fetch audit details" });
