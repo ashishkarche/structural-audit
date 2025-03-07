@@ -13,7 +13,6 @@ function ViewSubmittedAudit() {
   const [fullAudit, setFullAudit] = useState(null);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedPDF, setSelectedPDF] = useState(null);
 
   useEffect(() => {
     const fetchFullAudit = async () => {
@@ -21,7 +20,6 @@ function ViewSubmittedAudit() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/full`, config);
-
         setFullAudit(response.data);
       } catch (err) {
         console.error("Error fetching audit details:", err);
@@ -70,7 +68,6 @@ function ViewSubmittedAudit() {
     }
   };
 
-
   return (
     <div className="view-audit-container">
       <button className="back-button" onClick={() => navigate(`/view-audits`)}>
@@ -95,16 +92,10 @@ function ViewSubmittedAudit() {
         </table>
       </div>
 
-
-      {/* ✅ Import Structural Changes Component */}
       <StructuralChanges structuralChanges={structuralChanges} />
-
-      {/* ✅ Import Immediate Concerns Component */}
       <ImmediateConcerns immediateConcerns={immediateConcerns} />
-
-      {/* ✅ Import Audit Drawings Component */}
       <AuditDrawings auditDrawings={auditDrawings} />
-      {/* 🔹 Observations Table (Now Includes Damage Photos from DamageEntries) */}
+
       <h3>Observations</h3>
       <div className="table-container">
         {observations?.length > 0 ? (
@@ -126,7 +117,6 @@ function ViewSubmittedAudit() {
             <tbody>
               {observations.map((item) => {
                 const damageEntry = dataEntries?.find((d) => d.audit_id === item.audit_id);
-
                 return (
                   <tr key={item.id}>
                     <td>{item.unexpected_load ? "Yes" : "No"}</td>
@@ -150,9 +140,7 @@ function ViewSubmittedAudit() {
               })}
             </tbody>
           </table>
-        ) : (
-          <p>No observations recorded.</p>
-        )}
+        ) : <p>No observations recorded.</p>}
       </div>
 
       <h3>NDT Test Results</h3>
@@ -193,15 +181,6 @@ function ViewSubmittedAudit() {
         ) : <p>No NDT test results recorded.</p>}
       </div>
 
-
-      {/* 🔹 PDF Viewer Modal */}
-      {selectedPDF && (
-        <div className="modal" onClick={() => setSelectedPDF(null)}>
-          <iframe src={selectedPDF} width="100%" height="600px" title="PDF Preview"></iframe>
-        </div>
-      )}
-
-      {/* 🔹 Image Viewer Modal */}
       {selectedImage && (
         <div className="modal" onClick={() => setSelectedImage(null)}>
           <img src={selectedImage} alt="Preview" />
