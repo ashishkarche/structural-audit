@@ -917,113 +917,77 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 ]), async (req, res) => {
   try {
     const { auditId } = req.params;
+    console.log("Received Request Body:", req.body);
+    console.log("Received Files:", req.files);
 
-    // ✅ Parse test data from request body
+    // Function to safely parse JSON data
     const parseTestData = (field) => {
       try {
         return req.body[field] ? JSON.parse(req.body[field]) : null;
       } catch (error) {
-        return null; // Return null if parsing fails
+        console.error(`Error parsing field ${field}:`, error);
+        return null;
       }
     };
 
-    // ✅ Extract test values
-    const testData = {
-      rebound_index: parseTestData("rebound_hammer_test")?.value || null,
-      rebound_quality: parseTestData("rebound_hammer_test")?.quality || null,
-      rebound_recommendation: parseTestData("rebound_hammer_test")?.recommendation || null,
-
-      ultrasonic_pulse_velocity: parseTestData("ultrasonic_test")?.pulse_velocity || null,
-      ultrasonic_concrete_quality: parseTestData("ultrasonic_test")?.concrete_quality || null,
-      ultrasonic_recommendation: parseTestData("ultrasonic_test")?.recommendation || null,
-
-      core_diameter: parseTestData("core_sampling_test")?.core_diameter || null,
-      core_length: parseTestData("core_sampling_test")?.core_length || null,
-      core_sampling_ld_ratio: parseTestData("core_sampling_test")?.lD_Ratio || null,
-      core_sampling_measured_strength: parseTestData("core_sampling_test")?.measured_strength || null,
-      core_sampling_corrected_strength: parseTestData("core_sampling_test")?.corrected_strength || null,
-      core_sampling_density: parseTestData("core_sampling_test")?.density || null,
-      core_sampling_recommendation: parseTestData("core_sampling_test")?.recommendation || null,
-
-      carbonation_depth: parseTestData("carbonation_test")?.carbonation_depth || null,
-      carbonation_ph_level: parseTestData("carbonation_test")?.pH_level || null,
-      carbonation_recommendation: parseTestData("carbonation_test")?.recommendation || null,
-
-      chloride_content: parseTestData("chloride_test")?.chloride_content || null,
-      chloride_corrosion_risk: parseTestData("chloride_test")?.corrosion_risk || null,
-      chloride_recommendation: parseTestData("chloride_test")?.recommendation || null,
-
-      sulfate_content: parseTestData("sulfate_test")?.sulfate_content || null,
-      sulfate_deterioration_risk: parseTestData("sulfate_test")?.deterioration_risk || null,
-      sulfate_recommendation: parseTestData("sulfate_test")?.recommendation || null,
-
-      half_cell_potential_value: parseTestData("half_cell_potential_test")?.potential_value || null,
-      corrosion_probability: parseTestData("half_cell_potential_test")?.corrosion_probability || null,
-      half_cell_recommendation: parseTestData("half_cell_potential_test")?.recommendation || null,
-
-      concrete_cover_required: parseTestData("concrete_cover_test")?.required_cover || null,
-      concrete_cover_measured: parseTestData("concrete_cover_test")?.measured_cover || null,
-      concrete_cover_deficiency: parseTestData("concrete_cover_test")?.cover_deficiency || null,
-      concrete_cover_structural_risk: parseTestData("concrete_cover_test")?.structural_risk || null,
-      concrete_cover_recommendation: parseTestData("concrete_cover_test")?.recommendation || null,
-
-      original_rebar_diameter: parseTestData("rebar_diameter_test")?.original_rebar_diameter || null,
-      measured_rebar_diameter: parseTestData("rebar_diameter_test")?.measured_rebar_diameter || null,
-      rebar_reduction: parseTestData("rebar_diameter_test")?.reduction_percentage || null,
-      rebar_impact: parseTestData("rebar_diameter_test")?.impact || null,
-      rebar_recommendation: parseTestData("rebar_diameter_test")?.recommendation || null,
-
-      crushing_strength: parseTestData("crushing_strength_test")?.strength_value || null,
-      crushing_strength_classification: parseTestData("crushing_strength_test")?.classification || null,
-      crushing_strength_recommendation: parseTestData("crushing_strength_test")?.recommendation || null,
+    // Extract test data using correct column names
+    const testFields = {
+      "rebound_hammer": ["value", "quality", "recommendation"],
+      "ultrasonic": ["pulse_velocity", "concrete_quality", "recommendation"],
+      "core_sampling": ["core_diameter", "core_length", "lD_Ratio", "measured_strength", "corrected_strength", "density", "recommendation"],
+      "carbonation": ["carbonation_depth", "pH_level", "recommendation"],
+      "chloride": ["chloride_content", "corrosion_risk", "recommendation"],
+      "sulfate": ["sulfate_content", "deterioration_risk", "recommendation"],
+      "half_cell_potential": ["potential_value", "corrosion_probability", "recommendation"],
+      "concrete_cover": ["required_cover", "measured_cover", "cover_deficiency", "structural_risk", "recommendation"],
+      "rebar_diameter": ["original_rebar_diameter", "measured_rebar_diameter", "reduction_percentage", "impact", "recommendation"],
+      "crushing_strength": ["strength_value", "classification", "recommendation"]
     };
 
-    // ✅ Retrieve uploaded images as binary buffers
-    const imageFields = {
-      rebound_hammer_image: req.files?.reboundHammerImage?.[0]?.buffer || null,
-      ultrasonic_image: req.files?.ultrasonicImage?.[0]?.buffer || null,
-      core_sampling_image: req.files?.coreSamplingImage?.[0]?.buffer || null,
-      carbonation_image: req.files?.carbonationImage?.[0]?.buffer || null,
-      chloride_image: req.files?.chlorideImage?.[0]?.buffer || null,
-      sulfate_image: req.files?.sulfateImage?.[0]?.buffer || null,
-      half_cell_potential_image: req.files?.halfCellPotentialImage?.[0]?.buffer || null,
-      concrete_cover_image: req.files?.concreteCoverImage?.[0]?.buffer || null,
-      rebar_diameter_image: req.files?.rebarDiameterImage?.[0]?.buffer || null,
-      crushing_strength_image: req.files?.crushingStrengthImage?.[0]?.buffer || null
-    };
+    let testData = {};
+    for (const [test, keys] of Object.entries(testFields)) {
+      const parsedData = parseTestData(`${test}_test`) || {};
+      keys.forEach((key) => {
+        const columnName = `${test}_${key}`;
+        testData[columnName] = parsedData[key] || null;
+      });
+    }
 
-    // ✅ Build SQL query dynamically
-    let columns = ["audit_id", ...Object.keys(testData)];
-    let values = [auditId, ...Object.values(testData)];
-    let placeholders = new Array(values.length).fill("?");
-
-    // ✅ Add image columns dynamically
-    Object.keys(imageFields).forEach((key) => {
-      if (imageFields[key] !== null) {
-        columns.push(key);
-        values.push(imageFields[key]);
-        placeholders.push("?");
+    // Extract uploaded images
+    const imageFields = [
+      "reboundHammerImage", "ultrasonicImage", "coreSamplingImage", "carbonationImage",
+      "chlorideImage", "sulfateImage", "halfCellPotentialImage", "concreteCoverImage",
+      "rebarDiameterImage", "crushingStrengthImage"
+    ];
+    
+    let imageData = {};
+    imageFields.forEach((field) => {
+      if (req.files?.[field]?.[0]?.buffer) {
+        imageData[field.toLowerCase()] = req.files[field][0].buffer;
       }
     });
 
-    // ✅ Final SQL Query
-    const sql = `INSERT INTO NDTTests (${columns.join(", ")}) VALUES (${placeholders.join(", ")})`;
+    // Build SQL query
+    let columns = ["audit_id", ...Object.keys(testData), ...Object.keys(imageData)];
+    let values = [auditId, ...Object.values(testData), ...Object.values(imageData)];
+    let placeholders = columns.map(() => "?").join(", ");
 
-    // ✅ Execute the SQL query
+    const sql = `INSERT INTO NDTTests (${columns.join(", ")}) VALUES (${placeholders})`;
+    
+    console.log("Executing SQL Query:", sql);
+    console.log("Values:", values);
+
     await db.execute(sql, values);
 
-    // ✅ Log the audit history
+    // Log the audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "NDT results submitted successfully" });
-
   } catch (error) {
     console.error("❌ Error submitting NDT results:", error);
     res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });
-
-
 
 app.post("/api/conclusion/:auditId", authenticate, async (req, res) => {
   try {
