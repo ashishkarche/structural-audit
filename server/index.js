@@ -903,6 +903,7 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
   }
 });
 
+// Define API for NDT Tests submission
 app.post("/api/ndt/:auditId", authenticate, upload.fields([
   { name: "reboundHammerImage", maxCount: 1 },
   { name: "ultrasonicImage", maxCount: 1 },
@@ -920,7 +921,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
     console.log("Received Request Body:", req.body);
     console.log("Received Files:", req.files);
 
-    // Function to safely parse JSON data
+    // Function to safely parse JSON test data
     const parseTestData = (field) => {
       try {
         return req.body[field] ? JSON.parse(req.body[field]) : null;
@@ -930,42 +931,94 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
       }
     };
 
-    // Extract test data using correct column names
+    // Map request body fields to database columns
     const testFields = {
-      "rebound_hammer": ["value", "quality", "recommendation"],
-      "ultrasonic": ["pulse_velocity", "concrete_quality", "recommendation"],
-      "core_sampling": ["core_diameter", "core_length", "lD_Ratio", "measured_strength", "corrected_strength", "density", "recommendation"],
-      "carbonation": ["carbonation_depth", "pH_level", "recommendation"],
-      "chloride": ["chloride_content", "corrosion_risk", "recommendation"],
-      "sulfate": ["sulfate_content", "deterioration_risk", "recommendation"],
-      "half_cell_potential": ["potential_value", "corrosion_probability", "recommendation"],
-      "concrete_cover": ["required_cover", "measured_cover", "cover_deficiency", "structural_risk", "recommendation"],
-      "rebar_diameter": ["original_rebar_diameter", "measured_rebar_diameter", "reduction_percentage", "impact", "recommendation"],
-      "crushing_strength": ["strength_value", "classification", "recommendation"]
+      "rebound_hammer_test": {
+        "rebound_index": "value",
+        "rebound_quality": "quality",
+        "rebound_recommendation": "recommendation"
+      },
+      "ultrasonic_test": {
+        "ultrasonic_pulse_velocity": "pulse_velocity"
+      },
+      "core_sampling_test": {
+        "core_diameter": "core_diameter",
+        "core_length": "core_length",
+        "lD_Ratio": "lD_Ratio",
+        "measured_strength": "measured_strength",
+        "corrected_strength": "corrected_strength",
+        "density": "density",
+        "recommendation": "recommendation"
+      },
+      "carbonation_test": {
+        "carbonation_depth": "carbonation_depth",
+        "pH_level": "pH_level",
+        "recommendation": "recommendation"
+      },
+      "chloride_test": {
+        "chloride_content": "chloride_content",
+        "corrosion_risk": "corrosion_risk",
+        "recommendation": "recommendation"
+      },
+      "sulfate_test": {
+        "sulfate_content": "sulfate_content",
+        "deterioration_risk": "deterioration_risk",
+        "recommendation": "recommendation"
+      },
+      "half_cell_potential_test": {
+        "potential_value": "potential_value",
+        "corrosion_probability": "corrosion_probability",
+        "recommendation": "recommendation"
+      },
+      "concrete_cover_test": {
+        "required_cover": "required_cover",
+        "measured_cover": "measured_cover",
+        "cover_deficiency": "cover_deficiency",
+        "structural_risk": "structural_risk",
+        "recommendation": "recommendation"
+      },
+      "rebar_diameter_test": {
+        "original_rebar_diameter": "original_rebar_diameter",
+        "measured_rebar_diameter": "measured_rebar_diameter",
+        "reduction_percentage": "reduction_percentage",
+        "impact": "impact",
+        "recommendation": "recommendation"
+      },
+      "crushing_strength_test": {
+        "strength_value": "strength_value",
+        "classification": "classification",
+        "recommendation": "recommendation"
+      }
     };
 
     let testData = {};
-    for (const [test, keys] of Object.entries(testFields)) {
-      const parsedData = parseTestData(`${test}_test`) || {};
-      keys.forEach((key) => {
-        const columnName = `${test}_${key}`;
-        testData[columnName] = parsedData[key] || null;
-      });
+    for (const [test, mappings] of Object.entries(testFields)) {
+      const parsedData = parseTestData(test) || {};
+      for (const [dbColumn, jsonKey] of Object.entries(mappings)) {
+        testData[dbColumn] = parsedData[jsonKey] || null;
+      }
     }
 
-    // Extract uploaded images
-    const imageFields = [
-      "reboundHammerImage", "ultrasonicImage", "coreSamplingImage", "carbonationImage",
-      "chlorideImage", "sulfateImage", "halfCellPotentialImage", "concreteCoverImage",
-      "rebarDiameterImage", "crushingStrengthImage"
-    ];
-    
+    // Map uploaded images to database columns
+    const imageFields = {
+      "reboundHammerImage": "rebound_hammer_image",
+      "ultrasonicImage": "ultrasonic_image",
+      "coreSamplingImage": "core_sampling_image",
+      "carbonationImage": "carbonation_image",
+      "chlorideImage": "chloride_image",
+      "sulfateImage": "sulfate_image",
+      "halfCellPotentialImage": "half_cell_potential_image",
+      "concreteCoverImage": "concrete_cover_image",
+      "rebarDiameterImage": "rebar_diameter_image",
+      "crushingStrengthImage": "crushing_strength_image"
+    };
+
     let imageData = {};
-    imageFields.forEach((field) => {
-      if (req.files?.[field]?.[0]?.buffer) {
-        imageData[field.toLowerCase()] = req.files[field][0].buffer;
+    for (const [reqField, dbColumn] of Object.entries(imageFields)) {
+      if (req.files?.[reqField]?.[0]?.buffer) {
+        imageData[dbColumn] = req.files[reqField][0].buffer;
       }
-    });
+    }
 
     // Build SQL query
     let columns = ["audit_id", ...Object.keys(testData), ...Object.keys(imageData)];
@@ -973,13 +1026,13 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
     let placeholders = columns.map(() => "?").join(", ");
 
     const sql = `INSERT INTO NDTTests (${columns.join(", ")}) VALUES (${placeholders})`;
-    
+
     console.log("Executing SQL Query:", sql);
     console.log("Values:", values);
 
     await db.execute(sql, values);
 
-    // Log the audit history
+    // Log audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
     res.json({ message: "NDT results submitted successfully" });
