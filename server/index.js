@@ -902,7 +902,6 @@ app.get("/api/observations/:auditId", authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch observations" });
   }
 });
-
 // Define API for NDT Tests submission
 app.post("/api/ndt/:auditId", authenticate, upload.fields([
   { name: "reboundHammerImage", maxCount: 1 },
@@ -931,7 +930,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
       }
     };
 
-    // Map request body fields to database columns
+    // Mapping test data fields
     const testFields = {
       "rebound_hammer_test": {
         "rebound_index": "value",
@@ -948,46 +947,46 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
         "measured_strength": "measured_strength",
         "corrected_strength": "corrected_strength",
         "density": "density",
-        "recommendation": "recommendation"
+        "core_sampling_recommendation": "recommendation"
       },
       "carbonation_test": {
         "carbonation_depth": "carbonation_depth",
         "pH_level": "pH_level",
-        "recommendation": "recommendation"
+        "carbonation_recommendation": "recommendation"
       },
       "chloride_test": {
         "chloride_content": "chloride_content",
         "corrosion_risk": "corrosion_risk",
-        "recommendation": "recommendation"
+        "chloride_recommendation": "recommendation"
       },
       "sulfate_test": {
         "sulfate_content": "sulfate_content",
         "deterioration_risk": "deterioration_risk",
-        "recommendation": "recommendation"
+        "sulfate_recommendation": "recommendation"
       },
       "half_cell_potential_test": {
         "potential_value": "potential_value",
         "corrosion_probability": "corrosion_probability",
-        "recommendation": "recommendation"
+        "half_cell_potential_recommendation": "recommendation"
       },
       "concrete_cover_test": {
         "required_cover": "required_cover",
         "measured_cover": "measured_cover",
         "cover_deficiency": "cover_deficiency",
         "structural_risk": "structural_risk",
-        "recommendation": "recommendation"
+        "concrete_cover_recommendation": "recommendation"
       },
       "rebar_diameter_test": {
         "original_rebar_diameter": "original_rebar_diameter",
         "measured_rebar_diameter": "measured_rebar_diameter",
         "reduction_percentage": "reduction_percentage",
         "impact": "impact",
-        "recommendation": "recommendation"
+        "rebar_diameter_recommendation": "recommendation"
       },
       "crushing_strength_test": {
         "strength_value": "strength_value",
         "classification": "classification",
-        "recommendation": "recommendation"
+        "crushing_strength_recommendation": "recommendation"
       }
     };
 
@@ -999,7 +998,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
       }
     }
 
-    // Map uploaded images to database columns
+    // Mapping uploaded images to database columns
     const imageFields = {
       "reboundHammerImage": "rebound_hammer_image",
       "ultrasonicImage": "ultrasonic_image",
@@ -1020,7 +1019,7 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
       }
     }
 
-    // Build SQL query
+    // Construct SQL query dynamically
     let columns = ["audit_id", ...Object.keys(testData), ...Object.keys(imageData)];
     let values = [auditId, ...Object.values(testData), ...Object.values(imageData)];
     let placeholders = columns.map(() => "?").join(", ");
@@ -1035,12 +1034,13 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
     // Log audit history
     await logAuditHistory(auditId, "NDT Results submitted", req.user.id);
 
-    res.json({ message: "NDT results submitted successfully" });
+    res.json({ message: "✅ NDT results submitted successfully" });
   } catch (error) {
     console.error("❌ Error submitting NDT results:", error);
     res.status(500).json({ message: "Failed to submit NDT results", error: error.message });
   }
 });
+
 
 app.post("/api/conclusion/:auditId", authenticate, async (req, res) => {
   try {
