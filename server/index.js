@@ -1578,8 +1578,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.moveDown(2);
     doc.fontSize(14).text("External Observation", { underline: true });
     doc.moveDown();
-    doc.fontSize(12).text("No major distress is noted in the external area.");
-    doc.moveDown();
 
     // Call our helper function to draw the images and mini table
     // Pass current doc.x and doc.y as starting positions
