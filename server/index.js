@@ -981,8 +981,6 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 ]), async (req, res) => {
   try {
     const { auditId } = req.params;
-    console.log("Received Request Body:", req.body);
-    console.log("Received Files:", req.files);
 
     // ✅ Extract and Validate Ultrasonic Test Data
     const testData = {
@@ -1057,8 +1055,6 @@ app.post("/api/ndt/:auditId", authenticate, upload.fields([
 
     const sql = `INSERT INTO NDTTests (${columns.join(", ")}) VALUES (${placeholders})`;
 
-    console.log("Executing SQL Query:", sql);
-    console.log("Values:", values);
 
     await db.execute(sql, values);
 
@@ -1156,6 +1152,18 @@ app.get('/api/notifications', authenticate, async (req, res) => {
   }
 });
 
+app.delete('/api/notifications/clear', authenticate, async (req, res) => {
+  try {
+    await db.execute(
+      `DELETE FROM Notifications WHERE user_id = ?`,
+      [req.user.id]
+    );
+    res.json({ message: "All notifications cleared successfully" });
+  } catch (error) {
+    console.error("Error clearing notifications:", error);
+    res.status(500).json({ message: "Failed to clear notifications" });
+  }
+});
 
 app.delete('/api/notifications/:id', authenticate, async (req, res) => {
   try {
@@ -1171,22 +1179,8 @@ app.delete('/api/notifications/:id', authenticate, async (req, res) => {
   }
 });
 
-app.delete('/api/notifications/clear', authenticate, async (req, res) => {
-  try {
-    await db.execute(
-      `DELETE FROM Notifications WHERE user_id = ? AND is_read = TRUE`,
-      [req.user.id]
-    );
-    res.json({ message: "All read notifications cleared successfully" });
-  } catch (error) {
-    console.error("Error clearing notifications:", error);
-    res.status(500).json({ message: "Failed to clear notifications" });
-  }
-});
 
-/* The above code is an endpoint in a Node.js application using Express framework. It handles a GET
-request to generate a PDF report for a specific audit based on the provided `auditId`. Here is a
-breakdown of what the code does: */
+
 app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
@@ -1491,25 +1485,51 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       visualObs.rows.push(["Algae Growth", observations[0].algae_growth ? "Yes" : "No"]);
     }
 
-    // Build NDT Test Results table (initially 4 columns)
+    const testGroups = {
+      "Rebound Hammer Test": ["rebound_index", "rebound_quality", "rebound_recommendation"],
+      "Ultrasonic Test": ["ultrasonic_pulse_velocity", "ultrasonic_concrete_quality", "ultrasonic_recommendation"],
+      "Core Sampling Test": ["core_diameter", "core_length", "lD_Ratio", "measured_strength", "corrected_strength", "density", "core_sampling_recommendation"],
+      "Carbonation Test": ["carbonation_depth", "carbonation_ph_level", "carbonation_recommendation"],
+      "Chloride Test": ["chloride_content", "chloride_corrosion_risk", "chloride_recommendation"],
+      "Sulfate Test": ["sulfate_content", "sulfate_deterioration_risk", "sulfate_recommendation"],
+      "Half-Cell Potential Test": ["half_cell_potential_value", "corrosion_probability", "half_cell_potential_recommendation"],
+      "Concrete Cover Test": ["concrete_cover_required", "concrete_cover_measured", "concrete_cover_deficiency", "concrete_cover_structural_risk", "concrete_cover_recommendation"],
+      "Rebar Diameter Test": ["original_rebar_diameter", "measured_rebar_diameter", "rebar_reduction", "rebar_impact", "rebar_recommendation"],
+      "Crushing Strength Test": ["crushing_strength", "crushing_strength_classification", "crushing_strength_recommendation"]
+    };
+
+    // ✅ Function to Remove Emojis & Non-ASCII Characters
+    const cleanText = (text) => {
+      if (!text) return "N/A"; // Handle null/empty values
+      return text.replace(/[^\x20-\x7E]/g, ""); // Removes emojis and special characters
+    };
+
+    // ✅ Initialize NDT Table
     const ndtTable = { headers: ["Test Type", "Value", "Quality", "Recommendation"], rows: [] };
-    ndtTests.forEach(ndt => {
-      Object.keys(ndt).forEach(key => {
-        if (key !== "id" && ndt[key]) {
-          try {
-            const data = JSON.parse(ndt[key]);
-            ndtTable.rows.push([
-              key.replace(/_/g, " "),
-              data.value || "N/A",
-              data.quality || "N/A",
-              data.recommendation || "N/A"
-            ]);
-          } catch (error) {
-            ndtTable.rows.push([key.replace(/_/g, " "), "Invalid Data", "Invalid Data", "Invalid Data"]);
+
+    // ✅ Process Each Test Entry
+    ndtTests.forEach((ndt, index) => {
+
+      Object.entries(testGroups).forEach(([groupName, fields]) => {
+        let value = "N/A";
+        let quality = "N/A";
+        let recommendation = "N/A";
+        let dataFound = false;
+
+        fields.forEach((fieldName, idx) => {
+          if (ndt[fieldName] !== null && ndt[fieldName] !== "") {
+            if (idx === 0) { value = cleanText(ndt[fieldName]); dataFound = true; }
+            if (idx === 1) { quality = cleanText(ndt[fieldName]); dataFound = true; }
+            if (idx === 2) { recommendation = cleanText(ndt[fieldName]); dataFound = true; }
           }
+        });
+
+        if (dataFound) {
+          ndtTable.rows.push([groupName, value, quality, recommendation]);
         }
       });
     });
+
 
     // Merge all into one combined table (2 columns: "Item" and "Detail")
     const mergedTable = { headers: ["Item", "Detail"], rows: [] };
@@ -1565,7 +1585,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Call our helper function to draw the images and mini table
     // Pass current doc.x and doc.y as starting positions
     drawExternalObservationTable(doc, damageEntries, doc.x, doc.y);
-    
+
     doc.addPage();
     doc.fontSize(16).text("Non-Destructive Testing (NDT)", { underline: true });
     doc.moveDown();
@@ -1577,75 +1597,85 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     );
     doc.moveDown();
 
-    // ✅ Summary Table of NDT Tests
-    const ndtTable1 = { headers: ["Test Type", "Measured Value", "Quality", "Interpretation", "Recommendation"], rows: [] };
-    ndtTests.forEach(ndt => {
-      Object.keys(ndt).forEach(key => {
-        if (key !== "id" && !key.includes("image") && ndt[key]) { // Ignore image fields
-          try {
-            const data = JSON.parse(ndt[key]);  // Parse JSON data properly
-            const recommendation = data.recommendation ? data.recommendation.replace(/[^\x20-\x7E]/g, '') : "N/A"; // Remove corrupt characters
-            ndtTable1.rows.push([
-              key.replace(/_/g, " "),  // Format Test Name
-              data.value || "N/A",
-              data.quality || "N/A",
-              data.interpretation || "N/A",
-              recommendation
-            ]);
-          } catch (error) {
-            ndtTable1.rows.push([key.replace(/_/g, " "), "Invalid Data", "Invalid Data", "Invalid Data", "Invalid Data"]);
-          }
-        }
-      });
+    // Build a summary table for NDT Tests using a group mapping approach.
+    const ndtData = ndtTests[0] || {}; // Assume one NDT record per audit
+    // Define your test groups and how to display them
+    const groupMapping = [
+      {
+        label: "Rebound Hammer Test",
+        value: ndtData.rebound_index,
+        quality: ndtData.rebound_quality,
+        recommendation: ndtData.rebound_recommendation
+      },
+      {
+        label: "Ultrasonic Test",
+        value: ndtData.ultrasonic_pulse_velocity,
+        quality: ndtData.ultrasonic_concrete_quality,
+        recommendation: ndtData.ultrasonic_recommendation
+      },
+      {
+        label: "Core Sampling Test",
+        value: `Diameter: ${ndtData.core_diameter || "N/A"}, Length: ${ndtData.core_length || "N/A"}, L/D Ratio: ${ndtData.lD_Ratio || "N/A"}`,
+        quality: ndtData.measured_strength || "N/A",
+        recommendation: ndtData.core_sampling_recommendation || "N/A"
+      },
+      {
+        label: "Carbonation Test",
+        value: ndtData.carbonation_depth,
+        quality: ndtData.carbonation_ph_level,
+        recommendation: ndtData.carbonation_recommendation
+      },
+      {
+        label: "Chloride Test",
+        value: ndtData.chloride_content,
+        quality: ndtData.chloride_corrosion_risk,
+        recommendation: ndtData.chloride_recommendation
+      },
+      {
+        label: "Sulfate Test",
+        value: ndtData.sulfate_content,
+        quality: ndtData.sulfate_deterioration_risk,
+        recommendation: ndtData.sulfate_recommendation
+      },
+      {
+        label: "Half-Cell Potential Test",
+        value: ndtData.half_cell_potential_value,
+        quality: ndtData.corrosion_probability,
+        recommendation: ndtData.half_cell_potential_recommendation
+      },
+      {
+        label: "Concrete Cover Test",
+        value: `Required: ${ndtData.concrete_cover_required || "N/A"}, Measured: ${ndtData.concrete_cover_measured || "N/A"}, Deficiency: ${ndtData.concrete_cover_deficiency || "N/A"}`,
+        quality: ndtData.concrete_cover_structural_risk || "N/A",
+        recommendation: ndtData.concrete_cover_recommendation || "N/A"
+      },
+      {
+        label: "Rebar Diameter Test",
+        value: `Original: ${ndtData.original_rebar_diameter || "N/A"}, Measured: ${ndtData.measured_rebar_diameter || "N/A"}`,
+        quality: ndtData.rebar_reduction || "N/A",
+        recommendation: ndtData.rebar_recommendation || "N/A"
+      },
+      {
+        label: "Crushing Strength Test",
+        value: ndtData.crushing_strength,
+        quality: ndtData.crushing_strength_classification,
+        recommendation: ndtData.crushing_strength_recommendation
+      }
+    ];
+
+    // Detailed Findings Section for each test (if needed)
+    // For each test group, you can add a detailed page if required.
+    groupMapping.forEach((group) => {
+      doc.addPage();
+      doc.fontSize(14).text(group.label, { underline: true });
+      doc.moveDown();
+      doc.fontSize(12).text(`Measured Value: ${group.value || "N/A"}`);
+      doc.text(`Quality: ${group.quality || "N/A"}`);
+      doc.text(`Recommendation: ${group.recommendation || "N/A"}`);
+      doc.moveDown();
+      // Optionally add any interpretation or additional details here.
     });
 
-    // ✅ Draw NDT Table
-    const colWidths = [180, 100, 120, 150, 180];
-    let yPosition = doc.y;
-    ndtTable1.headers.forEach((header, i) => {
-      doc.font("Helvetica-Bold").text(header, 50 + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0), yPosition);
-    });
-    yPosition += 20;
-    ndtTable1.rows.forEach(row => {
-      row.forEach((cell, i) => {
-        doc.font("Helvetica").text(cell.toString(), 50 + colWidths.slice(0, i).reduce((sum, w) => sum + w, 0), yPosition);
-      });
-      yPosition += 20;
-    });
-
-    doc.moveDown();
-
-    // ✅ Detailed Findings for Each Test
-    ndtTests.forEach(ndt => {
-      Object.keys(ndt).forEach(key => {
-        if (key !== "id" && ndt[key] && !key.includes("image")) {
-          try {
-            const testData = JSON.parse(ndt[key]);
-
-            doc.addPage();
-            doc.fontSize(14).text(key.replace(/_/g, " "), { underline: true });
-            doc.moveDown();
-
-            doc.fontSize(12).text(`📌 Measured Value: ${testData.value || "N/A"}`);
-            doc.text(`📊 Quality: ${testData.quality || "N/A"}`);
-            doc.text(`📖 Interpretation: ${testData.interpretation || "N/A"}`);
-            doc.text(`📌 Recommendation: ${testData.recommendation ? testData.recommendation.replace(/[^\x20-\x7E]/g, '') : "N/A"}`);
-            doc.text(`📜 IS Code Reference: ${testData.is_code || "N/A"}`);
-            doc.moveDown();
-
-            // ✅ If image exists, add it
-            const imageField = key + "_image";
-            if (ndt[imageField] && ndt[imageField] !== "Invalid Data") {
-              const imagePath = `/mnt/data/${imageField}.jpg`;
-              fs.writeFileSync(imagePath, ndt[imageField]);  // Save binary data as image
-              doc.image(imagePath, { width: 250 });
-            }
-          } catch (error) {
-            doc.text("⚠️ Error displaying test data.");
-          }
-        }
-      });
-    });
     /****************************************************************
      * (8) CONCLUSION & RECOMMENDATIONS
      ****************************************************************/
@@ -1681,30 +1711,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
   }
 });
 
-
-// 📌 Fetch All Reports Available for Download
-app.get('/api/reports', authenticate, async (req, res) => {
-  try {
-    const [reports] = await db.execute(
-      `SELECT id, name, location, date_of_audit FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC`,
-      [req.user.id]
-    );
-
-    // Generate download links dynamically
-    const reportsWithLinks = reports.map(report => ({
-      id: report.id,
-      name: report.name,
-      location: report.location,
-      date_of_audit: report.date_of_audit,
-      download_url: `http://localhost:5000/api/audits/${report.id}/report`,
-    }));
-
-    res.json(reportsWithLinks);
-  } catch (error) {
-    console.error("Error fetching reports:", error);
-    res.status(500).json({ message: "Failed to fetch reports" });
-  }
-});
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
