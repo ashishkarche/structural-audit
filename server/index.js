@@ -1362,9 +1362,9 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       { label: "Scope of Work", page: "4" },
       { label: "Purpose of Investigation", page: "5" },
       { label: "History / Salient Features", page: "6" },
-      { label: "Combined Report", page: "7" },
+      { label: "Performa-B", page: "7" },
       { label: "Detailed Observations", page: "8" },
-      { label: "Damage Observations", page: "9" },
+      { label: "Non-Destructive Testing (NDT)", page: "9" },
       { label: "Conclusion & Recommendations", page: "10" }
     ];
     let currentY = doc.y;
@@ -1427,7 +1427,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
-    doc.addPage();
 
     /****************************************************************
      * (5) MERGED COMBINED REPORT
@@ -1553,7 +1552,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Draw the merged table
     const mergedColWidths = [200, 300];
     doc.addPage();
-    doc.fontSize(16).text("5. Combined Report", { underline: true });
+    doc.fontSize(16).text("5. Performa-B", { underline: true });
     doc.moveDown();
     drawDynamicTable(doc, mergedTable, 50, doc.y, mergedColWidths, { headerFontSize: 12, rowFontSize: 10 });
 
@@ -1587,7 +1586,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     drawExternalObservationTable(doc, damageEntries, doc.x, doc.y);
 
     doc.addPage();
-    doc.fontSize(16).text("Non-Destructive Testing (NDT)", { underline: true });
+    doc.fontSize(16).text("7. Non-Destructive Testing (NDT)", { underline: true });
     doc.moveDown();
 
     // ✅ Introduction to NDT
@@ -1595,7 +1594,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       "Non-Destructive Testing (NDT) is used to assess the condition of concrete structures without causing damage. " +
       "The following tests were conducted to evaluate strength, durability, and overall structural performance."
     );
-    doc.moveDown();
 
     // Build a summary table for NDT Tests using a group mapping approach.
     const ndtData = ndtTests[0] || {}; // Assume one NDT record per audit
