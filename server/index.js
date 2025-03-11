@@ -728,8 +728,9 @@ app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res
   try {
     const { auditId } = req.params;
     const sql = `
-      SELECT brief_background_history, brief_history_details, date_of_change, 
-             structural_changes, change_details, previous_investigation 
+      SELECT id, brief_background_history, brief_history_details, date_of_change, 
+             structural_changes, change_details, previous_investigation,
+             CASE WHEN previous_investigation_reports IS NOT NULL THEN TRUE ELSE FALSE END AS has_report
       FROM StructuralChanges 
       WHERE audit_id = ?`;
 
@@ -745,6 +746,27 @@ app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res
     res.status(500).json({ message: "Failed to fetch structural changes." });
   }
 });
+
+// Serve PDF report for a specific structural change
+app.get('/api/audits/:auditId/structural-changes/:id/report', authenticate, async (req, res) => {
+  try {
+    const { auditId, id } = req.params;
+    const sql = `SELECT previous_investigation_reports FROM StructuralChanges WHERE id = ? AND audit_id = ?`;
+    
+    const [rows] = await db.execute(sql, [id, auditId]);
+
+    if (rows.length === 0 || !rows[0].previous_investigation_reports) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.send(rows[0].previous_investigation_reports);
+  } catch (error) {
+    console.error("Error fetching report:", error);
+    res.status(500).json({ message: "Failed to fetch report" });
+  }
+});
+
 
 app.get('/api/audits/:auditId/immediate-concerns', authenticate, async (req, res) => {
   try {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { FaEye } from "react-icons/fa"; // Eye icon for viewing reports
 // import "../../static/StructuralChanges.css";
 
 function StructuralChanges() {
@@ -13,7 +14,10 @@ function StructuralChanges() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes`, config);
+        const response = await axios.get(
+          `https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes`,
+          config
+        );
 
         setStructuralChanges(response.data);
       } catch (err) {
@@ -24,6 +28,24 @@ function StructuralChanges() {
 
     fetchStructuralChanges();
   }, [auditId]);
+
+  const handleViewReport = async (changeId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` }, responseType: "blob" };
+
+      const response = await axios.get(
+        `https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes/${changeId}/report`,
+        config
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      window.open(url);
+    } catch (err) {
+      console.error("Error fetching report:", err);
+      alert("Failed to open report. Please try again.");
+    }
+  };
 
   return (
     <div className="structural-changes-container">
@@ -39,6 +61,7 @@ function StructuralChanges() {
               <th>Structural Changes</th>
               <th>Change Details</th>
               <th>Previous Investigation</th>
+              <th>Report</th> {/* Added Report column */}
             </tr>
           </thead>
           <tbody>
@@ -50,6 +73,15 @@ function StructuralChanges() {
                 <td>{item.structural_changes ? "Yes" : "No"}</td>
                 <td>{item.change_details || "N/A"}</td>
                 <td>{item.previous_investigation ? "Yes" : "No"}</td>
+                <td>
+                  {item.has_report ? (
+                    <button className="view-report-btn" onClick={() => handleViewReport(item.id)}>
+                      <FaEye /> View Report
+                    </button>
+                  ) : (
+                    "No Report"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
