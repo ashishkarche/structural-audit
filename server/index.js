@@ -728,9 +728,8 @@ app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res
   try {
     const { auditId } = req.params;
     const sql = `
-      SELECT id, brief_background_history, brief_history_details, date_of_change, 
-             structural_changes, change_details, previous_investigation,
-             CASE WHEN previous_investigation_reports IS NOT NULL THEN TRUE ELSE FALSE END AS has_report
+      SELECT brief_background_history, brief_history_details, date_of_change, 
+             structural_changes, change_details, previous_investigation, previous_investigation_reports 
       FROM StructuralChanges 
       WHERE audit_id = ?`;
 
@@ -740,33 +739,18 @@ app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res
       return res.status(404).json({ message: "No structural changes found for this audit." });
     }
 
-    res.json(structuralChanges);
+    // Convert BLOB to Base64
+    const structuralWithBase64 = structuralChanges.map((item) => ({
+      ...item,
+      previous_investigation_reports: item.previous_investigation_reports ? item.previous_investigation_reports.toString('base64') : null
+    }));
+
+    res.json(structuralWithBase64);
   } catch (error) {
     console.error("Error fetching structural changes:", error);
     res.status(500).json({ message: "Failed to fetch structural changes." });
   }
 });
-
-// Serve PDF report for a specific structural change
-app.get('/api/audits/:auditId/structural-changes/:id/report', authenticate, async (req, res) => {
-  try {
-    const { auditId, id } = req.params;
-    const sql = `SELECT previous_investigation_reports FROM StructuralChanges WHERE id = ? AND audit_id = ?`;
-    
-    const [rows] = await db.execute(sql, [id, auditId]);
-
-    if (rows.length === 0 || !rows[0].previous_investigation_reports) {
-      return res.status(404).json({ message: "Report not found" });
-    }
-
-    res.setHeader("Content-Type", "application/pdf");
-    res.send(rows[0].previous_investigation_reports);
-  } catch (error) {
-    console.error("Error fetching report:", error);
-    res.status(500).json({ message: "Failed to fetch report" });
-  }
-});
-
 
 app.get('/api/audits/:auditId/immediate-concerns', authenticate, async (req, res) => {
   try {

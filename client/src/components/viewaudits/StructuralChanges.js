@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import { FaEye } from "react-icons/fa"; // Eye icon for viewing reports
-// import "../../static/StructuralChanges.css";
+import { FaEye } from "react-icons/fa";
+
 
 function StructuralChanges() {
   const { auditId } = useParams();
   const [structuralChanges, setStructuralChanges] = useState([]);
   const [error, setError] = useState("");
+  const [selectedPDF, setSelectedPDF] = useState(null);
+
 
   useEffect(() => {
     const fetchStructuralChanges = async () => {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(
-          `https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes`,
-          config
-        );
+        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes`, config);
 
         setStructuralChanges(response.data);
       } catch (err) {
@@ -28,24 +27,6 @@ function StructuralChanges() {
 
     fetchStructuralChanges();
   }, [auditId]);
-
-  const handleViewReport = async (changeId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` }, responseType: "blob" };
-
-      const response = await axios.get(
-        `https://structural-audit.vercel.app/api/audits/${auditId}/structural-changes/${changeId}/report`,
-        config
-      );
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      window.open(url);
-    } catch (err) {
-      console.error("Error fetching report:", err);
-      alert("Failed to open report. Please try again.");
-    }
-  };
 
   return (
     <div className="structural-changes-container">
@@ -61,7 +42,7 @@ function StructuralChanges() {
               <th>Structural Changes</th>
               <th>Change Details</th>
               <th>Previous Investigation</th>
-              <th>Report</th> {/* Added Report column */}
+              <th>Previous Investigation Report</th>
             </tr>
           </thead>
           <tbody>
@@ -74,20 +55,21 @@ function StructuralChanges() {
                 <td>{item.change_details || "N/A"}</td>
                 <td>{item.previous_investigation ? "Yes" : "No"}</td>
                 <td>
-                  {item.has_report ? (
-                    <button className="view-report-btn" onClick={() => handleViewReport(item.id)}>
-                      <FaEye /> View Report
-                    </button>
-                  ) : (
-                    "No Report"
-                  )}
-                </td>
+                  <button onClick={() => setSelectedPDF(`data:application/pdf;base64,${item.previous_investigation_reports}`)}>
+                    <FaEye /> View PDF
+                  </button></td>
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
         <p>No structural changes recorded.</p>
+      )}
+
+      {selectedPDF && (
+        <div className="modal" onClick={() => setSelectedPDF(null)}>
+          <iframe src={selectedPDF} width="100%" height="600px" title="PDF Preview"></iframe>
+        </div>
       )}
     </div>
   );
