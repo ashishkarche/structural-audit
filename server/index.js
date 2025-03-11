@@ -1713,6 +1713,30 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
   }
 });
 
+// 📌 Fetch All Reports Available for Download
+app.get('/api/reports', authenticate, async (req, res) => {
+  try {
+    const [reports] = await db.execute(
+      `SELECT id, name, location, date_of_audit FROM Audits WHERE auditor_id = ? ORDER BY date_of_audit DESC`,
+      [req.user.id]
+    );
+
+    // Generate download links dynamically
+    const reportsWithLinks = reports.map(report => ({
+      id: report.id,
+      name: report.name,
+      location: report.location,
+      date_of_audit: report.date_of_audit,
+      download_url: `https://structural-audit.vercel.app/api/audits/${report.id}/report`,
+    }));
+
+    res.json(reportsWithLinks);
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    res.status(500).json({ message: "Failed to fetch reports" });
+  }
+});
+
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

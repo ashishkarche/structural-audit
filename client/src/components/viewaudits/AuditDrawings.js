@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-// import "../../static/AuditDrawings.css";
 import { FaEye } from "react-icons/fa";
 
 function AuditDrawings() {
@@ -15,7 +14,10 @@ function AuditDrawings() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/drawings`, config);
+        const response = await axios.get(
+          `https://structural-audit.vercel.app/api/audits/${auditId}/drawings`,
+          config
+        );
 
         setDrawings(response.data);
       } catch (err) {
@@ -32,26 +34,28 @@ function AuditDrawings() {
       <h2>Audit Drawings</h2>
       {error && <p className="error-message">{error}</p>}
       {drawings.length > 0 ? (
-        <table className="audit-table">
-          <thead>
-            <tr>
-              <th>Drawing Type</th>
-              <th>View File</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drawings.map((drawing) => (
-              <tr key={drawing.id}>
-                <td>{drawing.drawing_type}</td>
-                <td>
-                  <button onClick={() => setSelectedPDF(`data:application/pdf;base64,${drawing.file_data}`)}>
-                    <FaEye /> View PDF
-                  </button>
-                </td>
+        <div className="table-container">
+          <table className="audit-table">
+            <thead>
+              <tr>
+                <th>Drawing Type</th>
+                <th>View File</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {drawings.map((drawing) => (
+                <tr key={drawing.id}>
+                  <td>{drawing.drawing_type}</td>
+                  <td>
+                    <button onClick={() => setSelectedPDF(`data:application/pdf;base64,${drawing.file_data}`)}>
+                      <FaEye /> View PDF
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <p>No audit drawings recorded.</p>
       )}
