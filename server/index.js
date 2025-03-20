@@ -1299,50 +1299,57 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       let y = startY;
       const imageWidth = 200;
       const gap = 20;
-      const imageHeight = 140; // approximate height for the images
+      const imageHeight = 140;
       const bottomMargin = 50;
-
-      // If near bottom, add a new page
-      if (y > doc.page.height - bottomMargin - 150) {
-        doc.addPage();
-        y = doc.y;
-      }
-
-      // Draw up to two images side by side using the first two damage entries
-      if (damageEntries.length > 0) {
-        const first = damageEntries[0];
-        const second = damageEntries.length >= 2 ? damageEntries[1] : null;
-
+      const cellWidth = imageWidth; // Match width of images
+      const cellHeight = 30; // Fixed height for text cells
+    
+      let count = 0; // Track rows per page
+    
+      for (let i = 0; i < damageEntries.length; i += 2) {
+        // If two rows are already drawn, move to a new page
+        if (count === 2) {
+          doc.addPage();
+          y = doc.y;
+          count = 0;
+        }
+    
+        const first = damageEntries[i];
+        const second = damageEntries[i + 1] || null; // Second entry may not exist
+    
+        // Draw images side by side
         if (first.damage_photos) {
           doc.image(first.damage_photos, startX, y, { width: imageWidth });
         }
         if (second && second.damage_photos) {
           doc.image(second.damage_photos, startX + imageWidth + gap, y, { width: imageWidth });
         }
-        y += imageHeight + 10;
+    
+        y += imageHeight + 5; // Move down after images
+    
+        // Draw text for Location and Cause
+        doc.rect(startX, y, cellWidth, cellHeight).stroke();
+        doc.text("Location: " + (first.location || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
+    
+        doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
+        doc.text("Location: " + (second ? second.location : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
+    
+        y += cellHeight; // Move down for next row
+    
+        doc.rect(startX, y, cellWidth, cellHeight).stroke();
+        doc.text("Cause: " + (first.cause || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
+    
+        doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
+        doc.text("Cause: " + (second ? second.cause : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
+    
+        y += cellHeight + 10; // Move down after text
+        count++; // Increase row count
       }
-
-      // Draw a mini table (1 row, 2 columns) for Location and Distress
-      const cellWidth = 250; // Adjust width as needed (total page width roughly 500)
-      const cellHeight = 30; // Fixed cell height
-      // Draw left cell border
-      doc.rect(startX, y, cellWidth, cellHeight).stroke();
-      // Draw right cell border
-      doc.rect(startX + cellWidth, y, cellWidth, cellHeight).stroke();
-
-      // Fetch values from the first damage entry (if available)
-      const locationText = damageEntries.length > 0 && damageEntries[0].location ? damageEntries[0].location : "N/A";
-      const distressText = damageEntries.length > 0 && damageEntries[0].cause ? damageEntries[0].cause : "N/A";
-
-      // Write text inside left cell (Location)
-      doc.fontSize(12).text("Location: " + locationText, startX + 5, y + 8, { width: cellWidth - 10 });
-      // Write text inside right cell (Distress)
-      doc.text("Distress: " + distressText, startX + cellWidth + 5, y + 8, { width: cellWidth - 10 });
-
-      y += cellHeight + 10;
-      return y; // return updated Y position
+    
+      return y; // Return updated Y position
     }
-
+    
+    
 
     // ───────────────────────────────────────────────────────────────
     // 5) COVER PAGE
