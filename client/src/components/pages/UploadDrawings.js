@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "../../static/UploadDrawings.css";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 function UploadDrawings() {
   const { auditId } = useParams();
@@ -18,6 +19,8 @@ function UploadDrawings() {
   });
 
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
+
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false); // ✅ Track if drawings are already uploaded
 
@@ -87,9 +90,12 @@ function UploadDrawings() {
       });
 
       setIsSubmitted(true); // ✅ Lock fields after submission
-      navigate(`/audit/${auditId}/structural-changes`);
+
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/structural-changes`), 2000);
     } catch (err) {
-      setError("Failed to upload drawings. Please try again.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     } finally {
       setLoading(false);
     }
@@ -99,6 +105,8 @@ function UploadDrawings() {
     <div className="upload-drawings-container">
       <h2>Upload Drawings</h2>
       {error && <p className="text-danger text-center">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
+
       {loading && <p className="text-center">Uploading files...</p>}
 
       <form onSubmit={handleSubmit} className="upload-form">

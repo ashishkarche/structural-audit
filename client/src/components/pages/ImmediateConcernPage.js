@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "../../static/ImmediateConcern.css";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 function ImmediateConcernPage() {
   const { auditId } = useParams();
@@ -20,6 +21,7 @@ function ImmediateConcernPage() {
 
   const [damagePreview, setDamagePreview] = useState(null);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
 
   const handleChange = (e) => {
     if (isSubmitted) return;
@@ -63,10 +65,12 @@ function ImmediateConcernPage() {
       // ✅ Mark form as submitted
       localStorage.setItem(`immediateConcern_${auditId}`, "submitted");
       setIsSubmitted(true);
-      navigate(`/audit/${auditId}/ndt-tests`);
+
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/ndt-tests`), 2000);
     } catch (err) {
-      console.error(err);
-      setError("Failed to submit immediate concern.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     }
   };
 
@@ -74,6 +78,7 @@ function ImmediateConcernPage() {
     <div className="immediate-concern-container">
       <h2>Immediate Concerns</h2>
       {error && <p className="error-message">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
 
       {isSubmitted ? (
         <p>Your data has already been submitted. You can view the details below.</p>

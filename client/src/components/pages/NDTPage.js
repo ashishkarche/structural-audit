@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/NDTPage.css";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 // ✅ Import all test components
 import ReboundHammerTest from "../ntd-test/ReboundHammerTest";
@@ -39,6 +40,7 @@ function NDTPage() {
   const [formData, setFormData] = useState(initialFormData);
   const [imageData, setImageData] = useState({});
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
 
   // ✅ Handle Image Uploads
   const handleImageChange = (e) => {
@@ -88,9 +90,12 @@ function NDTPage() {
       await axios.post(`https://structural-audit.vercel.app/api/ndt/${auditId}`, prepareFormData(), config);
       localStorage.setItem(`ndtSubmitted_${auditId}`, "submitted");
       setIsSubmitted(true);
-      navigate(`/audit/${auditId}/conclusion`);
+
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/conclusion`), 2000);
     } catch (err) {
-      setError("❌ Failed to submit NDT results. Please try again.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     }
   };
 
@@ -112,6 +117,7 @@ function NDTPage() {
     <div className="ndt-page-container">
       <h2 className="ndt-page-title">Non-Destructive Testing (NDT) Records</h2>
       {error && <p className="ndt-error-message">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
 
       {isSubmitted ? (
         <p className="ndt-success-message">✅ Your NDT records have been submitted. You can view the details below.</p>

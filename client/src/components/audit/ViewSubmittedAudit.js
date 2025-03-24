@@ -35,10 +35,8 @@ function ViewSubmittedAudit() {
 
   const { audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries, auditDrawings } = fullAudit;
 
-  const handleViewImage = (base64Data) => {
-    if (!base64Data) return;
-    const imageUrl = `data:image/jpeg;base64,${base64Data}`;
-    setSelectedImage(imageUrl);
+  const handleViewImage = (base64Array) => {
+    setSelectedImage(base64Array);
   };
 
   const handleGenerateReport = async () => {
@@ -129,11 +127,11 @@ function ViewSubmittedAudit() {
                     <td>{item.cracks_flooring ? "Yes" : "No"}</td>
                     <td>{damageEntry?.description || "N/A"}</td>
                     <td>
-                      {damageEntry?.damage_photos ? (
+                    {damageEntry?.damage_photos?.length > 0 ? (
                         <button onClick={() => handleViewImage(damageEntry.damage_photos)}>
-                          <FaEye /> View Image
+                          <FaEye /> View Images
                         </button>
-                      ) : "No Photo"}
+                      ) : "No Photos"}
                     </td>
                   </tr>
                 );
@@ -181,9 +179,11 @@ function ViewSubmittedAudit() {
         ) : <p>No NDT test results recorded.</p>}
       </div>
 
-      {selectedImage && (
-        <div className="modal" onClick={() => setSelectedImage(null)}>
-          <img src={selectedImage} alt="Preview" />
+      {selectedImage.length > 0 && (
+        <div className="modal" onClick={() => setSelectedImage([])}>
+          {selectedImage.map((img, index) => (
+            <img key={index} src={`data:image/jpeg;base64,${img}`} alt={`Preview ${index + 1}`} />
+          ))}
         </div>
       )}
     </div>

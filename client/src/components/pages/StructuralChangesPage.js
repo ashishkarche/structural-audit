@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/StructuralChangesPage.css";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 function StructuralChangesPage() {
   const { auditId } = useParams();
@@ -24,6 +25,8 @@ function StructuralChangesPage() {
   });
 
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
+
   const [uploadedPDF, setUploadedPDF] = useState(null); // ✅ Store the uploaded PDF
 
   const handleChange = (e) => {
@@ -62,9 +65,12 @@ function StructuralChangesPage() {
       // ✅ Mark form as submitted
       localStorage.setItem(`structuralChanges_${auditId}`, "submitted");
       setIsSubmitted(true);
-      navigate(`/audit/${auditId}/observations`);
+
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/observations`), 2000);
     } catch (err) {
-      setError("Failed to submit structural changes.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     }
   };
 
@@ -73,6 +79,7 @@ function StructuralChangesPage() {
       <h2 className="structural-changes-page-title">Structural Changes</h2>
 
       {error && <p className="structural-changes-error-message">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
 
       {isSubmitted ? (
         <p>Your data has already been submitted. You can view the details below.</p>

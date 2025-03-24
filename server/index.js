@@ -481,12 +481,13 @@ app.get("/api/audits/:auditId/full", async (req, res) => {
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
     let [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
 
-    // 🔹 Convert `damage_photos` BLOB to Base64
+    // 🔹 Convert `damage_photos` BLOB to Base64 (Supports Multiple Images)
     dataEntries = dataEntries.map((entry) => ({
       ...entry,
-      damage_photos: entry.damage_photos ? entry.damage_photos.toString("base64") : null,
+      damage_photos: entry.damage_photos
+        ? entry.damage_photos.toString("utf-8").split(",").map((photo) => photo.trim()) // Ensure multiple images are handled
+        : [],
     }));
-
     // Fetch NDT test results
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
 
@@ -709,12 +710,17 @@ app.post(
 
 
 
-// Fetch Audit History
+// Fetch Audit History with Auditor Name
 app.get('/api/audits/:auditId/history', authenticate, async (req, res) => {
   try {
     const { auditId } = req.params;
     const [history] = await db.execute(
-      `SELECT * FROM AuditHistory WHERE audit_id = ? ORDER BY timestamp DESC`,
+      `SELECT AuditHistory.id, AuditHistory.audit_id, AuditHistory.action, 
+              AuditHistory.timestamp, Auditors.name AS auditor_name
+       FROM AuditHistory
+       JOIN Auditors ON AuditHistory.user_id = Auditors.id
+       WHERE AuditHistory.audit_id = ? 
+       ORDER BY AuditHistory.timestamp DESC`,
       [auditId]
     );
     res.json(history);
@@ -723,6 +729,7 @@ app.get('/api/audits/:auditId/history', authenticate, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch audit history" });
   }
 });
+
 
 app.get('/api/audits/:auditId/structural-changes', authenticate, async (req, res) => {
   try {

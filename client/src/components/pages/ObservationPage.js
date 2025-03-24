@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/ObservationPage.css";
 import DamageClassification from "../observations/DamageClassification";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 function ObservationPage() {
   const { auditId } = useParams();
@@ -29,6 +30,7 @@ function ObservationPage() {
   });
 
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
 
   const handleChange = (e) => {
     if (isSubmitted) return; // Prevent changes if already submitted
@@ -117,9 +119,12 @@ function ObservationPage() {
       // ✅ Mark form as submitted
       localStorage.setItem(`observations_${auditId}`, "submitted");
       setIsSubmitted(true);
-      navigate(`/audit/${auditId}/immediate-concern`);
+
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/immediate-concern`), 2000);
     } catch (err) {
-      setError("Failed to submit observations.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     }
   };
 
@@ -128,6 +133,8 @@ function ObservationPage() {
     <div className="obs-page-container">
       <h2 className="obs-page-title">🔍 General Observations of Structure</h2>
       {error && <p className="obs-error-message">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
+
       {isSubmitted ? (
         <p>Your data has already been submitted. You can view the details below.</p>
       ) : (

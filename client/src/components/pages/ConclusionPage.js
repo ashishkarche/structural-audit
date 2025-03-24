@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../../static/ConclusionPage.css";
+import ToastNotification from "../../components/ToastNotification"; // Import Notification Component
 
 const ConclusionPage = () => {
   const { auditId } = useParams();
@@ -20,6 +21,7 @@ const ConclusionPage = () => {
   });
 
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null); // Toast notification state
 
   // ✅ Handle input change (disabled if already submitted)
   const handleChange = (e) => {
@@ -45,9 +47,11 @@ const ConclusionPage = () => {
       localStorage.setItem(`conclusionSubmitted_${auditId}`, "submitted");
       setIsSubmitted(true);
 
-      navigate(`/audit/${auditId}/details`); // ✅ Navigate to Audit Details after submission
+      setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
+
+      setTimeout(() => navigate(`/audit/${auditId}/details`), 2000); // Navigate after delay
     } catch (err) {
-      setError("Failed to submit conclusions & recommendations.");
+      setToast({ message: "Submission Failed!", type: "error" }); // Show error toast
     }
   };
 
@@ -55,6 +59,7 @@ const ConclusionPage = () => {
     <div className="conclusion-page-container">
       <h2 className="conclusion-page-title">Conclusion & Recommendations</h2>
       {error && <p className="conclusion-error-message">{error}</p>}
+      {toast && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast(null)} />} {/* Notification */}
 
       {isSubmitted ? (
         <p>Your conclusions and recommendations have been submitted. You can view the details below.</p>

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams,useNavigate } from "react-router-dom";
-
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaArrowLeft } from "react-icons/fa";
 import "../../static/AuditHistory.css";
@@ -33,9 +32,9 @@ const AuditHistory = () => {
 
   return (
     <div className="audit-history-container">
-            <button className="back-button" onClick={() => navigate(`/view-audits`)}>
-              <FaArrowLeft /> Back
-            </button>
+      <button className="back-button" onClick={() => navigate(`/view-audits`)}>
+        <FaArrowLeft /> Back
+      </button>
       <h2>Audit History</h2>
       {loading ? (
         <p>Loading history...</p>
@@ -46,7 +45,7 @@ const AuditHistory = () => {
           <thead>
             <tr>
               <th>Action</th>
-              <th>User</th>
+              <th>Auditor</th>
               <th>Timestamp</th>
             </tr>
           </thead>
@@ -54,7 +53,7 @@ const AuditHistory = () => {
             {history.map((entry) => (
               <tr key={entry.id}>
                 <td>{entry.action}</td>
-                <td>{entry.user_id}</td>
+                <td>{entry.auditor_name || "Unknown"}</td>
                 <td>{new Date(entry.timestamp).toLocaleString()}</td>
               </tr>
             ))}
