@@ -1355,11 +1355,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       return y; // Return updated Y position
     }
 
-    function ensureSpace(doc, additionalHeight = 50) {
-      if (doc.y + additionalHeight >= doc.page.height) {
-        doc.addPage();
-      }
-    }
+
 
     // ───────────────────────────────────────────────────────────────
     // 5) COVER PAGE
@@ -1409,41 +1405,16 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // ─── (1) INTRODUCTION ─────────────────────────────────────────
     doc.fontSize(16).text("1. INTRODUCTION", { underline: true });
     doc.moveDown();
-
     doc.fontSize(12).text(
-      `M/s `, { continued: true })
-      .font("Helvetica-Bold")
-      .text(`${auditor.firm_name}`, { continued: true })
-      .font("Helvetica")
-      .text(` has been appointed to conduct a detailed inspection and assessment of the structural condition of `, { continued: true })
-      .font("Helvetica-Bold")
-      .text(`"${audit.name}"`, { continued: true })
-      .font("Helvetica")
-      .text(` located at `, { continued: true })
-      .font("Helvetica-Bold")
-      .text(`${audit.location}.`, { continued: false });
-    doc.moveDown();
-
-    doc.text(
-      "A team of qualified engineers and specialists carried out a systematic and thorough visual inspection of the structure. In addition to the visual assessment, a series of material tests were conducted using advanced Non-Destructive Testing (NDT) techniques to ensure an accurate evaluation of the structure's integrity."
+      `M/s ${auditor.firm_name} has been appointed to inspect and assess the condition of “${audit.name}” situated at ${audit.location} and subsequently submit an audit reprt.`
     );
     doc.moveDown();
-
-    doc.text(
-      "The NDT methods employed during the assessment included Ultrasonic Pulse Velocity (USPV), Cover Meter Testing, Carbonation Depth Analysis, Concrete Core Strength Testing, Rebound Hammer Testing, Half-Cell Potential Measurements, and Chemical Analysis, among others. These tests were conducted in a structured sequence to obtain reliable data regarding the structure’s material properties and overall stability."
-    );
+    doc.text("Accordingly, a team of expert and engineers carried out a series of detailed visual inspection. Besides the inspection, material testing by adopting specialized Non Destructive Testing' techniques was also carried out in a proper sequence. In line with this, Non-Destructive Tests (N.D.T) like Ultrasonic Pulse Velocity (USPV), Cover Meter, Carbonation, Concrete Core Strength, Rebound Hammer, Half-Cell Potential, Chemical Analysis etc. were conducted.");
     doc.moveDown();
-
-    doc.text(
-      "The primary objective of this assessment was to identify any structural distresses, determine their severity, and assess their impact on the stability and serviceability of the structure. The findings of the inspection, along with the results of the Non-Destructive Testing, have been documented in this report."
-    );
+    doc.text("This was done mainly to identify distresses; if any, and their effects on the structural stability and serviceability of the structure.");
     doc.moveDown();
-
-    doc.text(
-      "This report presents a detailed analysis of the observations made during the inspection, the results of the NDT procedures, interpretations of the findings, photographic documentation of the identified distresses, and key recommendations for remedial measures."
-    );
-    doc.moveDown();
-    ensureSpace(doc); 
+    doc.text("The Inspection Report' comprising of Observations, Non Destructive Testing Reports, Inference of NDT, Photographs of distresses and Emerging Recommendations etc. is attached herewith.");
+    doc.addPage();
 
     // ─── (2) SCOPE OF WORK ────────────────────────────────────────
     doc.fontSize(16).text("2. SCOPE OF WORK", { underline: true });
@@ -1455,8 +1426,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
-    doc.moveDown();
-    ensureSpace(doc); 
+    doc.addPage();
 
     // ─── (3) PURPOSE OF INVESTIGATION ─────────────────────────────
     doc.fontSize(16).text("3. PURPOSE OF INVESTIGATION", { underline: true });
@@ -1468,8 +1438,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     } else {
       doc.fontSize(12).text("Data Not Available");
     }
-    doc.moveDown();
-    ensureSpace(doc); 
+    doc.addPage();
 
     // ─── (4) HISTORY / SALIENT FEATURES ───────────────────────────
     doc.fontSize(16).text("4. HISTORY / SALIENT FEATURES", { underline: true });
@@ -1611,9 +1580,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     drawDynamicTable(doc, mergedTable, 50, doc.y, mergedColWidths, { headerFontSize: 12, rowFontSize: 10 });
 
     // ─── (6) DETAILED OBSERVATIONS ─────────────────────────────────
-    doc.moveDown();
-    ensureSpace(doc); 
-
+    doc.addPage();
     doc.fontSize(16).text("6. DETAILED OBSERVATIONS", { underline: true });
     doc.moveDown();
     doc.fontSize(12).text(
@@ -1639,9 +1606,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Pass current doc.x and doc.y as starting positions
     drawExternalObservationTable(doc, damageEntries, doc.x, doc.y);
 
-    doc.moveDown();
-    ensureSpace(doc); 
-    
+    doc.addPage();
     doc.fontSize(16).text("7. Non-Destructive Testing (NDT)", { underline: true });
     doc.moveDown();
 
@@ -1665,27 +1630,27 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018) \n -To check the homogeneity of concrete"
+      "> Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018) \n -To check the homogeneity of concrete"
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Half-cell potentiometer test (Ref.: ASTM/C876-80) \n -To check the probability of corrosion level in reinforcement"
+      "> Half-cell potentiometer test (Ref.: ASTM/C876-80) \n -To check the probability of corrosion level in reinforcement"
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II) \n - To check the approximate compressive strength of concrete"
+      "> Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II) \n - To check the approximate compressive strength of concrete"
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Concrete core extraction for compressive strength \n - To acquire the actual compressive strength of the concrete in the structure"
+      "> Concrete core extraction for compressive strength \n - To acquire the actual compressive strength of the concrete in the structure"
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998) \n - To check the pH, Chloride & Sulphate content in the concrete"
+      "> Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998) \n - To check the pH, Chloride & Sulphate content in the concrete"
     );
     doc.moveDown();
     doc.fontSize(12).text(
-      "Carbonation test (Ref: BS: 1881: Part 201:1986) \n - To check the depth of carbonation of the concrete"
+      "> Carbonation test (Ref: BS: 1881: Part 201:1986) \n - To check the depth of carbonation of the concrete"
     );
 
     // Build a summary table for NDT Tests using a group mapping approach.
@@ -1757,8 +1722,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Detailed Findings Section for each test (if needed)
     // For each test group, you can add a detailed page if required.
     groupMapping.forEach((group) => {
-      doc.moveDown();
-      ensureSpace(doc); 
+      doc.addPage();
       doc.fontSize(14).text(group.label, { underline: true });
       doc.moveDown();
       doc.fontSize(12).text(`Measured Value: ${group.value || "N/A"}`);
