@@ -1660,7 +1660,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       "Non-Destructive Testing (NDT) is used to assess the condition of concrete structures without causing damage. " +
       "The following tests were conducted to evaluate strength, durability, and overall structural performance."
     );
-
     doc.moveDown();
     doc.fontSize(12).text(
       "Non-Destructive testing is a method by which the existing condition of the structure can be analysed without causing damages to the structure."
@@ -1674,98 +1673,51 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       "Based on the nature of distresses observed, the following non-destructive tests were suggested and carried out:-"
     );
     doc.moveDown();
-    doc.fontSize(12).text(
-      "> Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018) \n -To check the homogeneity of concrete"
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "> Half-cell potentiometer test (Ref.: ASTM/C876-80) \n -To check the probability of corrosion level in reinforcement"
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "> Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II) \n - To check the approximate compressive strength of concrete"
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "> Concrete core extraction for compressive strength \n - To acquire the actual compressive strength of the concrete in the structure"
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "> Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998) \n - To check the pH, Chloride & Sulphate content in the concrete"
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "> Carbonation test (Ref: BS: 1881: Part 201:1986) \n - To check the depth of carbonation of the concrete"
-    );
 
-    // Build a summary table for NDT Tests using a group mapping approach.
-    const ndtData = ndtTests[0] || {}; // Assume one NDT record per audit
-    // Define your test groups and how to display them
-    const groupMapping = [
-      {
-        label: "Rebound Hammer Test",
-        value: ndtData.rebound_index,
-        quality: ndtData.rebound_quality,
-        recommendation: ndtData.rebound_recommendation
-      },
-      {
-        label: "Ultrasonic Test",
-        value: ndtData.ultrasonic_pulse_velocity,
-        quality: ndtData.ultrasonic_concrete_quality,
-        recommendation: ndtData.ultrasonic_recommendation
-      },
-      {
-        label: "Core Sampling Test",
-        value: `Diameter: ${ndtData.core_diameter || "N/A"}, Length: ${ndtData.core_length || "N/A"}, L/D Ratio: ${ndtData.lD_Ratio || "N/A"}`,
-        quality: ndtData.measured_strength || "N/A",
-        recommendation: ndtData.core_sampling_recommendation || "N/A"
-      },
-      {
-        label: "Carbonation Test",
-        value: ndtData.carbonation_depth,
-        quality: ndtData.carbonation_ph_level,
-        recommendation: ndtData.carbonation_recommendation
-      },
-      {
-        label: "Chloride Test",
-        value: ndtData.chloride_content,
-        quality: ndtData.chloride_corrosion_risk,
-        recommendation: ndtData.chloride_recommendation
-      },
-      {
-        label: "Sulfate Test",
-        value: ndtData.sulfate_content,
-        quality: ndtData.sulfate_deterioration_risk,
-        recommendation: ndtData.sulfate_recommendation
-      },
-      {
-        label: "Half-Cell Potential Test",
-        value: ndtData.half_cell_potential_value,
-        quality: ndtData.corrosion_probability,
-        recommendation: ndtData.half_cell_potential_recommendation
-      },
-      {
-        label: "Concrete Cover Test",
-        value: `Required: ${ndtData.concrete_cover_required || "N/A"}, Measured: ${ndtData.concrete_cover_measured || "N/A"}, Deficiency: ${ndtData.concrete_cover_deficiency || "N/A"}`,
-        quality: ndtData.concrete_cover_structural_risk || "N/A",
-        recommendation: ndtData.concrete_cover_recommendation || "N/A"
-      },
-      {
-        label: "Rebar Diameter Test",
-        value: `Original: ${ndtData.original_rebar_diameter || "N/A"}, Measured: ${ndtData.measured_rebar_diameter || "N/A"}`,
-        quality: ndtData.rebar_reduction || "N/A",
-        recommendation: ndtData.rebar_recommendation || "N/A"
-      },
-      {
-        label: "Crushing Strength Test",
-        value: ndtData.crushing_strength,
-        quality: ndtData.crushing_strength_classification,
-        recommendation: ndtData.crushing_strength_recommendation
-      }
+    const ndtTestsList = [
+      { title: "Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018)", description: "To check the homogeneity of concrete" },
+      { title: "Half-cell potentiometer test (Ref.: ASTM/C876-80)", description: "To check the probability of corrosion level in reinforcement" },
+      { title: "Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II)", description: "To check the approximate compressive strength of concrete" },
+      { title: "Concrete core extraction for compressive strength", description: "To acquire the actual compressive strength of the concrete in the structure" },
+      { title: "Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998)", description: "To check the pH, Chloride & Sulphate content in the concrete" },
+      { title: "Carbonation test (Ref: BS: 1881: Part 201:1986)", description: "To check the depth of carbonation of the concrete" }
     ];
 
-    // Detailed Findings Section for each test (if needed)
-    // For each test group, you can add a detailed page if required.
+    ndtTestsList.forEach((test) => {
+      doc.fontSize(12).text(`> ${test.title} \n - ${test.description}`);
+      doc.moveDown();
+    });
+
+    // Build a structured NDT summary table
+    doc.addPage();
+    doc.fontSize(14).text("Summary of NDT Results", { underline: true });
+    doc.moveDown();
+
+    doc.table(
+      [
+        ["Test Name", "Measured Value", "Quality", "Recommendation"],
+        ["Rebound Hammer Test", ndtData.rebound_index || "N/A", ndtData.rebound_quality || "N/A", ndtData.rebound_recommendation || "N/A"],
+        ["Ultrasonic Test", ndtData.ultrasonic_pulse_velocity || "N/A", ndtData.ultrasonic_concrete_quality || "N/A", ndtData.ultrasonic_recommendation || "N/A"],
+        ["Core Sampling Test", `Diameter: ${ndtData.core_diameter || "N/A"}, Length: ${ndtData.core_length || "N/A"}, L/D Ratio: ${ndtData.lD_Ratio || "N/A"}`, ndtData.measured_strength || "N/A", ndtData.core_sampling_recommendation || "N/A"],
+        ["Carbonation Test", ndtData.carbonation_depth || "N/A", ndtData.carbonation_ph_level || "N/A", ndtData.carbonation_recommendation || "N/A"],
+        ["Chloride Test", ndtData.chloride_content || "N/A", ndtData.chloride_corrosion_risk || "N/A", ndtData.chloride_recommendation || "N/A"],
+        ["Sulfate Test", ndtData.sulfate_content || "N/A", ndtData.sulfate_deterioration_risk || "N/A", ndtData.sulfate_recommendation || "N/A"],
+        ["Half-Cell Potential Test", ndtData.half_cell_potential_value || "N/A", ndtData.corrosion_probability || "N/A", ndtData.half_cell_potential_recommendation || "N/A"],
+        ["Concrete Cover Test", `Required: ${ndtData.concrete_cover_required || "N/A"}, Measured: ${ndtData.concrete_cover_measured || "N/A"}, Deficiency: ${ndtData.concrete_cover_deficiency || "N/A"}`, ndtData.concrete_cover_structural_risk || "N/A", ndtData.concrete_cover_recommendation || "N/A"],
+        ["Rebar Diameter Test", `Original: ${ndtData.original_rebar_diameter || "N/A"}, Measured: ${ndtData.measured_rebar_diameter || "N/A"}`, ndtData.rebar_reduction || "N/A", ndtData.rebar_recommendation || "N/A"],
+        ["Crushing Strength Test", ndtData.crushing_strength || "N/A", ndtData.crushing_strength_classification || "N/A", ndtData.crushing_strength_recommendation || "N/A"]
+      ],
+      {
+        prepareHeader: () => doc.fontSize(12).text(" "),
+        prepareRow: (row, indexColumn, indexRow, rectRow, rectColumn) => {
+          doc.fontSize(10).text(row[indexColumn], rectColumn.x, rectColumn.y, { width: rectColumn.width, align: "center" });
+        }
+      }
+    );
+
+    doc.moveDown(2);
+
+    // Detailed Findings Section
     groupMapping.forEach((group) => {
       doc.addPage();
       doc.fontSize(14).text(group.label, { underline: true });
@@ -1774,7 +1726,6 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       doc.text(`Quality: ${group.quality || "N/A"}`);
       doc.text(`Recommendation: ${group.recommendation || "N/A"}`);
       doc.moveDown();
-      // Optionally add any interpretation or additional details here.
     });
 
     /****************************************************************
