@@ -12,7 +12,7 @@ function ViewSubmittedAudit() {
   const navigate = useNavigate();
   const [fullAudit, setFullAudit] = useState(null);
   const [error, setError] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState([]); // ✅ Fix: Initialize as empty array
 
   useEffect(() => {
     const fetchFullAudit = async () => {
@@ -179,7 +179,7 @@ function ViewSubmittedAudit() {
         ) : <p>No NDT test results recorded.</p>}
       </div>
 
-      {selectedImage.length > 0 && (
+      {selectedImage && selectedImage.length > 0 && (
         <div className="modal" onClick={() => setSelectedImage([])}>
           {selectedImage.map((img, index) => (
             <img key={index} src={`data:image/jpeg;base64,${img}`} alt={`Preview ${index + 1}`} />
