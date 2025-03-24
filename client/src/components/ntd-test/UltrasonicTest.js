@@ -32,10 +32,10 @@ const UltrasonicTest = ({ formData, setFormData, handleImageChange, imageData, i
   // ✅ Generate Recommendation
   const generateRecommendation = (velocity) => {
     if (!velocity) return "";
-    if (velocity > 4.5) return "✅ Low Risk: No intervention required.";
-    if (velocity >= 3.5) return "✔️ Moderate Risk: Surface repairs and monitoring required.";
-    if (velocity >= 3.0) return "⚠️ High Risk: Further structural assessment needed.";
-    return "❌ Severe Risk: Immediate retrofitting and repairs required.";
+    if (velocity > 4.5) return "Low Risk: No intervention required.";
+    if (velocity >= 3.5) return "Moderate Risk: Surface repairs and monitoring required.";
+    if (velocity >= 3.0) return "High Risk: Further structural assessment needed.";
+    return "Severe Risk: Immediate retrofitting and repairs required.";
   };
 
   // ✅ Auto-calculate values when `ultrasonic_pulse_velocity` changes

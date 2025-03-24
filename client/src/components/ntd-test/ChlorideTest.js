@@ -31,12 +31,12 @@ const ChlorideTest = ({ formData, setFormData, handleImageChange, imageData, isS
   const generateRecommendation = () => {
     const chlorideContent = parseFloat(formData.chlorideContent) || 0;
     if (chlorideContent >= 0.3) {
-      return "❌ High Risk: Immediate protective measures required. Use low-permeability concrete, increase cover thickness, apply corrosion inhibitors, and ensure waterproofing.";
+      return "High Risk: Immediate protective measures required. Use low-permeability concrete, increase cover thickness, apply corrosion inhibitors, and ensure waterproofing.";
     }
     if (chlorideContent >= 0.15) {
-      return "⚠️ Moderate Risk: Monitor structure regularly. Apply anti-corrosion coatings and ensure proper drainage to prevent chloride penetration.";
+      return "Moderate Risk: Monitor structure regularly. Apply anti-corrosion coatings and ensure proper drainage to prevent chloride penetration.";
     }
-    return "✅ Low Risk: No immediate action required. Continue regular structural monitoring and maintenance.";
+    return "Low Risk: No immediate action required. Continue regular structural monitoring and maintenance.";
   };
 
   // ✅ Memoized Computations

@@ -40,10 +40,10 @@ const ReboundHammerTest = ({ formData, setFormData, handleImageChange, imageData
 
   const generateRecommendation = (index) => {
     if (!index) return "";
-    if (index > 40) return "✅ Low Risk: No intervention required.";
-    if (index >= 30) return "✔️ Moderate Risk: Surface repairs recommended.";
-    if (index >= 20) return "⚠️ High Risk: Strengthening needed.";
-    return "❌ Severe Risk: Immediate retrofitting required.";
+    if (index > 40) return "Low Risk: No intervention required.";
+    if (index >= 30) return "Moderate Risk: Surface repairs recommended.";
+    if (index >= 20) return "High Risk: Strengthening needed.";
+    return "Severe Risk: Immediate retrofitting required.";
   };
 
   const reboundIndex = calculateReboundIndex();

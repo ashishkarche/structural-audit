@@ -38,15 +38,15 @@ const ConcreteCoverTest = ({ formData, setFormData, handleImageChange, imageData
   // ✅ Generate Recommendation
   const generateRecommendation = (deficiency) => {
     if (!deficiency || deficiency <= 0) {
-      return "✅ Adequate Cover: Continue regular structural monitoring and maintenance.";
+      return "Adequate Cover: Continue regular structural monitoring and maintenance.";
     }
     if (deficiency > 10) {
-      return "❌ Severe Cover Deficiency: Immediate action required. Apply protective coatings (IS 13620), use corrosion inhibitors (IS 9077), repair using micro-concrete/polymer-modified mortar (IS 13935). Structural strengthening may be required.";
+      return "Severe Cover Deficiency: Immediate action required. Apply protective coatings (IS 13620), use corrosion inhibitors (IS 9077), repair using micro-concrete/polymer-modified mortar (IS 13935). Structural strengthening may be required.";
     }
     if (deficiency >= 5) {
-      return "⚠️ Moderate Cover Deficiency: Apply surface protection coatings, improve waterproofing (IS 2645), and conduct periodic inspections.";
+      return "Moderate Cover Deficiency: Apply surface protection coatings, improve waterproofing (IS 2645), and conduct periodic inspections.";
     }
-    return "✔️ Minor Cover Deficiency: No immediate action needed, but monitor regularly. Ensure proper curing and maintenance practices.";
+    return "Minor Cover Deficiency: No immediate action needed, but monitor regularly. Ensure proper curing and maintenance practices.";
   };
 
   // ✅ Memoized Computations

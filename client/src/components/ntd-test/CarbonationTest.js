@@ -24,8 +24,8 @@ const CarbonationTest = ({ formData, setFormData, handleImageChange, imageData, 
   const computeRecommendation = () => {
     const carbonationDepth = parseFloat(formData.carbonationDepth) || 0;
     return carbonationDepth >= 20
-      ? "❌ High Risk: Use low water-cement ratio, increase cover, apply anti-carbonation coatings."
-      : "✅ Satisfactory Condition: No immediate action required.";
+      ? "High Risk: Use low water-cement ratio, increase cover, apply anti-carbonation coatings."
+      : "Satisfactory Condition: No immediate action required.";
   };
 
   // ✅ Memoized Computation

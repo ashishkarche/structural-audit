@@ -36,9 +36,9 @@ const RebarDiameterReductionTest = ({ formData, setFormData, handleImageChange, 
   };
 
   const generateRecommendation = (reduction) => {
-    if (!reduction || reduction <= 0) return "✅ No Reduction Detected.";
-    if (reduction > 20) return "❌ High Impact: Structural strengthening needed.";
-    return "⚠️ Moderate Impact: Apply protective coatings and corrosion inhibitors.";
+    if (!reduction || reduction <= 0) return "No Reduction Detected.";
+    if (reduction > 20) return "High Impact: Structural strengthening needed.";
+    return "Moderate Impact: Apply protective coatings and corrosion inhibitors.";
   };
 
   const reductionPercentage = calculateReductionPercentage();
