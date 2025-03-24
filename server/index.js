@@ -282,7 +282,9 @@ app.post("/submit-audit", authenticate, async (req, res) => {
       area,
       structureType,
       cementType,
+      otherCementType,
       steelType,
+      otherSteelType,
       numberOfStories,
       designedUse,
       presentUse,
@@ -291,18 +293,38 @@ app.post("/submit-audit", authenticate, async (req, res) => {
       distressNature,
     } = req.body;
 
-    // Ensure required fields are provided
-    if (!name || !location || !yearOfConstruction || !dateOfAudit || !area || !structureType || !cementType || !steelType || !numberOfStories || !designedUse || !presentUse) {
-      return res.status(400).json({ message: "Missing required fields. Please fill in all necessary details." });
+    // Required fields validation
+    const requiredFields = [
+      { key: "name", value: name },
+      { key: "location", value: location },
+      { key: "yearOfConstruction", value: yearOfConstruction },
+      { key: "dateOfAudit", value: dateOfAudit },
+      { key: "area", value: area },
+      { key: "structureType", value: structureType },
+      { key: "cementType", value: cementType },
+      { key: "steelType", value: steelType },
+      { key: "numberOfStories", value: numberOfStories },
+      { key: "designedUse", value: designedUse },
+      { key: "presentUse", value: presentUse },
+    ];
+
+    const missingFields = requiredFields
+      .filter((field) => !field.value)
+      .map((field) => field.key);
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+      });
     }
 
     // Function to safely format dates
     const formatDate = (date) => {
       const parsedDate = new Date(date);
-      return isNaN(parsedDate) ? null : parsedDate.toISOString().split("T")[0];
+      return isNaN(parsedDate.getTime()) ? null : parsedDate.toISOString().split("T")[0];
     };
 
-    // Format dates
+    // Format date fields
     const formattedDate = formatDate(dateOfAudit);
     const formattedDistressYear = distressYear ? parseInt(distressYear, 10) : null;
 
@@ -310,27 +332,50 @@ app.post("/submit-audit", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
     }
 
-    // Insert audit into database WITHOUT file uploads
-    const sql = `
-    INSERT INTO Audits (
-    auditor_id, name, location, year_of_construction, date_of_audit, area, structure_type,
-    cement_type, steel_type, number_of_stories, designed_use, present_use, changes_in_building,
-    distress_year, distress_nature ) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    // Handle "Other" selections
+    const finalCementType = cementType === "Other" ? "Other" : cementType.trim();
+    const finalSteelType = steelType === "Other" ? "Other" : steelType.trim();
+    const storedOtherCementType = cementType === "Other" ? otherCementType?.trim() || null : null;
+    const storedOtherSteelType = steelType === "Other" ? otherSteelType?.trim() || null : null;
 
+    // Ensure numerical fields are valid
+    const parsedYearOfConstruction = parseInt(yearOfConstruction, 10);
+    const parsedArea = parseFloat(area);
+    const parsedNumberOfStories = parseInt(numberOfStories, 10);
+
+    if (isNaN(parsedYearOfConstruction) || parsedYearOfConstruction < 1800) {
+      return res.status(400).json({ message: "Invalid year of construction." });
+    }
+    if (isNaN(parsedArea) || parsedArea <= 0) {
+      return res.status(400).json({ message: "Invalid area value." });
+    }
+    if (isNaN(parsedNumberOfStories) || parsedNumberOfStories <= 0) {
+      return res.status(400).json({ message: "Number of stories must be a positive number." });
+    }
+
+    // Insert audit into database
+    const sql = `
+      INSERT INTO Audits (
+        auditor_id, name, location, year_of_construction, date_of_audit, area, structure_type,
+        cement_type, other_cement_type, steel_type, other_steel_type, number_of_stories, 
+        designed_use, present_use, changes_in_building, distress_year, distress_nature
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
     const [result] = await db.execute(sql, [
       req.user.id,
       name.trim(),
       location.trim(),
-      parseInt(yearOfConstruction, 10),
+      parsedYearOfConstruction,
       formattedDate,
-      parseFloat(area),
+      parsedArea,
       structureType.trim(),
-      cementType.trim(),
-      steelType.trim(),
-      parseInt(numberOfStories, 10),
+      finalCementType,
+      storedOtherCementType,
+      finalSteelType,
+      storedOtherSteelType,
+      parsedNumberOfStories,
       designedUse.trim(),
       presentUse.trim(),
       changesInBuilding ? changesInBuilding.trim() : null,
