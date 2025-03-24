@@ -12,7 +12,7 @@ function ViewSubmittedAudit() {
   const navigate = useNavigate();
   const [fullAudit, setFullAudit] = useState(null);
   const [error, setError] = useState("");
-  const [selectedImage, setSelectedImage] = useState([]); // ✅ Fix: Initialize as empty array
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     const fetchFullAudit = async () => {
@@ -35,8 +35,10 @@ function ViewSubmittedAudit() {
 
   const { audit, structuralChanges, observations, immediateConcerns, ndtTests, dataEntries, auditDrawings } = fullAudit;
 
-  const handleViewImage = (base64Array) => {
-    setSelectedImage(base64Array);
+  const handleViewImage = (base64Data) => {
+    if (!base64Data) return;
+    const imageUrl = `data:image/jpeg;base64,${base64Data}`;
+    setSelectedImage(imageUrl);
   };
 
   const handleGenerateReport = async () => {
@@ -127,11 +129,11 @@ function ViewSubmittedAudit() {
                     <td>{item.cracks_flooring ? "Yes" : "No"}</td>
                     <td>{damageEntry?.description || "N/A"}</td>
                     <td>
-                    {damageEntry?.damage_photos?.length > 0 ? (
+                      {damageEntry?.damage_photos ? (
                         <button onClick={() => handleViewImage(damageEntry.damage_photos)}>
-                          <FaEye /> View Images
+                          <FaEye /> View Image
                         </button>
-                      ) : "No Photos"}
+                      ) : "No Photo"}
                     </td>
                   </tr>
                 );
@@ -179,11 +181,9 @@ function ViewSubmittedAudit() {
         ) : <p>No NDT test results recorded.</p>}
       </div>
 
-      {selectedImage && selectedImage.length > 0 && (
-        <div className="modal" onClick={() => setSelectedImage([])}>
-          {selectedImage.map((img, index) => (
-            <img key={index} src={`data:image/jpeg;base64,${img}`} alt={`Preview ${index + 1}`} />
-          ))}
+      {selectedImage && (
+        <div className="modal" onClick={() => setSelectedImage(null)}>
+          <img src={selectedImage} alt="Preview" />
         </div>
       )}
     </div>

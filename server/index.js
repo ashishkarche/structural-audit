@@ -481,13 +481,12 @@ app.get("/api/audits/:auditId/full", async (req, res) => {
     const [observations] = await db.execute(`SELECT * FROM Observations WHERE audit_id = ?`, [auditId]);
     let [dataEntries] = await db.execute(`SELECT * FROM DamageEntries WHERE audit_id = ?`, [auditId]);
 
-    // 🔹 Convert `damage_photos` BLOB to Base64 (Supports Multiple Images)
+    // 🔹 Convert `damage_photos` BLOB to Base64
     dataEntries = dataEntries.map((entry) => ({
       ...entry,
-      damage_photos: entry.damage_photos
-        ? entry.damage_photos.toString("utf-8").split(",").map((photo) => photo.trim()) // Ensure multiple images are handled
-        : [],
+      damage_photos: entry.damage_photos ? entry.damage_photos.toString("base64") : null,
     }));
+
     // Fetch NDT test results
     const [ndtTests] = await db.execute(`SELECT * FROM NDTTests WHERE audit_id = ?`, [auditId]);
 
