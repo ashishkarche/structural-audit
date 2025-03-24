@@ -1309,9 +1309,9 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       const bottomMargin = 50;
       const cellWidth = imageWidth; // Match width of images
       const cellHeight = 30; // Fixed height for text cells
-    
+
       let count = 0; // Track rows per page
-    
+
       for (let i = 0; i < damageEntries.length; i += 2) {
         // If two rows are already drawn, move to a new page
         if (count === 2) {
@@ -1319,10 +1319,10 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
           y = doc.y;
           count = 0;
         }
-    
+
         const first = damageEntries[i];
         const second = damageEntries[i + 1] || null; // Second entry may not exist
-    
+
         // Draw images side by side
         if (first.damage_photos) {
           doc.image(first.damage_photos, startX, y, { width: imageWidth });
@@ -1330,32 +1330,32 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
         if (second && second.damage_photos) {
           doc.image(second.damage_photos, startX + imageWidth + gap, y, { width: imageWidth });
         }
-    
+
         y += imageHeight + 5; // Move down after images
-    
+
         // Draw text for Location and Cause
         doc.rect(startX, y, cellWidth, cellHeight).stroke();
         doc.text("Location: " + (first.location || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
-    
+
         doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
         doc.text("Location: " + (second ? second.location : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
-    
+
         y += cellHeight; // Move down for next row
-    
+
         doc.rect(startX, y, cellWidth, cellHeight).stroke();
         doc.text("Cause: " + (first.cause || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
-    
+
         doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
         doc.text("Cause: " + (second ? second.cause : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
-    
+
         y += cellHeight + 10; // Move down after text
         count++; // Increase row count
       }
-    
+
       return y; // Return updated Y position
     }
-    
-    
+
+
 
     // ───────────────────────────────────────────────────────────────
     // 5) COVER PAGE
@@ -1406,10 +1406,14 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.fontSize(16).text("1. INTRODUCTION", { underline: true });
     doc.moveDown();
     doc.fontSize(12).text(
-      `M/s ${auditor.firm_name} has been appointed to inspect and assess the condition of “${audit.name}” located at ${audit.location}.`
+      `M/s ${auditor.firm_name} has been appointed to inspect and assess the condition of “${audit.name}” situated at ${audit.location} and subsequently submit an audit reprt.`
     );
     doc.moveDown();
-    doc.text("A comprehensive visual inspection was conducted along with non-destructive testing to evaluate the structure’s integrity and identify any areas of concern.");
+    doc.text("Accordingly, a team of expert and engineers carried out a series of detailed visual inspection. Besides the inspection, material testing by adopting specialized Non Destructive Testing' techniques was also carried out in a proper sequence. In line with this, Non-Destructive Tests (N.D.T) like Ultrasonic Pulse Velocity (USPV), Cover Meter, Carbonation, Concrete Core Strength, Rebound Hammer, Half-Cell Potential, Chemical Analysis etc. were conducted.");
+    doc.moveDown();
+    doc.text("This was done mainly to identify distresses; if any, and their effects on the structural stability and serviceability of the structure.");
+    doc.moveDown();
+    doc.text("The Inspection Report' comprising of Observations, Non Destructive Testing Reports, Inference of NDT, Photographs of distresses and Emerging Recommendations etc. is attached herewith.");
     doc.addPage();
 
     // ─── (2) SCOPE OF WORK ────────────────────────────────────────
@@ -1595,7 +1599,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       "A detailed summary of the Structural assessment report is submitted herewith in this compilation."
     );
     doc.moveDown(2);
-    doc.fontSize(14).text("External Observation", { underline: true });
+    doc.fontSize(14).text("Observation", { underline: true });
     doc.moveDown();
 
     // Call our helper function to draw the images and mini table
@@ -1610,6 +1614,43 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.fontSize(12).text(
       "Non-Destructive Testing (NDT) is used to assess the condition of concrete structures without causing damage. " +
       "The following tests were conducted to evaluate strength, durability, and overall structural performance."
+    );
+
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Non-Destructive testing is a method by which the existing condition of the structure can be analysed without causing damages to the structure."
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "These methods are non-destructive as they do not impair the function of the structure and evaluate changes in properties with time."
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Based on the nature of distresses observed, the following non-destructive tests were suggested and carried out:-"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018) \n -To check the homogeneity of concrete"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Half-cell potentiometer test (Ref.: ASTM/C876-80) \n -To check the probability of corrosion level in reinforcement"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II) \n - To check the approximate compressive strength of concrete"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Concrete core extraction for compressive strength \n - To acquire the actual compressive strength of the concrete in the structure"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998) \n - To check the pH, Chloride & Sulphate content in the concrete"
+    );
+    doc.moveDown();
+    doc.fontSize(12).text(
+      "Carbonation test (Ref: BS: 1881: Part 201:1986) \n - To check the depth of carbonation of the concrete"
     );
 
     // Build a summary table for NDT Tests using a group mapping approach.
