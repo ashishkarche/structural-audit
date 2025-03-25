@@ -49,7 +49,7 @@ function ViewSubmittedAudit() {
       alert("Generating report, please wait...");
 
       const response = await axios.get(
-        `http://localhost:5000/api/audits/${auditId}/report`,
+        `https://structural-audit.vercel.app/api/audits/${auditId}/report`,
         { ...config, responseType: "blob" }
       );
 
