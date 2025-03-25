@@ -1696,16 +1696,16 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     doc.table(
       [
         ["Test Name", "Measured Value", "Quality", "Recommendation"],
-        ["Rebound Hammer Test", ndtData.rebound_index || "N/A", ndtData.rebound_quality || "N/A", ndtData.rebound_recommendation || "N/A"],
-        ["Ultrasonic Test", ndtData.ultrasonic_pulse_velocity || "N/A", ndtData.ultrasonic_concrete_quality || "N/A", ndtData.ultrasonic_recommendation || "N/A"],
-        ["Core Sampling Test", `Diameter: ${ndtData.core_diameter || "N/A"}, Length: ${ndtData.core_length || "N/A"}, L/D Ratio: ${ndtData.lD_Ratio || "N/A"}`, ndtData.measured_strength || "N/A", ndtData.core_sampling_recommendation || "N/A"],
-        ["Carbonation Test", ndtData.carbonation_depth || "N/A", ndtData.carbonation_ph_level || "N/A", ndtData.carbonation_recommendation || "N/A"],
-        ["Chloride Test", ndtData.chloride_content || "N/A", ndtData.chloride_corrosion_risk || "N/A", ndtData.chloride_recommendation || "N/A"],
-        ["Sulfate Test", ndtData.sulfate_content || "N/A", ndtData.sulfate_deterioration_risk || "N/A", ndtData.sulfate_recommendation || "N/A"],
-        ["Half-Cell Potential Test", ndtData.half_cell_potential_value || "N/A", ndtData.corrosion_probability || "N/A", ndtData.half_cell_potential_recommendation || "N/A"],
-        ["Concrete Cover Test", `Required: ${ndtData.concrete_cover_required || "N/A"}, Measured: ${ndtData.concrete_cover_measured || "N/A"}, Deficiency: ${ndtData.concrete_cover_deficiency || "N/A"}`, ndtData.concrete_cover_structural_risk || "N/A", ndtData.concrete_cover_recommendation || "N/A"],
-        ["Rebar Diameter Test", `Original: ${ndtData.original_rebar_diameter || "N/A"}, Measured: ${ndtData.measured_rebar_diameter || "N/A"}`, ndtData.rebar_reduction || "N/A", ndtData.rebar_recommendation || "N/A"],
-        ["Crushing Strength Test", ndtData.crushing_strength || "N/A", ndtData.crushing_strength_classification || "N/A", ndtData.crushing_strength_recommendation || "N/A"]
+        ["Rebound Hammer Test", ndtTests.rebound_index || "N/A", ndtTests.rebound_quality || "N/A", ndtTests.rebound_recommendation || "N/A"],
+        ["Ultrasonic Test", ndtTests.ultrasonic_pulse_velocity || "N/A", ndtTests.ultrasonic_concrete_quality || "N/A", ndtTests.ultrasonic_recommendation || "N/A"],
+        ["Core Sampling Test", `Diameter: ${ndtTests.core_diameter || "N/A"}, Length: ${ndtTests.core_length || "N/A"}, L/D Ratio: ${ndtTests.lD_Ratio || "N/A"}`, ndtTests.measured_strength || "N/A", ndtTests.core_sampling_recommendation || "N/A"],
+        ["Carbonation Test", ndtTests.carbonation_depth || "N/A", ndtTests.carbonation_ph_level || "N/A", ndtTests.carbonation_recommendation || "N/A"],
+        ["Chloride Test", ndtTests.chloride_content || "N/A", ndtTests.chloride_corrosion_risk || "N/A", ndtTests.chloride_recommendation || "N/A"],
+        ["Sulfate Test", ndtTests.sulfate_content || "N/A", ndtTests.sulfate_deterioration_risk || "N/A", ndtTests.sulfate_recommendation || "N/A"],
+        ["Half-Cell Potential Test", ndtTests.half_cell_potential_value || "N/A", ndtTests.corrosion_probability || "N/A", ndtTests.half_cell_potential_recommendation || "N/A"],
+        ["Concrete Cover Test", `Required: ${ndtTests.concrete_cover_required || "N/A"}, Measured: ${ndtTests.concrete_cover_measured || "N/A"}, Deficiency: ${ndtTests.concrete_cover_deficiency || "N/A"}`, ndtTests.concrete_cover_structural_risk || "N/A", ndtTests.concrete_cover_recommendation || "N/A"],
+        ["Rebar Diameter Test", `Original: ${ndtTests.original_rebar_diameter || "N/A"}, Measured: ${ndtTests.measured_rebar_diameter || "N/A"}`, ndtTests.rebar_reduction || "N/A", ndtTests.rebar_recommendation || "N/A"],
+        ["Crushing Strength Test", ndtTests.crushing_strength || "N/A", ndtTests.crushing_strength_classification || "N/A", ndtTests.crushing_strength_recommendation || "N/A"]
       ],
       {
         prepareHeader: () => doc.fontSize(12).text(" "),
