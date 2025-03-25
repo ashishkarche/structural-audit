@@ -1348,58 +1348,73 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
     // Helper function: Draw external observation table with images and a mini table
     function drawExternalObservationTable(doc, damageEntries, startX, startY) {
       let y = startY;
-      const imageWidth = 200;
-      const gap = 20;
-      const imageHeight = 140;
-      const bottomMargin = 50;
-      const cellWidth = imageWidth; // Match width of images
-      const cellHeight = 30; // Fixed height for text cells
-
-      let count = 0; // Track rows per page
-
+      const imageWidth = 180; // Fixed width for images
+      const imageHeight = 140; // Fixed height for images
+      const gap = 20; // Space between images
+      const cellHeight = 30; // Height for text cells
+      const rowHeight = imageHeight + cellHeight * 2 + 10; // Total row height (image + 2 text rows)
+      const pageHeight = doc.page.height - doc.page.margins.bottom - doc.page.margins.top; // Usable page height
+    
       for (let i = 0; i < damageEntries.length; i += 2) {
-        // If two rows are already drawn, move to a new page
-        if (count === 2) {
+        // If not enough space, move to a new page
+        if (y + rowHeight > pageHeight) {
           doc.addPage();
           y = doc.y;
-          count = 0;
         }
-
+    
         const first = damageEntries[i];
         const second = damageEntries[i + 1] || null; // Second entry may not exist
-
-        // Draw images side by side
+    
+        // Draw images side by side with fixed size
         if (first.damage_photos) {
-          doc.image(first.damage_photos, startX, y, { width: imageWidth });
+          doc.image(first.damage_photos, startX, y, { width: imageWidth, height: imageHeight });
         }
         if (second && second.damage_photos) {
-          doc.image(second.damage_photos, startX + imageWidth + gap, y, { width: imageWidth });
+          doc.image(second.damage_photos, startX + imageWidth + gap, y, { width: imageWidth, height: imageHeight });
         }
-
+    
         y += imageHeight + 5; // Move down after images
-
-        // Draw text for Location and Cause
-        doc.rect(startX, y, cellWidth, cellHeight).stroke();
-        doc.text("Location: " + (first.location || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
-
-        doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
-        doc.text("Location: " + (second ? second.location : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
-
+    
+        // Draw table headers
+        doc.font("Helvetica-Bold").fontSize(12);
+        doc.rect(startX, y, imageWidth, cellHeight).stroke();
+        doc.text("Location:", startX + 5, y + 8);
+        doc.rect(startX + imageWidth + gap, y, imageWidth, cellHeight).stroke();
+        doc.text("Location:", startX + imageWidth + gap + 5, y + 8);
+    
         y += cellHeight; // Move down for next row
-
-        doc.rect(startX, y, cellWidth, cellHeight).stroke();
-        doc.text("Cause: " + (first.cause || "N/A"), startX + 5, y + 8, { width: cellWidth - 10 });
-
-        doc.rect(startX + imageWidth + gap, y, cellWidth, cellHeight).stroke();
-        doc.text("Cause: " + (second ? second.cause : "N/A"), startX + imageWidth + gap + 5, y + 8, { width: cellWidth - 10 });
-
-        y += cellHeight + 10; // Move down after text
-        count++; // Increase row count
+    
+        // Draw table content
+        doc.font("Helvetica").fontSize(10);
+        doc.rect(startX, y, imageWidth, cellHeight).stroke();
+        doc.text(first.location || "N/A", startX + 5, y + 8, { width: imageWidth - 10 });
+    
+        doc.rect(startX + imageWidth + gap, y, imageWidth, cellHeight).stroke();
+        doc.text(second ? second.location : "N/A", startX + imageWidth + gap + 5, y + 8, { width: imageWidth - 10 });
+    
+        y += cellHeight; // Move down for next row
+    
+        doc.font("Helvetica-Bold").fontSize(12);
+        doc.rect(startX, y, imageWidth, cellHeight).stroke();
+        doc.text("Cause:", startX + 5, y + 8);
+        doc.rect(startX + imageWidth + gap, y, imageWidth, cellHeight).stroke();
+        doc.text("Cause:", startX + imageWidth + gap + 5, y + 8);
+    
+        y += cellHeight; // Move down for next row
+    
+        doc.font("Helvetica").fontSize(10);
+        doc.rect(startX, y, imageWidth, cellHeight).stroke();
+        doc.text(first.cause || "N/A", startX + 5, y + 8, { width: imageWidth - 10 });
+    
+        doc.rect(startX + imageWidth + gap, y, imageWidth, cellHeight).stroke();
+        doc.text(second ? second.cause : "N/A", startX + imageWidth + gap + 5, y + 8, { width: imageWidth - 10 });
+    
+        y += cellHeight + 10; // Move down for next row
       }
-
+    
       return y; // Return updated Y position
     }
-
+    
 
 
     // ───────────────────────────────────────────────────────────────
@@ -1660,64 +1675,75 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       "Non-Destructive Testing (NDT) is used to assess the condition of concrete structures without causing damage. " +
       "The following tests were conducted to evaluate strength, durability, and overall structural performance."
     );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "Non-Destructive testing is a method by which the existing condition of the structure can be analysed without causing damages to the structure."
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "These methods are non-destructive as they do not impair the function of the structure and evaluate changes in properties with time."
-    );
-    doc.moveDown();
-    doc.fontSize(12).text(
-      "Based on the nature of distresses observed, the following non-destructive tests were suggested and carried out:-"
-    );
-    doc.moveDown();
 
-    const ndtTestsList = [
-      { title: "Ultra-Sonic Pulse Velocity (Ref. IS: 516 Part 5/Sec 1:2018)", description: "To check the homogeneity of concrete" },
-      { title: "Half-cell potentiometer test (Ref.: ASTM/C876-80)", description: "To check the probability of corrosion level in reinforcement" },
-      { title: "Schmidt Rebound Hammer Test (Ref.: IS: 13311 Part II)", description: "To check the approximate compressive strength of concrete" },
-      { title: "Concrete core extraction for compressive strength", description: "To acquire the actual compressive strength of the concrete in the structure" },
-      { title: "Chemical Analysis Test (Ref.: BS: 1881 Part 124:1998)", description: "To check the pH, Chloride & Sulphate content in the concrete" },
-      { title: "Carbonation test (Ref: BS: 1881: Part 201:1986)", description: "To check the depth of carbonation of the concrete" }
+    // Build a summary table for NDT Tests using a group mapping approach.
+    const ndtData = ndtTests[0] || {}; // Assume one NDT record per audit
+    // Define your test groups and how to display them
+    const groupMapping = [
+      {
+        label: "Rebound Hammer Test",
+        value: ndtData.rebound_index,
+        quality: ndtData.rebound_quality,
+        recommendation: ndtData.rebound_recommendation
+      },
+      {
+        label: "Ultrasonic Test",
+        value: ndtData.ultrasonic_pulse_velocity,
+        quality: ndtData.ultrasonic_concrete_quality,
+        recommendation: ndtData.ultrasonic_recommendation
+      },
+      {
+        label: "Core Sampling Test",
+        value: `Diameter: ${ndtData.core_diameter || "N/A"}, Length: ${ndtData.core_length || "N/A"}, L/D Ratio: ${ndtData.lD_Ratio || "N/A"}`,
+        quality: ndtData.measured_strength || "N/A",
+        recommendation: ndtData.core_sampling_recommendation || "N/A"
+      },
+      {
+        label: "Carbonation Test",
+        value: ndtData.carbonation_depth,
+        quality: ndtData.carbonation_ph_level,
+        recommendation: ndtData.carbonation_recommendation
+      },
+      {
+        label: "Chloride Test",
+        value: ndtData.chloride_content,
+        quality: ndtData.chloride_corrosion_risk,
+        recommendation: ndtData.chloride_recommendation
+      },
+      {
+        label: "Sulfate Test",
+        value: ndtData.sulfate_content,
+        quality: ndtData.sulfate_deterioration_risk,
+        recommendation: ndtData.sulfate_recommendation
+      },
+      {
+        label: "Half-Cell Potential Test",
+        value: ndtData.half_cell_potential_value,
+        quality: ndtData.corrosion_probability,
+        recommendation: ndtData.half_cell_potential_recommendation
+      },
+      {
+        label: "Concrete Cover Test",
+        value: `Required: ${ndtData.concrete_cover_required || "N/A"}, Measured: ${ndtData.concrete_cover_measured || "N/A"}, Deficiency: ${ndtData.concrete_cover_deficiency || "N/A"}`,
+        quality: ndtData.concrete_cover_structural_risk || "N/A",
+        recommendation: ndtData.concrete_cover_recommendation || "N/A"
+      },
+      {
+        label: "Rebar Diameter Test",
+        value: `Original: ${ndtData.original_rebar_diameter || "N/A"}, Measured: ${ndtData.measured_rebar_diameter || "N/A"}`,
+        quality: ndtData.rebar_reduction || "N/A",
+        recommendation: ndtData.rebar_recommendation || "N/A"
+      },
+      {
+        label: "Crushing Strength Test",
+        value: ndtData.crushing_strength,
+        quality: ndtData.crushing_strength_classification,
+        recommendation: ndtData.crushing_strength_recommendation
+      }
     ];
 
-    ndtTestsList.forEach((test) => {
-      doc.fontSize(12).text(`> ${test.title} \n - ${test.description}`);
-      doc.moveDown();
-    });
-
-    // Build a structured NDT summary table
-    doc.addPage();
-    doc.fontSize(14).text("Summary of NDT Results", { underline: true });
-    doc.moveDown();
-
-    doc.table(
-      [
-        ["Test Name", "Measured Value", "Quality", "Recommendation"],
-        ["Rebound Hammer Test", ndtTests.rebound_index || "N/A", ndtTests.rebound_quality || "N/A", ndtTests.rebound_recommendation || "N/A"],
-        ["Ultrasonic Test", ndtTests.ultrasonic_pulse_velocity || "N/A", ndtTests.ultrasonic_concrete_quality || "N/A", ndtTests.ultrasonic_recommendation || "N/A"],
-        ["Core Sampling Test", `Diameter: ${ndtTests.core_diameter || "N/A"}, Length: ${ndtTests.core_length || "N/A"}, L/D Ratio: ${ndtTests.lD_Ratio || "N/A"}`, ndtTests.measured_strength || "N/A", ndtTests.core_sampling_recommendation || "N/A"],
-        ["Carbonation Test", ndtTests.carbonation_depth || "N/A", ndtTests.carbonation_ph_level || "N/A", ndtTests.carbonation_recommendation || "N/A"],
-        ["Chloride Test", ndtTests.chloride_content || "N/A", ndtTests.chloride_corrosion_risk || "N/A", ndtTests.chloride_recommendation || "N/A"],
-        ["Sulfate Test", ndtTests.sulfate_content || "N/A", ndtTests.sulfate_deterioration_risk || "N/A", ndtTests.sulfate_recommendation || "N/A"],
-        ["Half-Cell Potential Test", ndtTests.half_cell_potential_value || "N/A", ndtTests.corrosion_probability || "N/A", ndtTests.half_cell_potential_recommendation || "N/A"],
-        ["Concrete Cover Test", `Required: ${ndtTests.concrete_cover_required || "N/A"}, Measured: ${ndtTests.concrete_cover_measured || "N/A"}, Deficiency: ${ndtTests.concrete_cover_deficiency || "N/A"}`, ndtTests.concrete_cover_structural_risk || "N/A", ndtTests.concrete_cover_recommendation || "N/A"],
-        ["Rebar Diameter Test", `Original: ${ndtTests.original_rebar_diameter || "N/A"}, Measured: ${ndtTests.measured_rebar_diameter || "N/A"}`, ndtTests.rebar_reduction || "N/A", ndtTests.rebar_recommendation || "N/A"],
-        ["Crushing Strength Test", ndtTests.crushing_strength || "N/A", ndtTests.crushing_strength_classification || "N/A", ndtTests.crushing_strength_recommendation || "N/A"]
-      ],
-      {
-        prepareHeader: () => doc.fontSize(12).text(" "),
-        prepareRow: (row, indexColumn, indexRow, rectRow, rectColumn) => {
-          doc.fontSize(10).text(row[indexColumn], rectColumn.x, rectColumn.y, { width: rectColumn.width, align: "center" });
-        }
-      }
-    );
-
-    doc.moveDown(2);
-
-    // Detailed Findings Section
+    // Detailed Findings Section for each test (if needed)
+    // For each test group, you can add a detailed page if required.
     groupMapping.forEach((group) => {
       doc.addPage();
       doc.fontSize(14).text(group.label, { underline: true });
@@ -1726,6 +1752,7 @@ app.get('/api/audits/:auditId/report', authenticate, async (req, res) => {
       doc.text(`Quality: ${group.quality || "N/A"}`);
       doc.text(`Recommendation: ${group.recommendation || "N/A"}`);
       doc.moveDown();
+      // Optionally add any interpretation or additional details here.
     });
 
     /****************************************************************
