@@ -29,7 +29,7 @@ function NotificationPanel() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get("https://structural-audit.vercel.app/api/notifications", config);
+      const response = await axios.get("https://your-api/api/notifications", config);
       setNotifications(response.data);
     } catch (err) {
       setError("Failed to load notifications.");
@@ -55,7 +55,7 @@ function NotificationPanel() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`https://structural-audit.vercel.app/api/notifications/${id}`, config);
+      await axios.delete(`https://your-api/api/notifications/${id}`, config);
       
       // Remove from state immediately
       setNotifications((prev) => prev.filter((notif) => notif.id !== id));
@@ -68,7 +68,7 @@ function NotificationPanel() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete("https://structural-audit.vercel.app/api/notifications/clear", config);
+      await axios.delete("https://your-api/api/notifications/clear", config);
       setNotifications([]);
     } catch (err) {
       setError("Failed to clear notifications.");

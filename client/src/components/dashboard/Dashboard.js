@@ -26,9 +26,9 @@ function Dashboard() {
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const [auditorRes, totalAuditsRes, auditsRes] = await Promise.all([
-          axios.get("https://structural-audit.vercel.app/api/auditors/me", config),
-          axios.get("https://structural-audit.vercel.app/api/audits/total", config),
-          axios.get("https://structural-audit.vercel.app/api/audits/recent", config),
+          axios.get("https://your-api/api/auditors/me", config),
+          axios.get("https://your-api/api/audits/total", config),
+          axios.get("https://your-api/api/audits/recent", config),
         ]);
 
         setAuditor(auditorRes.data);

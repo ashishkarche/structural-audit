@@ -15,7 +15,7 @@ function EditAudit() {
       try {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}`, config);
+        const response = await axios.get(`https://your-api/api/audits/${auditId}`, config);
 
         // Convert date_of_audit to yyyy-MM-dd format
         const formattedAudit = {
@@ -45,7 +45,7 @@ function EditAudit() {
     try {
       const token = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } };
-      await axios.put(`https://structural-audit.vercel.app/api/audits/${auditId}`, auditData, config);
+      await axios.put(`https://your-api/api/audits/${auditId}`, auditData, config);
       alert("Audit updated successfully!");
       navigate("/view-audits");
     } catch (err) {

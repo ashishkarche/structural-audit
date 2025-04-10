@@ -20,7 +20,7 @@ function ForgetPassword() {
     setError("");
 
     try {
-      const response = await axios.post("https://structural-audit.vercel.app/api/check-email", { email });
+      const response = await axios.post("https://your-api/api/check-email", { email });
       if (response.data.exists) {
         setStep(2); // Move to password update step
         setMessage("Email verified! Enter your new password.");
@@ -45,7 +45,7 @@ function ForgetPassword() {
     }
 
     try {
-      await axios.post("https://structural-audit.vercel.app/api/update-password", { email, newPassword });
+      await axios.post("https://your-api/api/update-password", { email, newPassword });
       setMessage("Password updated successfully! Redirecting to login...");
 
       // ✅ Redirect to login page after 2 seconds

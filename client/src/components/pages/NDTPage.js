@@ -87,7 +87,7 @@ function NDTPage() {
     };
 
     try {
-      await axios.post(`https://structural-audit.vercel.app/api/ndt/${auditId}`, prepareFormData(), config);
+      await axios.post(`https://your-api/api/ndt/${auditId}`, prepareFormData(), config);
       localStorage.setItem(`ndtSubmitted_${auditId}`, "submitted");
       setIsSubmitted(true);
 

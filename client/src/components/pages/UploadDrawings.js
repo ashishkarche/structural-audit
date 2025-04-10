@@ -32,7 +32,7 @@ function UploadDrawings() {
         const token = localStorage.getItem("token");
 
         const response = await axios.get(
-          `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
+          `https://your-api/api/files/${auditId}/drawings`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -76,11 +76,11 @@ function UploadDrawings() {
       if (drawings.architecturalDrawing) formData.append("architecturalDrawing", drawings.architecturalDrawing);
       if (drawings.structuralDrawing) formData.append("structuralDrawing", drawings.structuralDrawing);
 
-      await axios.post("https://structural-audit.vercel.app/api/upload-drawings", formData, config);
+      await axios.post("https://your-api/api/upload-drawings", formData, config);
 
       // ✅ Fetch updated PDFs after upload
       const updatedResponse = await axios.get(
-        `https://structural-audit.vercel.app/api/files/${auditId}/drawings`,
+        `https://your-api/api/files/${auditId}/drawings`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

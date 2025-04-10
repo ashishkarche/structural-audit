@@ -18,7 +18,7 @@ function Login() {
 
     // ✅ Check if Email is Registered
     try {
-      const emailCheck = await axios.post("https://structural-audit.vercel.app/api/check-email", { email });
+      const emailCheck = await axios.post("https://your-api/api/check-email", { email });
 
       if (!emailCheck.data.exists) {
         setError("Account not registered. Please Register first.");
@@ -38,7 +38,7 @@ function Login() {
 
     // ✅ Attempt Login
     try {
-      const response = await axios.post("https://structural-audit.vercel.app/login", { email, password });
+      const response = await axios.post("https://your-api/login", { email, password });
       localStorage.setItem("token", response.data.token);
       navigate("/dashboard");
     } catch (err) {

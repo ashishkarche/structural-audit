@@ -48,7 +48,7 @@ function Register() {
     }
 
     try {
-      await axios.post("https://structural-audit.vercel.app/register", formData);
+      await axios.post("https://your-api/register", formData);
       setMessage("Registration successful! Redirecting to login...");
       setTimeout(() => navigate("/"), 2000);
     } catch (err) {

@@ -17,7 +17,7 @@ const AuditHistory = () => {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
         const response = await axios.get(
-          `https://structural-audit.vercel.app/api/audits/${auditId}/history`,
+          `https://your-api/api/audits/${auditId}/history`,
           config
         );
         setHistory(response.data);

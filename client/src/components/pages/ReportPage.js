@@ -17,7 +17,7 @@ function ReportPage() {
         }
 
         const config = { headers: { Authorization: `Bearer ${token}` } };
-        const response = await axios.get("https://structural-audit.vercel.app/api/reports", config);
+        const response = await axios.get("https://your-api/api/reports", config);
         setReports(response.data);
       } catch (err) {
         console.error("Error fetching reports:", err);
@@ -42,7 +42,7 @@ function ReportPage() {
       const config = { headers: { Authorization: `Bearer ${token}` }, responseType: "blob" };
 
       // 📌 Fetch the report
-      const response = await axios.get(`https://structural-audit.vercel.app/api/audits/${auditId}/report`, config);
+      const response = await axios.get(`https://your-api/api/audits/${auditId}/report`, config);
 
       // 📌 Trigger Download
       const url = window.URL.createObjectURL(new Blob([response.data]));

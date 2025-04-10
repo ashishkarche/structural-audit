@@ -114,7 +114,7 @@ function ObservationPage() {
     });
 
     try {
-      await axios.post(`https://structural-audit.vercel.app/api/observations/${auditId}`, formDataToSend, config);
+      await axios.post(`https://your-api/api/observations/${auditId}`, formDataToSend, config);
 
       // ✅ Mark form as submitted
       localStorage.setItem(`observations_${auditId}`, "submitted");

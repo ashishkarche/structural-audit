@@ -1804,7 +1804,7 @@ app.get('/api/reports', authenticate, async (req, res) => {
       name: report.name,
       location: report.location,
       date_of_audit: report.date_of_audit,
-      download_url: `https://structural-audit.vercel.app/api/audits/${report.id}/report`,
+      download_url: `https://your-api/api/audits/${report.id}/report`,
     }));
 
     res.json(reportsWithLinks);

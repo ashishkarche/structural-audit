@@ -54,7 +54,7 @@ function SubmitAudit() {
     };
 
     try {
-      const response = await axios.post("https://structural-audit.vercel.app/submit-audit", formattedData, config);
+      const response = await axios.post("https://your-api/submit-audit", formattedData, config);
       setToast({ message: "Submission Successful!", type: "success" }); // Show success toast
 
       setTimeout(() => navigate(`/audit/${response.data.auditId}/upload-drawings`), 2000);

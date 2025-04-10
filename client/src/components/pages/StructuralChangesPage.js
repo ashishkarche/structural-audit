@@ -57,7 +57,7 @@ function StructuralChangesPage() {
 
     try {
       await axios.post(
-        `https://structural-audit.vercel.app/api/structural-changes/${auditId}`,
+        `https://your-api/api/structural-changes/${auditId}`,
         formDataToSend,
         config
       );
